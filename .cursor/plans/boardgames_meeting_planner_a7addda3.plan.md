@@ -13,18 +13,30 @@ todos:
     status: completed
   - id: home-games
     content: "Phase 4: Home screen (meeting card or survey CTA), Board games CRUD screens (list, detail/edit, new) with image upload"
-    status: in_progress
+    status: completed
+  - id: fix-avatar-urls
+    content: "Phase 5: Fix attendee avatar URLs on Home screen -- use signed URLs (getSignedUrls) instead of raw storage paths"
+    status: pending
+  - id: add-to-calendar
+    content: "Phase 6: Add 'Add to Calendar' button on approved meeting card -- open device calendar with whole-day event for chosen_date"
+    status: pending
+  - id: empty-state-timing
+    content: "Phase 7: Show 'next survey available' timing info in Home empty state (7 days after last completed meeting)"
+    status: pending
+  - id: gluestack-migration
+    content: "Phase 8: Migrate Home & Games screens to gluestack-ui components for consistency with later phases"
+    status: pending
   - id: survey
-    content: "Phase 5: Survey/voting screen -- date picker with weekends/holidays/custom dates, game multi-select with 3-play logic, 'not participating' as empty vote, voter avatars, submit"
+    content: "Phase 9: Survey/voting screen -- date picker with weekends/holidays/custom dates, game multi-select with 3-play logic, 'not participating' as empty vote, voter avatars, submit"
     status: pending
   - id: approval
-    content: "Phase 6: Meeting approval flow -- pick date (sorted by votes), pick game (filtered + sorted), approve/unapprove, late join (adds vote with chosen date+game), edit meeting"
+    content: "Phase 10: Meeting approval flow -- pick date (sorted by votes), pick game (filtered + sorted), approve/unapprove, late join (adds vote with chosen date+game), edit meeting"
     status: pending
   - id: notifications
-    content: "Phase 7: Expo push notification setup, Supabase Edge Functions for create-survey cron, survey-reminder cron, meeting-reminder cron, in-app Realtime subscriptions"
+    content: "Phase 11: Expo push notification setup, Supabase Edge Functions for create-survey cron, survey-reminder cron, meeting-reminder cron, in-app Realtime subscriptions"
     status: pending
   - id: polish
-    content: "Phase 8: Profile/settings screen, notification preferences, past dates disabled, edge cases, testing, README"
+    content: "Phase 12: Profile/settings screen, notification preferences, past dates disabled, edge cases, testing, README"
     status: pending
 isProject: false
 ---
