@@ -1,8 +1,8 @@
 export interface Profile {
   id: string;
-  username: string;
-  name: string;
-  surname: string;
+  username: string | null;
+  name: string | null;
+  surname: string | null;
   avatar_url: string | null;
   notification_prior_meeting: number;
   notification_reminder_interval: number;
@@ -31,7 +31,7 @@ export interface Meeting {
   chosen_game_id: string | null;
   approved_by: string | null;
   approved_at: string | null;
-  voting_start_date: string | null;
+  voting_start_date: string;
 }
 
 export interface DateOption {
@@ -56,4 +56,10 @@ export interface VoteDate {
 export interface VoteGame {
   vote_id: string;
   game_id: string;
+}
+
+export interface PushToken {
+  user_id: string;
+  token: string;
+  updated_at: string;
 }

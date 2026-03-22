@@ -7,7 +7,7 @@ todos:
     status: completed
   - id: database
     content: "Phase 2: Write SQL migrations in supabase/migrations/ with all tables, RLS policies, SQL functions (consecutive game count, create survey, Polish holidays), storage buckets, indexes"
-    status: pending
+    status: completed
   - id: auth
     content: "Phase 3: Supabase Auth integration -- login-only, session management, auth guard in root layout (no self-registration)"
     status: pending
