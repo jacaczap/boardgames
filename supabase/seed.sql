@@ -1,0 +1,2 @@
+-- Seed data for development
+-- Add test data here after migrations are created

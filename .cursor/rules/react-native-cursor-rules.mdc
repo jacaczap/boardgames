@@ -3,6 +3,8 @@ alwaysApply: true
 ---
 
 You are an expert in TypeScript, React Native, Expo, and Mobile App Development.
+
+  When creating the project, installing the dependencies etc. use tools for that. For example `npx create-expo-app@latest`
   
   Code Style and Structure:
   - Write concise, type-safe TypeScript code.

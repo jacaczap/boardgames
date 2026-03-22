@@ -4,7 +4,7 @@ overview: Build a React Native (Expo) + Supabase app for a single friend group t
 todos:
   - id: setup
     content: "Phase 1: Init Expo project with expo-router, gluestack-ui, supabase-js, TypeScript config, env vars, folder structure"
-    status: pending
+    status: completed
   - id: database
     content: "Phase 2: Write SQL migrations in supabase/migrations/ with all tables, RLS policies, SQL functions (consecutive game count, create survey, Polish holidays), storage buckets, indexes"
     status: pending
@@ -55,7 +55,7 @@ erDiagram
     votes ||--o{ vote_dates : selects
     votes ||--o{ vote_games : selects
     date_options ||--o{ vote_dates : chosen_in
-    meetings }o--|| board_games : chosen_game
+    meetings }o--o| board_games : chosen_game
 ```
 
 
@@ -247,7 +247,7 @@ flowchart TD
     ApprovedMeeting --> CronMeetingReminder["pg_cron: meeting-reminder"]
     CronMeetingReminder --> PushMeeting["Push: Meeting in X days"]
     ApprovedMeeting --> Unapprove["Any user unapproves"]
-    Unapprove --> NewSurvey
+    Unapprove -->|"status back to voting"| UsersVote
     ApprovedMeeting --> Complete["Mark completed after date passes"]
     Complete --> CompletedMeeting
 ```
@@ -260,7 +260,7 @@ The source code is hosted as a **public GitHub repo**. Key rules:
 
 - `**.gitignore`** must include: `.env`, `supabase/.temp/`, `supabase/.branches/`, `supabase/config.toml` (contains project-id -- template as `config.toml.example` with placeholder values)
 - **Version-controlled**: `supabase/migrations/`, `supabase/functions/`, `supabase/seed.sql` -- these contain no secrets and must be tracked (single developer -- losing local machine would mean total loss of schema, RLS policies, and function code)
-- `**.env`** stores: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (these are safe client-side but still gitignored for cleanliness)
+- `**.env`** stores: `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_KEY` (these are safe client-side but still gitignored for cleanliness)
 - `**service_role` key**: NEVER in client code; only used inside Edge Functions (server-side) and set via `supabase secrets set`
 - **Edge Functions secret handling**: access secrets exclusively via `Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')` -- never hardcode. All secrets set via `supabase secrets set` (stored in Supabase platform, not in code). Source code is safe for public repo.
 - **Supabase anon key**: safe to be in the client app (designed for this); all access is gated by RLS. The URL and anon key are also embedded in the compiled app binary (APK/IPA/JS bundle) regardless of `.gitignore` -- this is by design. RLS policies are the actual security boundary, not key secrecy.
