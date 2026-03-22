@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useRef, useMemo } from "react";
 import {
   FlatList,
   RefreshControl,
@@ -88,10 +88,13 @@ export default function GamesListScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
-  const imagePaths = games
-    .map((g) => g.image_url)
-    .filter((p): p is string => !!p);
+  const imagePaths = useMemo(
+    () => games.map((g) => g.image_url).filter((p): p is string => !!p),
+    [games],
+  );
   const imageUrls = useSignedUrls("game-images", imagePaths);
+  const imageUrlsRef = useRef(imageUrls);
+  imageUrlsRef.current = imageUrls;
 
   const fetchGames = useCallback(async () => {
     try {
@@ -123,11 +126,11 @@ export default function GamesListScreen() {
     ({ item }: { item: BoardGame }) => (
       <GameRow
         item={item}
-        imageUri={item.image_url ? imageUrls.get(item.image_url) : undefined}
+        imageUri={item.image_url ? imageUrlsRef.current.get(item.image_url) : undefined}
         onPress={() => router.push(`/(tabs)/games/${item.id}`)}
       />
     ),
-    [imageUrls, router],
+    [router],
   );
 
   const filtered = games.filter(

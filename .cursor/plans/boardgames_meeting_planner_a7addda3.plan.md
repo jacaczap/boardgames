@@ -70,7 +70,10 @@ todos:
     status: completed
   - id: survey
     content: "Phase 15: Survey/voting screen -- date picker with weekends/holidays/custom dates, game multi-select with 3-play logic, 'not participating' as empty vote, voter avatars, submit"
-    status: pending
+    status: completed
+  - id: survey-bugfixes
+    content: "Phase 15a: Survey & misc bugfixes -- add vote delete error check in handleSubmit, add Realtime subscription for live vote updates, add useFocusEffect for stale data on navigate-back, add custom date range validation, add duplicate active survey guard in create_next_survey SQL, fix DST issue in Home nextSurveyDate calculation, stabilize imageUrls ref in games FlatList"
+    status: completed
   - id: approval
     content: "Phase 16: Meeting approval flow -- pick date (sorted by votes), pick game (filtered + sorted), approve/unapprove, late join (adds vote with chosen date+game), edit meeting"
     status: pending

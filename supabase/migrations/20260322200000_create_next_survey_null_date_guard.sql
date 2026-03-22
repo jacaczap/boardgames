@@ -34,6 +34,13 @@ begin
     end if;
   end if;
 
+  if exists (
+    select 1 from public.meetings
+    where status in ('voting'::public.meeting_status, 'approved'::public.meeting_status)
+  ) then
+    raise exception 'An active survey or approved meeting already exists';
+  end if;
+
   v_end_date := v_start_date + interval '60 days';
 
   insert into public.meetings (number, status, voting_start_date)

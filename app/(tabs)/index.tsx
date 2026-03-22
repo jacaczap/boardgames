@@ -74,8 +74,8 @@ export default function HomeScreen() {
           .limit(1);
 
         if (lastCompleted?.[0]?.chosen_date) {
-          const surveyAvail = new Date(lastCompleted[0].chosen_date + "T00:00:00");
-          surveyAvail.setDate(surveyAvail.getDate() + 7);
+          const [y, m, d] = lastCompleted[0].chosen_date.split("-").map(Number);
+          const surveyAvail = new Date(Date.UTC(y, m - 1, d + 7));
           setNextSurveyDate(surveyAvail);
         } else {
           setNextSurveyDate(null);
