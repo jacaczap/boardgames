@@ -16,27 +16,45 @@ todos:
     status: completed
   - id: fix-avatar-urls
     content: "Phase 5: Fix attendee avatar URLs on Home screen -- use signed URLs (getSignedUrls) instead of raw storage paths"
+    status: completed
+  - id: stale-data-focus
+    content: "Phase 6: Fix stale data on screen focus -- add useFocusEffect to Games list and Home screen, subscribe Realtime to votes table for live voter count"
+    status: pending
+  - id: signed-url-refresh
+    content: "Phase 7: Auto-refresh signed URLs before expiry -- add re-fetch interval or expiry-aware hook so images don't break after 1h"
+    status: pending
+  - id: orphaned-images
+    content: "Phase 8: Delete old image from storage when replacing a game image, and guard against orphaned uploads in new-game flow"
+    status: pending
+  - id: player-count-validation
+    content: "Phase 9: Add local numeric validation for min/max player fields in game forms (reject NaN before Supabase call)"
+    status: pending
+  - id: signed-url-map-guard
+    content: "Phase 10: Guard getSignedUrls map.set -- check both item.path and item.signedUrl before inserting into Map"
+    status: pending
+  - id: create-survey-null-date
+    content: "Phase 11: Add null-date guard in create_next_survey SQL -- handle edge case where last completed meeting has no chosen_date"
     status: pending
   - id: add-to-calendar
-    content: "Phase 6: Add 'Add to Calendar' button on approved meeting card -- open device calendar with whole-day event for chosen_date"
+    content: "Phase 12: Add 'Add to Calendar' button on approved meeting card -- open device calendar with whole-day event for chosen_date"
     status: pending
   - id: empty-state-timing
-    content: "Phase 7: Show 'next survey available' timing info in Home empty state (7 days after last completed meeting)"
+    content: "Phase 13: Show 'next survey available' timing info in Home empty state (7 days after last completed meeting)"
     status: pending
   - id: gluestack-migration
-    content: "Phase 8: Migrate Home & Games screens to gluestack-ui components for consistency with later phases"
+    content: "Phase 14: Migrate Home & Games screens to gluestack-ui components for consistency with later phases"
     status: pending
   - id: survey
-    content: "Phase 9: Survey/voting screen -- date picker with weekends/holidays/custom dates, game multi-select with 3-play logic, 'not participating' as empty vote, voter avatars, submit"
+    content: "Phase 15: Survey/voting screen -- date picker with weekends/holidays/custom dates, game multi-select with 3-play logic, 'not participating' as empty vote, voter avatars, submit"
     status: pending
   - id: approval
-    content: "Phase 10: Meeting approval flow -- pick date (sorted by votes), pick game (filtered + sorted), approve/unapprove, late join (adds vote with chosen date+game), edit meeting"
+    content: "Phase 16: Meeting approval flow -- pick date (sorted by votes), pick game (filtered + sorted), approve/unapprove, late join (adds vote with chosen date+game), edit meeting"
     status: pending
   - id: notifications
-    content: "Phase 11: Expo push notification setup, Supabase Edge Functions for create-survey cron, survey-reminder cron, meeting-reminder cron, in-app Realtime subscriptions"
+    content: "Phase 17: Expo push notification setup, Supabase Edge Functions for create-survey cron, survey-reminder cron, meeting-reminder cron, in-app Realtime subscriptions"
     status: pending
   - id: polish
-    content: "Phase 12: Profile/settings screen, notification preferences, past dates disabled, edge cases, testing, README"
+    content: "Phase 18: Profile/settings screen, notification preferences, past dates disabled, edge cases, testing, README"
     status: pending
 isProject: false
 ---

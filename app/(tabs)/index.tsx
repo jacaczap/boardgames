@@ -13,7 +13,7 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import { useSignedUrl } from "@/lib/storage";
+import { useSignedUrl, getSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile } from "@/lib/types";
 
 export default function HomeScreen() {
@@ -21,6 +21,7 @@ export default function HomeScreen() {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [game, setGame] = useState<BoardGame | null>(null);
   const [attendees, setAttendees] = useState<Profile[]>([]);
+  const [avatarUrls, setAvatarUrls] = useState<Map<string, string>>(new Map());
   const [voterCount, setVoterCount] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -42,6 +43,7 @@ export default function HomeScreen() {
     if (!m) {
       setGame(null);
       setAttendees([]);
+      setAvatarUrls(new Map());
       setLoading(false);
       return;
     }
@@ -85,7 +87,18 @@ export default function HomeScreen() {
                   "id",
                   votes.map((v) => v.user_id),
                 );
-              setAttendees((profiles as Profile[]) ?? []);
+              const profileList = (profiles as Profile[]) ?? [];
+              setAttendees(profileList);
+
+              const paths = profileList
+                .map((p) => p.avatar_url)
+                .filter((u): u is string => !!u);
+              if (paths.length) {
+                const urlMap = await getSignedUrls("avatars", paths);
+                setAvatarUrls(urlMap);
+              } else {
+                setAvatarUrls(new Map());
+              }
             }
           }
         }
@@ -334,11 +347,15 @@ export default function HomeScreen() {
                 Attendees
               </Text>
               <View className="flex-row flex-wrap gap-2">
-                {attendees.map((p) => (
+                {attendees.map((p) => {
+                  const signedAvatar = p.avatar_url
+                    ? avatarUrls.get(p.avatar_url)
+                    : undefined;
+                  return (
                   <View key={p.id} className="items-center">
-                    {p.avatar_url ? (
+                    {signedAvatar ? (
                       <Image
-                        source={{ uri: p.avatar_url }}
+                        source={{ uri: signedAvatar }}
                         className="w-10 h-10 rounded-full"
                       />
                     ) : (
@@ -353,7 +370,8 @@ export default function HomeScreen() {
                       {p.name}
                     </Text>
                   </View>
-                ))}
+                  );
+                })}
               </View>
             </View>
           )}
