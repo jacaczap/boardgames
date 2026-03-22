@@ -52,7 +52,16 @@ todos:
     status: completed
   - id: add-to-calendar
     content: "Phase 12: Add 'Add to Calendar' button on approved meeting card -- open device calendar with whole-day event for chosen_date"
-    status: pending
+    status: completed
+  - id: calendar-bugfixes
+    content: "Phase 12a: Calendar bugfixes -- add expo-calendar to app.json plugins (permissions for native builds), hide 'Add to Calendar' on web (expo-calendar unsupported), add loading guard to prevent duplicate calendar events on double-tap"
+    status: completed
+  - id: missing-nav-stack
+    content: "Phase 12b: Add Stack navigator for survey/[id] and approve/[id] screens -- root layout uses Slot so these routes have no header/back button"
+    status: completed
+  - id: minor-code-fixes
+    content: "Phase 12c: Minor fixes -- add try/catch to fetchGame in games/[id].tsx, extract renderItem callback in games list to avoid anonymous closure re-renders"
+    status: completed
   - id: empty-state-timing
     content: "Phase 13: Show 'next survey available' timing info in Home empty state (7 days after last completed meeting)"
     status: pending
@@ -70,6 +79,9 @@ todos:
     status: pending
   - id: polish
     content: "Phase 18: Profile/settings screen, notification preferences, past dates disabled, edge cases, testing, README"
+    status: pending
+  - id: i18n
+    content: "Phase 19: i18n -- add expo-localization + i18next/react-i18next, extract all user-facing strings to en/pl translation files, auto-detect device locale, add language switcher in Profile, translate all screens (Home, Games, Survey, Approve, Profile, Auth)"
     status: pending
 isProject: false
 ---

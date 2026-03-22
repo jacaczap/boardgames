@@ -112,6 +112,17 @@ export default function GamesListScreen() {
     setRefreshing(false);
   }, [fetchGames]);
 
+  const renderGameRow = useCallback(
+    ({ item }: { item: BoardGame }) => (
+      <GameRow
+        item={item}
+        imageUri={item.image_url ? imageUrls.get(item.image_url) : undefined}
+        onPress={() => router.push(`/(tabs)/games/${item.id}`)}
+      />
+    ),
+    [imageUrls, router],
+  );
+
   const filtered = games.filter(
     (g) =>
       g.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -149,13 +160,7 @@ export default function GamesListScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
-          <GameRow
-            item={item}
-            imageUri={item.image_url ? imageUrls.get(item.image_url) : undefined}
-            onPress={() => router.push(`/(tabs)/games/${item.id}`)}
-          />
-        )}
+        renderItem={renderGameRow}
         contentContainerStyle={{ paddingTop: 8, paddingBottom: 100 }}
         refreshControl={
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />

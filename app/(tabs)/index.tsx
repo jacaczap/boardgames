@@ -9,10 +9,12 @@ import {
   Linking,
   RefreshControl,
   Alert,
+  Platform,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import * as Calendar from "expo-calendar";
 import { supabase } from "@/lib/supabase";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile } from "@/lib/types";
@@ -27,6 +29,7 @@ export default function HomeScreen() {
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [creatingSurvey, setCreatingSurvey] = useState(false);
+  const [addingToCalendar, setAddingToCalendar] = useState(false);
 
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
   const avatarPaths = attendees
@@ -218,6 +221,54 @@ export default function HomeScreen() {
     }
   };
 
+  const handleAddToCalendar = async () => {
+    if (!meeting?.chosen_date || addingToCalendar) return;
+    setAddingToCalendar(true);
+    try {
+      const { status } = await Calendar.requestCalendarPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("Permission denied", "Calendar access is required to create an event.");
+        return;
+      }
+
+      let calendarId: string | undefined;
+      if (Platform.OS === "ios") {
+        const defaultCal = await Calendar.getDefaultCalendarAsync();
+        calendarId = defaultCal.id;
+      } else if (Platform.OS === "android") {
+        const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
+        const primary = calendars.find(
+          (c) => c.isPrimary || c.accessLevel === Calendar.CalendarAccessLevel.OWNER,
+        );
+        calendarId = primary?.id ?? calendars[0]?.id;
+      }
+
+      if (!calendarId) {
+        Alert.alert("Error", "No writable calendar found on this device.");
+        return;
+      }
+
+      const title = game?.name
+        ? `Board Games - ${game.name}`
+        : "Board Games Meeting";
+      const startDate = new Date(meeting.chosen_date + "T00:00:00");
+      const endDate = new Date(meeting.chosen_date + "T23:59:59");
+
+      await Calendar.createEventAsync(calendarId, {
+        title,
+        startDate,
+        endDate,
+        allDay: true,
+      });
+
+      Alert.alert("Done", "Event added to your calendar.");
+    } catch (e: any) {
+      Alert.alert("Error", e?.message ?? "Failed to add calendar event");
+    } finally {
+      setAddingToCalendar(false);
+    }
+  };
+
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-white">
@@ -350,7 +401,19 @@ export default function HomeScreen() {
             <Text className="text-gray-600 mt-3">{game.description}</Text>
           )}
 
-          <View className="flex-row mt-4 gap-3">
+          <View className="flex-row flex-wrap mt-4 gap-3">
+            {meeting.chosen_date && Platform.OS !== "web" && (
+              <TouchableOpacity
+                className="flex-row items-center bg-blue-50 rounded-lg px-3 py-2"
+                onPress={handleAddToCalendar}
+                disabled={addingToCalendar}
+              >
+                <Ionicons name="calendar-outline" size={18} color="#2563eb" />
+                <Text className="text-blue-700 font-medium ml-1 text-sm">
+                  {addingToCalendar ? "Adding..." : "Add to Calendar"}
+                </Text>
+              </TouchableOpacity>
+            )}
             {game?.tutorial_url && (
               <TouchableOpacity
                 className="flex-row items-center bg-red-50 rounded-lg px-3 py-2"

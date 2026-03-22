@@ -1,6 +1,6 @@
 import "../global.css";
 import React, { useEffect, useState } from "react";
-import { Slot, useRouter, useSegments } from "expo-router";
+import { Stack, useRouter, useSegments } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
@@ -58,7 +58,18 @@ export default function RootLayout() {
 
   return (
     <GluestackUIProvider>
-      <Slot />
+      <Stack screenOptions={{ headerShown: false }}>
+        <Stack.Screen name="(auth)" />
+        <Stack.Screen name="(tabs)" />
+        <Stack.Screen
+          name="survey/[id]"
+          options={{ title: "Survey", headerShown: true }}
+        />
+        <Stack.Screen
+          name="approve/[id]"
+          options={{ title: "Approve Meeting", headerShown: true }}
+        />
+      </Stack>
     </GluestackUIProvider>
   );
 }

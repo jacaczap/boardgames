@@ -37,6 +37,12 @@
         {
           "photosPermission": "Allow BoardGames to access your photos for game images."
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow BoardGames to add meeting events to your calendar."
+        }
       ]
     ]
   }

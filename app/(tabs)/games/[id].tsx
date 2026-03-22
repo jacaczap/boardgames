@@ -52,17 +52,22 @@ export default function GameDetailScreen() {
 
   const fetchGame = useCallback(async () => {
     if (!id) return;
-    const { data } = await supabase
-      .from("board_games")
-      .select("*")
-      .eq("id", id)
-      .single();
-    if (data) {
-      const g = data as BoardGame;
-      setGame(g);
-      populateForm(g);
+    try {
+      const { data } = await supabase
+        .from("board_games")
+        .select("*")
+        .eq("id", id)
+        .single();
+      if (data) {
+        const g = data as BoardGame;
+        setGame(g);
+        populateForm(g);
+      }
+    } catch (e) {
+      console.error("Failed to fetch game:", e);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }, [id, populateForm]);
 
   useEffect(() => {
