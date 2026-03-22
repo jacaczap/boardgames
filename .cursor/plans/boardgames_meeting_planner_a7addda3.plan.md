@@ -79,7 +79,16 @@ todos:
     status: completed
   - id: notifications
     content: "Phase 17: Expo push notification setup, Supabase Edge Functions for create-survey cron, survey-reminder cron, meeting-reminder cron, in-app Realtime subscriptions"
-    status: in_progress
+    status: completed
+  - id: notif-ts-fixes
+    content: "Phase 17a: Fix expo-notifications@55 TS compat -- add shouldShowBanner/shouldShowList to notification handler, replace removed removeNotificationSubscription with subscription.remove(), fix Subscription useRef type, exclude supabase/functions/ from tsconfig (Deno files)"
+    status: completed
+  - id: edge-func-fixes
+    content: "Phase 17b: Edge Function fixes -- fix timezone-sensitive date comparison in create-survey (append T00:00:00Z), fix new-user-notification always showing 'Someone new' (profile has no name at trigger time, defer or accept as known limitation)"
+    status: completed
+  - id: complete-meeting-cron
+    content: "Phase 17c: Add complete-meeting lifecycle -- new Edge Function that marks approved meetings as 'completed' when chosen_date has passed, pg_cron daily schedule, migration. Fix meeting-reminder to use exact match (daysUntil == notification_prior_meeting) instead of range (<=) so each user is notified exactly once, no log table needed"
+    status: completed
   - id: polish
     content: "Phase 18: Profile/settings screen, notification preferences, past dates disabled, edge cases, testing, README"
     status: pending
@@ -283,8 +292,9 @@ Edge Functions triggered by `pg_cron` or database triggers:
 
 1. `**create-survey`** (pg_cron, daily): checks if any completed meeting is >= 7 days old without a follow-up survey; if so, creates one via `create_next_survey()` and sends push to all users.
 2. `**survey-reminder`** (pg_cron, daily): for active surveys, finds users who haven't voted and whose `survey_reminder_log.sent_at` is >= `notification_reminder_interval` days ago (per-user setting) or has no entry yet; sends push and upserts `survey_reminder_log`.
-3. `**meeting-reminder`** (pg_cron, daily): for approved meetings, sends push to attendees whose meeting is within `notification_prior_meeting` days (per-user setting). One-shot, no log needed.
-4. `**new-user-notification`** (DB trigger on `profiles` INSERT): sends push to all existing users notifying them a new member joined.
+3. `**meeting-reminder`** (pg_cron, daily): for approved meetings, sends a one-shot push to attendees exactly `notification_prior_meeting` days before the meeting (per-user setting). Uses exact match (`daysUntil == setting`) so each user is notified once — no log table needed.
+4. `**complete-meeting`** (pg_cron, daily): marks approved meetings whose `chosen_date` has passed as `completed`, closing the lifecycle loop so `create-survey` can auto-create the next survey.
+5. `**new-user-notification`** (DB trigger on `profiles` INSERT): sends push to all existing users notifying them a new member joined.
 
 Push notifications sent via Expo Push API using tokens from `push_tokens` table (read by Edge Functions via `service_role` key).
 
@@ -308,8 +318,8 @@ flowchart TD
     CronMeetingReminder --> PushMeeting["Push: Meeting in X days"]
     ApprovedMeeting --> Unapprove["Any user unapproves"]
     Unapprove -->|"status back to voting"| UsersVote
-    ApprovedMeeting --> Complete["Mark completed after date passes"]
-    Complete --> CompletedMeeting
+    ApprovedMeeting --> CronComplete["pg_cron: complete-meeting"]
+    CronComplete -->|"chosen_date passed"| CompletedMeeting
 ```
 
 

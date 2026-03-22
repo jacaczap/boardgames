@@ -1,6 +1,7 @@
 import React from "react";
-import { Alert } from "react-native";
+import { Alert, Platform } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { clearPushToken } from "@/lib/notifications";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
@@ -10,6 +11,14 @@ import { Button, ButtonText } from "@/components/ui/button";
 
 export default function ProfileScreen() {
   const handleLogout = async () => {
+    if (Platform.OS !== "web") {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+      if (session?.user) {
+        await clearPushToken(session.user.id);
+      }
+    }
     const { error } = await supabase.auth.signOut();
     if (error) {
       Alert.alert("Error", error.message);

@@ -1,10 +1,16 @@
 import "../global.css";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
+import { Platform } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { Session } from "@supabase/supabase-js";
+import * as Notifications from "expo-notifications";
 import { supabase } from "@/lib/supabase";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { getStayLoggedIn } from "@/lib/auth-storage";
+import {
+  registerForPushNotifications,
+  savePushToken,
+} from "@/lib/notifications";
 
 import { Center } from "@/components/ui/center";
 import { Spinner } from "@/components/ui/spinner";
@@ -14,6 +20,7 @@ export default function RootLayout() {
   const [loading, setLoading] = useState(true);
   const segments = useSegments();
   const router = useRouter();
+  const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     const init = async () => {
@@ -37,6 +44,35 @@ export default function RootLayout() {
 
     return () => subscription.unsubscribe();
   }, []);
+
+  useEffect(() => {
+    if (!session?.user || Platform.OS === "web") return;
+
+    (async () => {
+      const token = await registerForPushNotifications();
+      if (token) {
+        await savePushToken(session.user.id, token);
+      }
+    })();
+  }, [session?.user?.id]);
+
+  useEffect(() => {
+    responseListener.current =
+      Notifications.addNotificationResponseReceivedListener((response) => {
+        const data = response.notification.request.content.data;
+        if (!data) return;
+
+        if (data.type === "survey" && data.meetingId) {
+          router.push(`/survey/${data.meetingId}`);
+        } else if (data.type === "meeting" && data.meetingId) {
+          router.push(`/approve/${data.meetingId}`);
+        }
+      });
+
+    return () => {
+      responseListener.current?.remove();
+    };
+  }, [router]);
 
   useEffect(() => {
     if (loading) return;
