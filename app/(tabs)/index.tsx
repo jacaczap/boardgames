@@ -391,13 +391,23 @@ export default function HomeScreen() {
             </Text>
           </HStack>
 
-          <Button
-            action="primary"
-            size="lg"
-            onPress={() => router.push(`/survey/${meeting.id}`)}
-          >
-            <ButtonText className="text-lg">Vote Now</ButtonText>
-          </Button>
+          <VStack space="md">
+            <Button
+              action="primary"
+              size="lg"
+              onPress={() => router.push(`/survey/${meeting.id}`)}
+            >
+              <ButtonText className="text-lg">Vote Now</ButtonText>
+            </Button>
+            <Button
+              variant="outline"
+              action="positive"
+              size="lg"
+              onPress={() => router.push(`/approve/${meeting.id}`)}
+            >
+              <ButtonText className="text-lg">Approve Meeting</ButtonText>
+            </Button>
+          </VStack>
         </Card>
       </ScrollView>
     );

@@ -76,10 +76,10 @@ todos:
     status: completed
   - id: approval
     content: "Phase 16: Meeting approval flow -- pick date (sorted by votes), pick game (filtered + sorted), approve/unapprove, late join (adds vote with chosen date+game), edit meeting"
-    status: pending
+    status: completed
   - id: notifications
     content: "Phase 17: Expo push notification setup, Supabase Edge Functions for create-survey cron, survey-reminder cron, meeting-reminder cron, in-app Realtime subscriptions"
-    status: pending
+    status: in_progress
   - id: polish
     content: "Phase 18: Profile/settings screen, notification preferences, past dates disabled, edge cases, testing, README"
     status: pending
