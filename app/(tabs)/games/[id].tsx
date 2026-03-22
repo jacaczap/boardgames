@@ -13,7 +13,7 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import { pickAndUploadImage, useSignedUrl } from "@/lib/storage";
+import { pickAndUploadImage, removeStorageFile, useSignedUrl } from "@/lib/storage";
 import type { BoardGame } from "@/lib/types";
 
 export default function GameDetailScreen() {
@@ -23,6 +23,7 @@ export default function GameDetailScreen() {
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -69,12 +70,31 @@ export default function GameDetailScreen() {
 
   const handlePickImage = async () => {
     const path = await pickAndUploadImage("game-images", id ?? "game");
-    if (path) setImagePath(path);
+    if (path) {
+      if (imagePath && imagePath !== game?.image_url) {
+        await removeStorageFile("game-images", imagePath);
+      }
+      setImagePath(path);
+    }
   };
 
   const handleSave = async () => {
     if (!name.trim()) {
       Alert.alert("Validation", "Game name is required");
+      return;
+    }
+    const parsedMin = minPlayers ? parseInt(minPlayers, 10) : null;
+    const parsedMax = maxPlayers ? parseInt(maxPlayers, 10) : null;
+    if (minPlayers && (isNaN(parsedMin!) || parsedMin! < 1)) {
+      Alert.alert("Validation", "Min players must be a positive number");
+      return;
+    }
+    if (maxPlayers && (isNaN(parsedMax!) || parsedMax! < 1)) {
+      Alert.alert("Validation", "Max players must be a positive number");
+      return;
+    }
+    if (parsedMin != null && parsedMax != null && parsedMin > parsedMax) {
+      Alert.alert("Validation", "Min players cannot exceed max players");
       return;
     }
     setSaving(true);
@@ -84,8 +104,8 @@ export default function GameDetailScreen() {
         name: name.trim(),
         description: description.trim() || null,
         genre: genre.trim() || null,
-        min_players: minPlayers ? parseInt(minPlayers, 10) : null,
-        max_players: maxPlayers ? parseInt(maxPlayers, 10) : null,
+        min_players: parsedMin,
+        max_players: parsedMax,
         tutorial_url: tutorialUrl.trim() || null,
         spotify_playlist_url: spotifyUrl.trim() || null,
         owners: owners.trim()
@@ -103,6 +123,9 @@ export default function GameDetailScreen() {
       Alert.alert("Error", error.message);
       return;
     }
+    if (game?.image_url && game.image_url !== imagePath) {
+      await removeStorageFile("game-images", game.image_url);
+    }
     setEditing(false);
     fetchGame();
   };
@@ -117,12 +140,10 @@ export default function GameDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            setDeleting(true);
             try {
               if (game?.image_url) {
-                const { error: storageError } = await supabase.storage
-                  .from("game-images")
-                  .remove([game.image_url]);
-                if (storageError) console.warn("Failed to remove image:", storageError.message);
+                await removeStorageFile("game-images", game.image_url);
               }
               const { error } = await supabase.from("board_games").delete().eq("id", id!);
               if (error) {
@@ -132,6 +153,8 @@ export default function GameDetailScreen() {
               router.back();
             } catch (e: any) {
               Alert.alert("Error", e?.message ?? "Failed to delete game");
+            } finally {
+              setDeleting(false);
             }
           },
         },
@@ -280,7 +303,10 @@ export default function GameDetailScreen() {
           </TouchableOpacity>
           <TouchableOpacity
             className="border border-gray-300 rounded-xl py-3 items-center"
-            onPress={() => {
+            onPress={async () => {
+              if (imagePath && imagePath !== game.image_url) {
+                await removeStorageFile("game-images", imagePath);
+              }
               populateForm(game);
               setEditing(false);
             }}
@@ -385,10 +411,13 @@ export default function GameDetailScreen() {
             <Text className="text-white font-semibold">Edit Game</Text>
           </TouchableOpacity>
           <TouchableOpacity
-            className="border border-red-300 rounded-xl py-3 items-center"
+            className={`border border-red-300 rounded-xl py-3 items-center ${deleting ? "opacity-50" : ""}`}
             onPress={handleDelete}
+            disabled={deleting}
           >
-            <Text className="text-red-600 font-semibold">Delete Game</Text>
+            <Text className="text-red-600 font-semibold">
+              {deleting ? "Deleting..." : "Delete Game"}
+            </Text>
           </TouchableOpacity>
         </View>
       </View>

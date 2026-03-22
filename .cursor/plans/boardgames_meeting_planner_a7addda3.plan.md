@@ -34,10 +34,13 @@ todos:
     status: completed
   - id: orphaned-images
     content: "Phase 8: Delete old image from storage when replacing a game image, guard against orphaned uploads in new-game flow, and clean up storage on game deletion"
-    status: pending
+    status: completed
   - id: player-count-validation
     content: "Phase 9: Add local numeric validation for min/max player fields in game forms (reject NaN before Supabase call)"
-    status: pending
+    status: completed
+  - id: delete-button-disable
+    content: "Phase 9a: Disable delete button during async operation in game detail screen to prevent double-tap"
+    status: completed
   - id: signed-url-map-guard
     content: "Phase 10: Guard getSignedUrls map.set -- check both item.path and item.signedUrl before inserting into Map"
     status: pending

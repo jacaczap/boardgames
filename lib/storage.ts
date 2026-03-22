@@ -74,6 +74,14 @@ export function useSignedUrls(
   return urls;
 }
 
+export async function removeStorageFile(
+  bucket: string,
+  path: string,
+): Promise<void> {
+  const { error } = await supabase.storage.from(bucket).remove([path]);
+  if (error) console.warn(`Failed to remove ${bucket}/${path}:`, error.message);
+}
+
 export async function pickAndUploadImage(
   bucket: string,
   filePrefix: string,

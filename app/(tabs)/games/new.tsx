@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,7 @@ import {
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import { pickAndUploadImage, useSignedUrl } from "@/lib/storage";
+import { pickAndUploadImage, removeStorageFile, useSignedUrl } from "@/lib/storage";
 
 export default function NewGameScreen() {
   const router = useRouter();
@@ -25,12 +25,28 @@ export default function NewGameScreen() {
   const [spotifyUrl, setSpotifyUrl] = useState("");
   const [owners, setOwners] = useState("");
   const [imagePath, setImagePath] = useState<string | null>(null);
+  const savedRef = useRef(false);
+  const imagePathRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (!savedRef.current && imagePathRef.current) {
+        removeStorageFile("game-images", imagePathRef.current);
+      }
+    };
+  }, []);
 
   const imageDisplayUrl = useSignedUrl("game-images", imagePath);
 
   const handlePickImage = async () => {
     const path = await pickAndUploadImage("game-images", "new");
-    if (path) setImagePath(path);
+    if (path) {
+      if (imagePath) {
+        await removeStorageFile("game-images", imagePath);
+      }
+      setImagePath(path);
+      imagePathRef.current = path;
+    }
   };
 
   const handleSave = async () => {
@@ -38,13 +54,27 @@ export default function NewGameScreen() {
       Alert.alert("Validation", "Game name is required");
       return;
     }
+    const parsedMin = minPlayers ? parseInt(minPlayers, 10) : null;
+    const parsedMax = maxPlayers ? parseInt(maxPlayers, 10) : null;
+    if (minPlayers && (isNaN(parsedMin!) || parsedMin! < 1)) {
+      Alert.alert("Validation", "Min players must be a positive number");
+      return;
+    }
+    if (maxPlayers && (isNaN(parsedMax!) || parsedMax! < 1)) {
+      Alert.alert("Validation", "Max players must be a positive number");
+      return;
+    }
+    if (parsedMin != null && parsedMax != null && parsedMin > parsedMax) {
+      Alert.alert("Validation", "Min players cannot exceed max players");
+      return;
+    }
     setSaving(true);
     const { error } = await supabase.from("board_games").insert({
       name: name.trim(),
       description: description.trim() || null,
       genre: genre.trim() || null,
-      min_players: minPlayers ? parseInt(minPlayers, 10) : null,
-      max_players: maxPlayers ? parseInt(maxPlayers, 10) : null,
+      min_players: parsedMin,
+      max_players: parsedMax,
       tutorial_url: tutorialUrl.trim() || null,
       spotify_playlist_url: spotifyUrl.trim() || null,
       owners: owners.trim()
@@ -61,6 +91,7 @@ export default function NewGameScreen() {
       Alert.alert("Error", error.message);
       return;
     }
+    savedRef.current = true;
     router.back();
   };
 
