@@ -26,6 +26,7 @@ export default function HomeScreen() {
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [creatingSurvey, setCreatingSurvey] = useState(false);
 
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
   const avatarPaths = attendees
@@ -201,6 +202,8 @@ export default function HomeScreen() {
   };
 
   const handleCreateSurvey = async () => {
+    if (creatingSurvey) return;
+    setCreatingSurvey(true);
     try {
       const { error } = await supabase.rpc("create_next_survey");
       if (error) {
@@ -210,6 +213,8 @@ export default function HomeScreen() {
       fetchData();
     } catch (e: any) {
       Alert.alert("Error", e?.message ?? "Failed to create survey");
+    } finally {
+      setCreatingSurvey(false);
     }
   };
 
@@ -243,11 +248,12 @@ export default function HomeScreen() {
           When a new survey is created, it will appear here.
         </Text>
         <TouchableOpacity
-          className="bg-blue-600 rounded-xl px-6 py-3"
+          className={`rounded-xl px-6 py-3 ${creatingSurvey ? "bg-blue-400" : "bg-blue-600"}`}
           onPress={handleCreateSurvey}
+          disabled={creatingSurvey}
         >
           <Text className="text-white font-semibold">
-            Create New Survey Now
+            {creatingSurvey ? "Creating..." : "Create New Survey Now"}
           </Text>
         </TouchableOpacity>
       </ScrollView>

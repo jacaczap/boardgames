@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -34,6 +34,7 @@ export default function GameDetailScreen() {
   const [spotifyUrl, setSpotifyUrl] = useState("");
   const [owners, setOwners] = useState("");
   const [imagePath, setImagePath] = useState<string | null>(null);
+  const tempUploadsRef = useRef<string[]>([]);
 
   const imageDisplayUrl = useSignedUrl("game-images", imagePath);
 
@@ -71,9 +72,7 @@ export default function GameDetailScreen() {
   const handlePickImage = async () => {
     const path = await pickAndUploadImage("game-images", id ?? "game");
     if (path) {
-      if (imagePath && imagePath !== game?.image_url) {
-        await removeStorageFile("game-images", imagePath);
-      }
+      tempUploadsRef.current.push(path);
       setImagePath(path);
     }
   };
@@ -126,6 +125,11 @@ export default function GameDetailScreen() {
     if (game?.image_url && game.image_url !== imagePath) {
       await removeStorageFile("game-images", game.image_url);
     }
+    const kept = imagePath;
+    for (const p of tempUploadsRef.current) {
+      if (p !== kept) await removeStorageFile("game-images", p);
+    }
+    tempUploadsRef.current = [];
     setEditing(false);
     fetchGame();
   };
@@ -304,9 +308,10 @@ export default function GameDetailScreen() {
           <TouchableOpacity
             className="border border-gray-300 rounded-xl py-3 items-center"
             onPress={async () => {
-              if (imagePath && imagePath !== game.image_url) {
-                await removeStorageFile("game-images", imagePath);
+              for (const p of tempUploadsRef.current) {
+                await removeStorageFile("game-images", p);
               }
+              tempUploadsRef.current = [];
               populateForm(game);
               setEditing(false);
             }}

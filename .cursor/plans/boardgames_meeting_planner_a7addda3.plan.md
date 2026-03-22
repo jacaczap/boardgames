@@ -43,10 +43,13 @@ todos:
     status: completed
   - id: signed-url-map-guard
     content: "Phase 10: Guard getSignedUrls map.set -- check both item.path and item.signedUrl before inserting into Map"
-    status: pending
+    status: completed
   - id: create-survey-null-date
     content: "Phase 11: Add null-date guard in create_next_survey SQL -- handle edge case where last completed meeting has no chosen_date"
-    status: pending
+    status: completed
+  - id: review-bugfixes-2
+    content: "Phase 11a: Review bugfixes -- disable Create Survey button during async to prevent duplicate meetings, fix multi-pick image orphan in game edit (track all temp uploads), update react-native-web to match RN 0.83"
+    status: completed
   - id: add-to-calendar
     content: "Phase 12: Add 'Add to Calendar' button on approved meeting card -- open device calendar with whole-day event for chosen_date"
     status: pending

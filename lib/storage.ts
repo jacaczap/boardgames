@@ -60,7 +60,7 @@ export function useSignedUrls(
       .createSignedUrls(paths, SIGNED_URL_EXPIRY);
     const map = new Map<string, string>();
     data?.forEach((item) => {
-      if (item.signedUrl) map.set(item.path!, item.signedUrl);
+      if (item.path && item.signedUrl) map.set(item.path, item.signedUrl);
     });
     setUrls(map);
   }, [bucket, pathsKey]); // eslint-disable-line react-hooks/exhaustive-deps
