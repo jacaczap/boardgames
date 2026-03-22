@@ -9,6 +9,7 @@ import {
   Switch,
 } from "react-native";
 import { supabase } from "@/lib/supabase";
+import { setStayLoggedIn as saveStayLoggedIn } from "@/lib/auth-storage";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -23,6 +24,7 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
+    await saveStayLoggedIn(stayLoggedIn);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,

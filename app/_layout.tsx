@@ -5,6 +5,7 @@ import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { ActivityIndicator, View } from "react-native";
+import { getStayLoggedIn } from "@/lib/auth-storage";
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null>(null);
@@ -13,10 +14,18 @@ export default function RootLayout() {
   const router = useRouter();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const init = async () => {
+      const stayLoggedIn = await getStayLoggedIn();
+      if (!stayLoggedIn) {
+        await supabase.auth.signOut();
+      }
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
       setSession(session);
       setLoading(false);
-    });
+    };
+    init();
 
     const {
       data: { subscription },

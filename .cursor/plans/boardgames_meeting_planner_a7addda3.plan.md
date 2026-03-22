@@ -10,10 +10,10 @@ todos:
     status: completed
   - id: auth
     content: "Phase 3: Supabase Auth integration -- login-only, session management, auth guard in root layout (no self-registration)"
-    status: pending
+    status: completed
   - id: home-games
     content: "Phase 4: Home screen (meeting card or survey CTA), Board games CRUD screens (list, detail/edit, new) with image upload"
-    status: pending
+    status: in_progress
   - id: survey
     content: "Phase 5: Survey/voting screen -- date picker with weekends/holidays/custom dates, game multi-select with 3-play logic, 'not participating' as empty vote, voter avatars, submit"
     status: pending
