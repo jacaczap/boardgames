@@ -200,14 +200,17 @@ export default function HomeScreen() {
     setRefreshing(false);
   }, [fetchData]);
 
-  const handleUnapprove = async () => {
-    if (!meeting) return;
+  const [unapproving, setUnapproving] = useState(false);
+
+  const handleUnapprove = () => {
+    if (!meeting || unapproving) return;
     Alert.alert("Unapprove", "Revert this meeting back to voting?", [
       { text: "Cancel", style: "cancel" },
       {
         text: "Unapprove",
         style: "destructive",
         onPress: async () => {
+          setUnapproving(true);
           try {
             const { error } = await supabase
               .from("meetings")
@@ -226,6 +229,8 @@ export default function HomeScreen() {
             fetchData();
           } catch (e: any) {
             Alert.alert("Error", e?.message ?? "Failed to unapprove meeting");
+          } finally {
+            setUnapproving(false);
           }
         },
       },
@@ -558,9 +563,10 @@ export default function HomeScreen() {
             <Button
               variant="outline"
               action="negative"
+              isDisabled={unapproving}
               onPress={handleUnapprove}
             >
-              <ButtonText>Unapprove</ButtonText>
+              <ButtonText>{unapproving ? "Unapproving..." : "Unapprove"}</ButtonText>
             </Button>
           </VStack>
         </VStack>

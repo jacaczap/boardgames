@@ -91,10 +91,10 @@ todos:
     status: completed
   - id: polish
     content: "Phase 18: Profile/settings screen, notification preferences, past dates disabled, edge cases, testing, README"
-    status: pending
+    status: completed
   - id: i18n
     content: "Phase 19: i18n -- add expo-localization + i18next/react-i18next, extract all user-facing strings to en/pl translation files, auto-detect device locale, add language switcher in Profile, translate all screens (Home, Games, Survey, Approve, Profile, Auth)"
-    status: pending
+    status: in_progress
 isProject: false
 ---
 
