@@ -1,13 +1,8 @@
 import React, { useState, useCallback } from "react";
 import {
-  View,
-  Text,
   FlatList,
-  TextInput,
-  TouchableOpacity,
-  Image,
   RefreshControl,
-  ActivityIndicator,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -15,6 +10,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useSignedUrls } from "@/lib/storage";
 import type { BoardGame } from "@/lib/types";
+
+import { Box } from "@/components/ui/box";
+import { HStack } from "@/components/ui/hstack";
+import { VStack } from "@/components/ui/vstack";
+import { Center } from "@/components/ui/center";
+import { Text } from "@/components/ui/text";
+import { Spinner } from "@/components/ui/spinner";
+import { Image } from "@/components/ui/image";
+import { Pressable } from "@/components/ui/pressable";
+import { Input, InputField, InputSlot, InputIcon } from "@/components/ui/input";
+import { Fab, FabIcon } from "@/components/ui/fab";
 
 const GameRow = React.memo(function GameRow({
   item,
@@ -26,12 +32,11 @@ const GameRow = React.memo(function GameRow({
   onPress: () => void;
 }) {
   return (
-    <TouchableOpacity
+    <Pressable
       className="bg-white rounded-xl mx-4 mb-3 overflow-hidden border border-gray-100"
       onPress={onPress}
-      activeOpacity={0.7}
     >
-      <View className="flex-row">
+      <HStack>
         {imageUri ? (
           <Image
             source={{ uri: imageUri }}
@@ -39,38 +44,40 @@ const GameRow = React.memo(function GameRow({
             resizeMode="cover"
           />
         ) : (
-          <View className="w-20 h-20 bg-gray-100 items-center justify-center rounded-l-xl">
+          <Center className="w-20 h-20 bg-gray-100 rounded-l-xl">
             <Ionicons name="dice-outline" size={28} color="#d1d5db" />
-          </View>
+          </Center>
         )}
-        <View className="flex-1 p-3 justify-center">
-          <Text className="text-base font-semibold text-gray-900">
+        <VStack className="flex-1 p-3 justify-center">
+          <Text className="font-semibold text-gray-900">
             {item.name}
           </Text>
           {item.genre && (
-            <Text className="text-sm text-gray-500 mt-0.5">{item.genre}</Text>
+            <Text size="sm" className="text-gray-500 mt-0.5">
+              {item.genre}
+            </Text>
           )}
-          <View className="flex-row items-center mt-1 gap-3">
+          <HStack space="md" className="items-center mt-1">
             {(item.min_players != null || item.max_players != null) && (
-              <View className="flex-row items-center">
+              <HStack space="xs" className="items-center">
                 <Ionicons name="people-outline" size={14} color="#9ca3af" />
-                <Text className="text-xs text-gray-400 ml-1">
+                <Text size="xs" className="text-gray-400">
                   {item.min_players ?? "?"}-{item.max_players ?? "?"} players
                 </Text>
-              </View>
+              </HStack>
             )}
             {item.owners?.length ? (
-              <Text className="text-xs text-gray-400" numberOfLines={1}>
+              <Text size="xs" className="text-gray-400" numberOfLines={1}>
                 {item.owners.join(", ")}
               </Text>
             ) : null}
-          </View>
-        </View>
-        <View className="justify-center pr-3">
+          </HStack>
+        </VStack>
+        <Center className="pr-3">
           <Ionicons name="chevron-forward" size={20} color="#d1d5db" />
-        </View>
-      </View>
-    </TouchableOpacity>
+        </Center>
+      </HStack>
+    </Pressable>
   );
 });
 
@@ -131,31 +138,34 @@ export default function GamesListScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-gray-50">
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
+      <Center className="flex-1 bg-gray-50">
+        <Spinner />
+      </Center>
     );
   }
 
   return (
-    <View className="flex-1 bg-gray-50">
-      <View className="px-4 pt-3 pb-2">
-        <View className="flex-row items-center bg-white rounded-xl px-3 py-2 border border-gray-200">
-          <Ionicons name="search" size={18} color="#9ca3af" />
-          <TextInput
-            className="flex-1 ml-2 text-base text-gray-900"
+    <Box className="flex-1 bg-gray-50">
+      <Box className="px-4 pt-3 pb-2">
+        <Input variant="outline" className="rounded-xl">
+          <InputSlot className="ml-3">
+            <InputIcon as={Ionicons} name="search" />
+          </InputSlot>
+          <InputField
+            className="ml-2"
             placeholder="Search games..."
-            placeholderTextColor="#9ca3af"
             value={search}
             onChangeText={setSearch}
           />
           {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch("")}>
-              <Ionicons name="close-circle" size={18} color="#9ca3af" />
-            </TouchableOpacity>
+            <InputSlot className="mr-3">
+              <TouchableOpacity onPress={() => setSearch("")}>
+                <Ionicons name="close-circle" size={18} color="#9ca3af" />
+              </TouchableOpacity>
+            </InputSlot>
           )}
-        </View>
-      </View>
+        </Input>
+      </Box>
 
       <FlatList
         data={filtered}
@@ -166,22 +176,18 @@ export default function GamesListScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
         ListEmptyComponent={
-          <View className="items-center justify-center py-20">
+          <Center className="py-20">
             <Ionicons name="dice-outline" size={48} color="#d1d5db" />
             <Text className="text-gray-400 mt-3">
               {search ? "No games match your search" : "No board games yet"}
             </Text>
-          </View>
+          </Center>
         }
       />
 
-      <TouchableOpacity
-        className="absolute bottom-6 right-6 bg-blue-600 w-14 h-14 rounded-full items-center justify-center shadow-lg"
-        onPress={() => router.push("/(tabs)/games/new")}
-        activeOpacity={0.8}
-      >
-        <Ionicons name="add" size={28} color="white" />
-      </TouchableOpacity>
-    </View>
+      <Fab onPress={() => router.push("/(tabs)/games/new")}>
+        <FabIcon as={Ionicons} name="add" />
+      </Fab>
+    </Box>
   );
 }

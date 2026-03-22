@@ -99,18 +99,23 @@ export async function pickAndUploadImage(
   const ext = asset.uri.split(".").pop() ?? "jpg";
   const fileName = `${filePrefix}_${Date.now()}.${ext}`;
 
-  const response = await fetch(asset.uri);
-  const blob = await response.blob();
+  try {
+    const response = await fetch(asset.uri);
+    const blob = await response.blob();
 
-  const { error } = await supabase.storage.from(bucket).upload(fileName, blob, {
-    contentType: asset.mimeType ?? "image/jpeg",
-    upsert: true,
-  });
+    const { error } = await supabase.storage.from(bucket).upload(fileName, blob, {
+      contentType: asset.mimeType ?? "image/jpeg",
+      upsert: true,
+    });
 
-  if (error) {
-    Alert.alert("Upload failed", error.message);
+    if (error) {
+      Alert.alert("Upload failed", error.message);
+      return null;
+    }
+
+    return fileName;
+  } catch (e: any) {
+    Alert.alert("Upload failed", e?.message ?? "Could not process the selected image");
     return null;
   }
-
-  return fileName;
 }

@@ -64,10 +64,10 @@ todos:
     status: completed
   - id: empty-state-timing
     content: "Phase 13: Show 'next survey available' timing info in Home empty state (7 days after last completed meeting)"
-    status: pending
+    status: completed
   - id: gluestack-migration
     content: "Phase 14: Migrate Home & Games screens to gluestack-ui components for consistency with later phases"
-    status: pending
+    status: completed
   - id: survey
     content: "Phase 15: Survey/voting screen -- date picker with weekends/holidays/custom dates, game multi-select with 3-play logic, 'not participating' as empty vote, voter avatars, submit"
     status: pending

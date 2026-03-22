@@ -1,13 +1,8 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
-  View,
-  Text,
   ScrollView,
-  Image,
   TouchableOpacity,
-  TextInput,
   Alert,
-  ActivityIndicator,
   Linking,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -15,6 +10,19 @@ import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { pickAndUploadImage, removeStorageFile, useSignedUrl } from "@/lib/storage";
 import type { BoardGame } from "@/lib/types";
+
+import { Box } from "@/components/ui/box";
+import { VStack } from "@/components/ui/vstack";
+import { HStack } from "@/components/ui/hstack";
+import { Center } from "@/components/ui/center";
+import { Text } from "@/components/ui/text";
+import { Heading } from "@/components/ui/heading";
+import { Button, ButtonText, ButtonIcon } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Image } from "@/components/ui/image";
+import { Input, InputField } from "@/components/ui/input";
+import { Badge, BadgeText } from "@/components/ui/badge";
+import { Pressable } from "@/components/ui/pressable";
 
 export default function GameDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -102,41 +110,46 @@ export default function GameDetailScreen() {
       return;
     }
     setSaving(true);
-    const { error } = await supabase
-      .from("board_games")
-      .update({
-        name: name.trim(),
-        description: description.trim() || null,
-        genre: genre.trim() || null,
-        min_players: parsedMin,
-        max_players: parsedMax,
-        tutorial_url: tutorialUrl.trim() || null,
-        spotify_playlist_url: spotifyUrl.trim() || null,
-        owners: owners.trim()
-          ? owners
-              .split(",")
-              .map((o) => o.trim())
-              .filter(Boolean)
-          : null,
-        image_url: imagePath,
-      })
-      .eq("id", id!);
-    setSaving(false);
+    try {
+      const { error } = await supabase
+        .from("board_games")
+        .update({
+          name: name.trim(),
+          description: description.trim() || null,
+          genre: genre.trim() || null,
+          min_players: parsedMin,
+          max_players: parsedMax,
+          tutorial_url: tutorialUrl.trim() || null,
+          spotify_playlist_url: spotifyUrl.trim() || null,
+          owners: owners.trim()
+            ? owners
+                .split(",")
+                .map((o) => o.trim())
+                .filter(Boolean)
+            : null,
+          image_url: imagePath,
+        })
+        .eq("id", id!);
 
-    if (error) {
-      Alert.alert("Error", error.message);
-      return;
+      if (error) {
+        Alert.alert("Error", error.message);
+        return;
+      }
+      if (game?.image_url && game.image_url !== imagePath) {
+        await removeStorageFile("game-images", game.image_url);
+      }
+      const kept = imagePath;
+      for (const p of tempUploadsRef.current) {
+        if (p !== kept) await removeStorageFile("game-images", p);
+      }
+      tempUploadsRef.current = [];
+      setEditing(false);
+      fetchGame();
+    } catch (e: any) {
+      Alert.alert("Error", e?.message ?? "Failed to save game");
+    } finally {
+      setSaving(false);
     }
-    if (game?.image_url && game.image_url !== imagePath) {
-      await removeStorageFile("game-images", game.image_url);
-    }
-    const kept = imagePath;
-    for (const p of tempUploadsRef.current) {
-      if (p !== kept) await removeStorageFile("game-images", p);
-    }
-    tempUploadsRef.current = [];
-    setEditing(false);
-    fetchGame();
   };
 
   const handleDelete = () => {
@@ -173,17 +186,17 @@ export default function GameDetailScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
+      <Center className="flex-1 bg-white">
+        <Spinner />
+      </Center>
     );
   }
 
   if (!game) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
+      <Center className="flex-1 bg-white">
         <Text className="text-gray-500">Game not found</Text>
-      </View>
+      </Center>
     );
   }
 
@@ -194,7 +207,7 @@ export default function GameDetailScreen() {
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
-        <TouchableOpacity onPress={handlePickImage} className="mb-4">
+        <Pressable onPress={handlePickImage} className="mb-4">
           {imageDisplayUrl ? (
             <Image
               source={{ uri: imageDisplayUrl }}
@@ -202,128 +215,129 @@ export default function GameDetailScreen() {
               resizeMode="cover"
             />
           ) : (
-            <View className="w-full h-48 rounded-xl bg-gray-100 items-center justify-center">
+            <Center className="w-full h-48 rounded-xl bg-gray-100">
               <Ionicons name="camera-outline" size={32} color="#9ca3af" />
               <Text className="text-gray-400 mt-1">Tap to add image</Text>
-            </View>
+            </Center>
           )}
-        </TouchableOpacity>
+        </Pressable>
 
-        <Text className="text-sm font-medium text-gray-700 mb-1">Name *</Text>
-        <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base mb-3"
-          value={name}
-          onChangeText={setName}
-          placeholder="Game name"
-        />
+        <VStack space="md">
+          <VStack space="xs">
+            <Text size="sm" className="font-medium text-gray-700">Name *</Text>
+            <Input>
+              <InputField value={name} onChangeText={setName} placeholder="Game name" />
+            </Input>
+          </VStack>
 
-        <Text className="text-sm font-medium text-gray-700 mb-1">
-          Description
-        </Text>
-        <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base mb-3"
-          value={description}
-          onChangeText={setDescription}
-          placeholder="Description"
-          multiline
-          numberOfLines={3}
-          textAlignVertical="top"
-          style={{ minHeight: 80 }}
-        />
+          <VStack space="xs">
+            <Text size="sm" className="font-medium text-gray-700">Description</Text>
+            <Input>
+              <InputField
+                value={description}
+                onChangeText={setDescription}
+                placeholder="Description"
+                multiline
+                numberOfLines={3}
+                textAlignVertical="top"
+                style={{ minHeight: 80 }}
+              />
+            </Input>
+          </VStack>
 
-        <Text className="text-sm font-medium text-gray-700 mb-1">Genre</Text>
-        <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base mb-3"
-          value={genre}
-          onChangeText={setGenre}
-          placeholder="e.g. Strategy, Party"
-        />
+          <VStack space="xs">
+            <Text size="sm" className="font-medium text-gray-700">Genre</Text>
+            <Input>
+              <InputField
+                value={genre}
+                onChangeText={setGenre}
+                placeholder="e.g. Strategy, Party"
+              />
+            </Input>
+          </VStack>
 
-        <View className="flex-row gap-3 mb-3">
-          <View className="flex-1">
-            <Text className="text-sm font-medium text-gray-700 mb-1">
-              Min Players
-            </Text>
-            <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
-              value={minPlayers}
-              onChangeText={setMinPlayers}
-              placeholder="2"
-              keyboardType="numeric"
-            />
-          </View>
-          <View className="flex-1">
-            <Text className="text-sm font-medium text-gray-700 mb-1">
-              Max Players
-            </Text>
-            <TextInput
-              className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base"
-              value={maxPlayers}
-              onChangeText={setMaxPlayers}
-              placeholder="6"
-              keyboardType="numeric"
-            />
-          </View>
-        </View>
+          <HStack space="md">
+            <VStack space="xs" className="flex-1">
+              <Text size="sm" className="font-medium text-gray-700">Min Players</Text>
+              <Input>
+                <InputField
+                  value={minPlayers}
+                  onChangeText={setMinPlayers}
+                  placeholder="2"
+                  keyboardType="numeric"
+                />
+              </Input>
+            </VStack>
+            <VStack space="xs" className="flex-1">
+              <Text size="sm" className="font-medium text-gray-700">Max Players</Text>
+              <Input>
+                <InputField
+                  value={maxPlayers}
+                  onChangeText={setMaxPlayers}
+                  placeholder="6"
+                  keyboardType="numeric"
+                />
+              </Input>
+            </VStack>
+          </HStack>
 
-        <Text className="text-sm font-medium text-gray-700 mb-1">
-          Tutorial URL
-        </Text>
-        <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base mb-3"
-          value={tutorialUrl}
-          onChangeText={setTutorialUrl}
-          placeholder="https://youtube.com/..."
-          autoCapitalize="none"
-          keyboardType="url"
-        />
+          <VStack space="xs">
+            <Text size="sm" className="font-medium text-gray-700">Tutorial URL</Text>
+            <Input>
+              <InputField
+                value={tutorialUrl}
+                onChangeText={setTutorialUrl}
+                placeholder="https://youtube.com/..."
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+            </Input>
+          </VStack>
 
-        <Text className="text-sm font-medium text-gray-700 mb-1">
-          Spotify Playlist URL
-        </Text>
-        <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base mb-3"
-          value={spotifyUrl}
-          onChangeText={setSpotifyUrl}
-          placeholder="https://open.spotify.com/..."
-          autoCapitalize="none"
-          keyboardType="url"
-        />
+          <VStack space="xs">
+            <Text size="sm" className="font-medium text-gray-700">Spotify Playlist URL</Text>
+            <Input>
+              <InputField
+                value={spotifyUrl}
+                onChangeText={setSpotifyUrl}
+                placeholder="https://open.spotify.com/..."
+                autoCapitalize="none"
+                keyboardType="url"
+              />
+            </Input>
+          </VStack>
 
-        <Text className="text-sm font-medium text-gray-700 mb-1">
-          Owners (comma-separated)
-        </Text>
-        <TextInput
-          className="bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-base mb-6"
-          value={owners}
-          onChangeText={setOwners}
-          placeholder="Alice, Bob"
-        />
+          <VStack space="xs">
+            <Text size="sm" className="font-medium text-gray-700">Owners (comma-separated)</Text>
+            <Input>
+              <InputField
+                value={owners}
+                onChangeText={setOwners}
+                placeholder="Alice, Bob"
+              />
+            </Input>
+          </VStack>
 
-        <View className="gap-3">
-          <TouchableOpacity
-            className={`rounded-xl py-3 items-center ${saving ? "bg-blue-400" : "bg-blue-600"}`}
-            onPress={handleSave}
-            disabled={saving}
-          >
-            <Text className="text-white font-semibold text-base">
-              {saving ? "Saving..." : "Save Changes"}
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className="border border-gray-300 rounded-xl py-3 items-center"
-            onPress={async () => {
-              for (const p of tempUploadsRef.current) {
-                await removeStorageFile("game-images", p);
-              }
-              tempUploadsRef.current = [];
-              populateForm(game);
-              setEditing(false);
-            }}
-          >
-            <Text className="text-gray-600 font-semibold">Cancel</Text>
-          </TouchableOpacity>
-        </View>
+          <VStack space="md" className="mt-3">
+            <Button action="primary" isDisabled={saving} onPress={handleSave}>
+              <ButtonText>{saving ? "Saving..." : "Save Changes"}</ButtonText>
+            </Button>
+            <Button
+              variant="outline"
+              action="secondary"
+              onPress={async () => {
+                for (const p of tempUploadsRef.current) {
+                  await removeStorageFile("game-images", p);
+                }
+                tempUploadsRef.current = [];
+                populateForm(game);
+                setEditing(false);
+              }}
+            >
+              <ButtonText>Cancel</ButtonText>
+            </Button>
+          </VStack>
+        </VStack>
       </ScrollView>
     );
   }
@@ -340,97 +354,79 @@ export default function GameDetailScreen() {
           resizeMode="cover"
         />
       ) : (
-        <View className="w-full h-40 bg-gray-100 items-center justify-center">
+        <Center className="w-full h-40 bg-gray-100">
           <Ionicons name="dice-outline" size={48} color="#d1d5db" />
-        </View>
+        </Center>
       )}
 
-      <View className="p-5">
-        <Text className="text-2xl font-bold text-gray-900">{game.name}</Text>
+      <VStack space="md" className="p-5">
+        <Heading size="2xl">{game.name}</Heading>
 
         {game.genre && (
-          <View className="mt-2 self-start bg-blue-50 rounded-full px-3 py-1">
-            <Text className="text-blue-700 text-sm font-medium">
-              {game.genre}
-            </Text>
-          </View>
+          <Badge action="info">
+            <BadgeText action="info">{game.genre}</BadgeText>
+          </Badge>
         )}
 
         {(game.min_players != null || game.max_players != null) && (
-          <View className="flex-row items-center mt-3">
+          <HStack space="xs" className="items-center">
             <Ionicons name="people" size={16} color="#6b7280" />
-            <Text className="text-gray-600 ml-1">
+            <Text className="text-gray-600">
               {game.min_players ?? "?"} - {game.max_players ?? "?"} players
             </Text>
-          </View>
+          </HStack>
         )}
 
         {game.description && (
-          <Text className="text-gray-600 mt-4 leading-6">
-            {game.description}
-          </Text>
+          <Text className="text-gray-600 leading-6">{game.description}</Text>
         )}
 
         {game.owners?.length ? (
-          <View className="mt-4">
-            <Text className="text-sm font-medium text-gray-500 mb-1">
-              Owners
-            </Text>
+          <VStack space="xs">
+            <Text size="sm" className="font-medium text-gray-500">Owners</Text>
             <Text className="text-gray-700">{game.owners.join(", ")}</Text>
-          </View>
+          </VStack>
         ) : null}
 
-        <View className="mt-5 gap-3">
+        <VStack space="md" className="mt-2">
           {game.tutorial_url && (
-            <TouchableOpacity
-              className="flex-row items-center bg-red-50 rounded-xl px-4 py-3"
+            <Button
+              variant="outline"
+              action="negative"
               onPress={() => Linking.openURL(game.tutorial_url!)}
+              className="bg-red-50 border-0"
             >
-              <Ionicons
-                name="play-circle-outline"
-                size={22}
-                color="#dc2626"
-              />
-              <Text className="text-red-700 font-medium ml-2">
-                Watch Tutorial
-              </Text>
-            </TouchableOpacity>
+              <ButtonIcon as={Ionicons} name="play-circle-outline" size={22} />
+              <ButtonText className="text-red-700 ml-2">Watch Tutorial</ButtonText>
+            </Button>
           )}
           {game.spotify_playlist_url && (
-            <TouchableOpacity
-              className="flex-row items-center bg-green-50 rounded-xl px-4 py-3"
+            <Button
+              variant="outline"
+              action="positive"
               onPress={() => Linking.openURL(game.spotify_playlist_url!)}
+              className="bg-green-50 border-0"
             >
-              <Ionicons
-                name="musical-notes-outline"
-                size={22}
-                color="#16a34a"
-              />
-              <Text className="text-green-700 font-medium ml-2">
-                Spotify Playlist
-              </Text>
-            </TouchableOpacity>
+              <ButtonIcon as={Ionicons} name="musical-notes-outline" size={22} />
+              <ButtonText className="text-green-700 ml-2">Spotify Playlist</ButtonText>
+            </Button>
           )}
-        </View>
+        </VStack>
 
-        <View className="mt-6 gap-3">
-          <TouchableOpacity
-            className="bg-blue-600 rounded-xl py-3 items-center"
-            onPress={() => setEditing(true)}
-          >
-            <Text className="text-white font-semibold">Edit Game</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            className={`border border-red-300 rounded-xl py-3 items-center ${deleting ? "opacity-50" : ""}`}
+        <VStack space="md" className="mt-3">
+          <Button action="primary" onPress={() => setEditing(true)}>
+            <ButtonText>Edit Game</ButtonText>
+          </Button>
+          <Button
+            variant="outline"
+            action="negative"
+            isDisabled={deleting}
             onPress={handleDelete}
-            disabled={deleting}
           >
-            <Text className="text-red-600 font-semibold">
-              {deleting ? "Deleting..." : "Delete Game"}
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
+            <ButtonText>{deleting ? "Deleting..." : "Delete Game"}</ButtonText>
+          </Button>
+        </VStack>
+      </VStack>
     </ScrollView>
   );
 }

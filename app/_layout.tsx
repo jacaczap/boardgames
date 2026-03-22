@@ -4,8 +4,10 @@ import { Stack, useRouter, useSegments } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import { supabase } from "@/lib/supabase";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { ActivityIndicator, View } from "react-native";
 import { getStayLoggedIn } from "@/lib/auth-storage";
+
+import { Center } from "@/components/ui/center";
+import { Spinner } from "@/components/ui/spinner";
 
 export default function RootLayout() {
   const [session, setSession] = useState<Session | null>(null);
@@ -50,9 +52,9 @@ export default function RootLayout() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center">
-        <ActivityIndicator size="large" />
-      </View>
+      <Center className="flex-1">
+        <Spinner />
+      </Center>
     );
   }
 

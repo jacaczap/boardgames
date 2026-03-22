@@ -1,15 +1,15 @@
 import React, { useState } from "react";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  ActivityIndicator,
-  Alert,
-  Switch,
-} from "react-native";
+import { Alert, Switch } from "react-native";
 import { supabase } from "@/lib/supabase";
 import { setStayLoggedIn as saveStayLoggedIn } from "@/lib/auth-storage";
+
+import { Box } from "@/components/ui/box";
+import { VStack } from "@/components/ui/vstack";
+import { HStack } from "@/components/ui/hstack";
+import { Text } from "@/components/ui/text";
+import { Heading } from "@/components/ui/heading";
+import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
+import { Input, InputField } from "@/components/ui/input";
 
 export default function LoginScreen() {
   const [email, setEmail] = useState("");
@@ -37,44 +37,52 @@ export default function LoginScreen() {
   };
 
   return (
-    <View className="flex-1 justify-center px-8 bg-white">
-      <Text className="text-3xl font-bold text-center mb-8">BoardGames</Text>
+    <Box className="flex-1 justify-center px-8 bg-white">
+      <Heading size="3xl" className="text-center mb-8">
+        BoardGames
+      </Heading>
 
-      <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base"
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-        textContentType="emailAddress"
-      />
+      <VStack space="md">
+        <Input variant="outline" className="rounded-lg">
+          <InputField
+            placeholder="Email"
+            value={email}
+            onChangeText={setEmail}
+            autoCapitalize="none"
+            keyboardType="email-address"
+            textContentType="emailAddress"
+          />
+        </Input>
 
-      <TextInput
-        className="border border-gray-300 rounded-lg px-4 py-3 mb-4 text-base"
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        textContentType="password"
-      />
+        <Input variant="outline" className="rounded-lg">
+          <InputField
+            placeholder="Password"
+            value={password}
+            onChangeText={setPassword}
+            secureTextEntry
+            textContentType="password"
+          />
+        </Input>
 
-      <View className="flex-row items-center justify-between mb-6">
-        <Text className="text-base text-gray-600">Stay logged in</Text>
-        <Switch value={stayLoggedIn} onValueChange={setStayLoggedIn} />
-      </View>
+        <HStack className="items-center justify-between mb-2">
+          <Text className="text-gray-600">Stay logged in</Text>
+          <Switch value={stayLoggedIn} onValueChange={setStayLoggedIn} />
+        </HStack>
 
-      <TouchableOpacity
-        className="bg-blue-600 rounded-lg py-4 items-center"
-        onPress={handleLogin}
-        disabled={loading}
-      >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text className="text-white text-base font-semibold">Log In</Text>
-        )}
-      </TouchableOpacity>
-    </View>
+        <Button
+          action="primary"
+          size="lg"
+          onPress={handleLogin}
+          isDisabled={loading}
+          className="rounded-lg"
+        >
+          {loading ? (
+            <ButtonSpinner />
+          ) : (
+            <ButtonText>Log In</ButtonText>
+          )}
+        </Button>
+      </VStack>
+    </Box>
   );
 }

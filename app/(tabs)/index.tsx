@@ -1,11 +1,6 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
-  View,
-  Text,
-  TouchableOpacity,
-  Image,
   ScrollView,
-  ActivityIndicator,
   Linking,
   RefreshControl,
   Alert,
@@ -19,6 +14,23 @@ import { supabase } from "@/lib/supabase";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile } from "@/lib/types";
 
+import { Box } from "@/components/ui/box";
+import { VStack } from "@/components/ui/vstack";
+import { HStack } from "@/components/ui/hstack";
+import { Center } from "@/components/ui/center";
+import { Text } from "@/components/ui/text";
+import { Heading } from "@/components/ui/heading";
+import { Button, ButtonText, ButtonIcon } from "@/components/ui/button";
+import { Spinner } from "@/components/ui/spinner";
+import { Image } from "@/components/ui/image";
+import { Card } from "@/components/ui/card";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallbackText,
+  AvatarGroup,
+} from "@/components/ui/avatar";
+
 export default function HomeScreen() {
   const router = useRouter();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
@@ -30,6 +42,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [creatingSurvey, setCreatingSurvey] = useState(false);
   const [addingToCalendar, setAddingToCalendar] = useState(false);
+  const [nextSurveyDate, setNextSurveyDate] = useState<Date | null>(null);
 
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
   const avatarPaths = attendees
@@ -52,6 +65,21 @@ export default function HomeScreen() {
       if (!m) {
         setGame(null);
         setAttendees([]);
+
+        const { data: lastCompleted } = await supabase
+          .from("meetings")
+          .select("chosen_date")
+          .eq("status", "completed")
+          .order("number", { ascending: false })
+          .limit(1);
+
+        if (lastCompleted?.[0]?.chosen_date) {
+          const surveyAvail = new Date(lastCompleted[0].chosen_date + "T00:00:00");
+          surveyAvail.setDate(surveyAvail.getDate() + 7);
+          setNextSurveyDate(surveyAvail);
+        } else {
+          setNextSurveyDate(null);
+        }
         return;
       }
 
@@ -271,9 +299,9 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <View className="flex-1 items-center justify-center bg-white">
-        <ActivityIndicator size="large" color="#2563eb" />
-      </View>
+      <Center className="flex-1 bg-white">
+        <Spinner />
+      </Center>
     );
   }
 
@@ -292,21 +320,43 @@ export default function HomeScreen() {
         }
       >
         <Ionicons name="calendar-outline" size={64} color="#d1d5db" />
-        <Text className="text-xl font-semibold text-gray-800 mt-4 mb-2">
+        <Heading size="xl" className="mt-4 mb-2">
           No upcoming meetings
-        </Text>
-        <Text className="text-gray-500 text-center mb-6">
-          When a new survey is created, it will appear here.
-        </Text>
-        <TouchableOpacity
-          className={`rounded-xl px-6 py-3 ${creatingSurvey ? "bg-blue-400" : "bg-blue-600"}`}
-          onPress={handleCreateSurvey}
-          disabled={creatingSurvey}
-        >
-          <Text className="text-white font-semibold">
-            {creatingSurvey ? "Creating..." : "Create New Survey Now"}
+        </Heading>
+        {nextSurveyDate ? (
+          nextSurveyDate <= new Date() ? (
+            <Text className="text-gray-500 text-center mb-6">
+              A new survey is ready to be created.
+            </Text>
+          ) : (
+            <Text className="text-gray-500 text-center mb-6">
+              Next survey available{" "}
+              {nextSurveyDate.toLocaleDateString("en-GB", {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}{" "}
+              ({Math.ceil(
+                (nextSurveyDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+              )}{" "}
+              days)
+            </Text>
+          )
+        ) : (
+          <Text className="text-gray-500 text-center mb-6">
+            When a new survey is created, it will appear here.
           </Text>
-        </TouchableOpacity>
+        )}
+        <Button
+          action="primary"
+          isDisabled={creatingSurvey}
+          onPress={handleCreateSurvey}
+          className="px-6"
+        >
+          <ButtonText>
+            {creatingSurvey ? "Creating..." : "Create New Survey Now"}
+          </ButtonText>
+        </Button>
       </ScrollView>
     );
   }
@@ -325,29 +375,30 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <View className="bg-blue-50 rounded-2xl p-6 w-full max-w-md">
-          <View className="items-center mb-4">
+        <Card variant="filled" className="bg-blue-50 p-6 w-full max-w-md">
+          <VStack space="md" className="items-center">
             <Ionicons name="clipboard-outline" size={48} color="#2563eb" />
-            <Text className="text-xl font-bold text-blue-900 mt-2">
+            <Heading size="xl" className="text-blue-900">
               Survey #{meeting.number}
-            </Text>
-            <Text className="text-blue-700 mt-1">Voting is open!</Text>
-          </View>
+            </Heading>
+            <Text className="text-blue-700">Voting is open!</Text>
+          </VStack>
 
-          <View className="flex-row items-center justify-center mb-6">
+          <HStack space="sm" className="items-center justify-center my-6">
             <Ionicons name="people-outline" size={20} color="#6b7280" />
-            <Text className="text-gray-600 ml-2">
+            <Text className="text-gray-600">
               {voterCount} / {totalUsers} voted
             </Text>
-          </View>
+          </HStack>
 
-          <TouchableOpacity
-            className="bg-blue-600 rounded-xl py-3 items-center"
+          <Button
+            action="primary"
+            size="lg"
             onPress={() => router.push(`/survey/${meeting.id}`)}
           >
-            <Text className="text-white font-semibold text-lg">Vote Now</Text>
-          </TouchableOpacity>
-        </View>
+            <ButtonText className="text-lg">Vote Now</ButtonText>
+          </Button>
+        </Card>
       </ScrollView>
     );
   }
@@ -360,7 +411,7 @@ export default function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <View className="bg-green-50 rounded-2xl overflow-hidden w-full max-w-md self-center">
+      <Card variant="filled" className="bg-green-50 w-full max-w-md self-center">
         {gameImageUrl && (
           <Image
             source={{ uri: gameImageUrl }}
@@ -368,22 +419,22 @@ export default function HomeScreen() {
             resizeMode="cover"
           />
         )}
-        <View className="p-5">
-          <View className="flex-row items-center mb-1">
+        <VStack space="md" className="p-5">
+          <HStack space="xs" className="items-center">
             <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
-            <Text className="text-green-700 font-medium ml-1">
+            <Text className="text-green-700 font-medium">
               Meeting Approved
             </Text>
-          </View>
+          </HStack>
 
-          <Text className="text-2xl font-bold text-gray-900 mt-2">
+          <Heading size="2xl" className="mt-1">
             {game?.name ?? "No game selected"}
-          </Text>
+          </Heading>
 
           {meeting.chosen_date && (
-            <View className="flex-row items-center mt-2">
+            <HStack space="xs" className="items-center">
               <Ionicons name="calendar" size={16} color="#6b7280" />
-              <Text className="text-gray-600 ml-1">
+              <Text className="text-gray-600">
                 {new Date(meeting.chosen_date + "T00:00:00").toLocaleDateString(
                   "en-GB",
                   {
@@ -394,109 +445,116 @@ export default function HomeScreen() {
                   },
                 )}
               </Text>
-            </View>
+            </HStack>
           )}
 
           {game?.description && (
-            <Text className="text-gray-600 mt-3">{game.description}</Text>
+            <Text className="text-gray-600">{game.description}</Text>
           )}
 
-          <View className="flex-row flex-wrap mt-4 gap-3">
+          <HStack space="md" className="flex-wrap mt-1">
             {meeting.chosen_date && Platform.OS !== "web" && (
-              <TouchableOpacity
-                className="flex-row items-center bg-blue-50 rounded-lg px-3 py-2"
+              <Button
+                variant="outline"
+                action="primary"
+                size="sm"
                 onPress={handleAddToCalendar}
-                disabled={addingToCalendar}
+                isDisabled={addingToCalendar}
+                className="bg-blue-50 border-0"
               >
-                <Ionicons name="calendar-outline" size={18} color="#2563eb" />
-                <Text className="text-blue-700 font-medium ml-1 text-sm">
+                <ButtonIcon as={Ionicons} name="calendar-outline" size={18} />
+                <ButtonText className="text-blue-700 ml-1 text-sm">
                   {addingToCalendar ? "Adding..." : "Add to Calendar"}
-                </Text>
-              </TouchableOpacity>
+                </ButtonText>
+              </Button>
             )}
             {game?.tutorial_url && (
-              <TouchableOpacity
-                className="flex-row items-center bg-red-50 rounded-lg px-3 py-2"
+              <Button
+                variant="outline"
+                action="negative"
+                size="sm"
                 onPress={() => Linking.openURL(game.tutorial_url!)}
+                className="bg-red-50 border-0"
               >
-                <Ionicons
+                <ButtonIcon
+                  as={Ionicons}
                   name="play-circle-outline"
                   size={18}
-                  color="#dc2626"
                 />
-                <Text className="text-red-700 font-medium ml-1 text-sm">
+                <ButtonText className="text-red-700 ml-1 text-sm">
                   Tutorial
-                </Text>
-              </TouchableOpacity>
+                </ButtonText>
+              </Button>
             )}
             {game?.spotify_playlist_url && (
-              <TouchableOpacity
-                className="flex-row items-center bg-green-100 rounded-lg px-3 py-2"
+              <Button
+                variant="outline"
+                action="positive"
+                size="sm"
                 onPress={() => Linking.openURL(game.spotify_playlist_url!)}
+                className="bg-green-100 border-0"
               >
-                <Ionicons
+                <ButtonIcon
+                  as={Ionicons}
                   name="musical-notes-outline"
                   size={18}
-                  color="#16a34a"
                 />
-                <Text className="text-green-700 font-medium ml-1 text-sm">
+                <ButtonText className="text-green-700 ml-1 text-sm">
                   Playlist
-                </Text>
-              </TouchableOpacity>
+                </ButtonText>
+              </Button>
             )}
-          </View>
+          </HStack>
 
           {attendees.length > 0 && (
-            <View className="mt-5">
-              <Text className="text-gray-500 text-sm font-medium mb-2">
+            <VStack space="sm" className="mt-2">
+              <Text size="sm" className="text-gray-500 font-medium">
                 Attendees
               </Text>
-              <View className="flex-row flex-wrap gap-2">
+              <AvatarGroup>
                 {attendees.map((p) => {
                   const signedAvatar = p.avatar_url
                     ? avatarUrls.get(p.avatar_url)
                     : undefined;
                   return (
-                  <View key={p.id} className="items-center">
-                    {signedAvatar ? (
-                      <Image
-                        source={{ uri: signedAvatar }}
-                        className="w-10 h-10 rounded-full"
-                      />
-                    ) : (
-                      <View className="w-10 h-10 rounded-full bg-blue-200 items-center justify-center">
-                        <Text className="text-blue-700 font-bold text-sm">
-                          {(p.name?.[0] ?? "").toUpperCase()}
-                          {(p.surname?.[0] ?? "").toUpperCase()}
-                        </Text>
-                      </View>
-                    )}
-                    <Text className="text-xs text-gray-500 mt-1">
-                      {p.name}
-                    </Text>
-                  </View>
+                    <VStack key={p.id} space="xs" className="items-center">
+                      <Avatar size="md">
+                        {signedAvatar ? (
+                          <AvatarImage source={{ uri: signedAvatar }} />
+                        ) : (
+                          <AvatarFallbackText>
+                            {(p.name?.[0] ?? "").toUpperCase()}
+                            {(p.surname?.[0] ?? "").toUpperCase()}
+                          </AvatarFallbackText>
+                        )}
+                      </Avatar>
+                      <Text size="xs" className="text-gray-500">
+                        {p.name}
+                      </Text>
+                    </VStack>
                   );
                 })}
-              </View>
-            </View>
+              </AvatarGroup>
+            </VStack>
           )}
 
-          <View className="mt-5 gap-3">
-            <TouchableOpacity
-              className="bg-blue-600 rounded-xl py-3 items-center"
+          <VStack space="md" className="mt-2">
+            <Button
+              action="primary"
               onPress={() => router.push(`/approve/${meeting.id}`)}
             >
-              <Text className="text-white font-semibold">View Details</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              className="border border-red-300 rounded-xl py-3 items-center"
+              <ButtonText>View Details</ButtonText>
+            </Button>
+            <Button
+              variant="outline"
+              action="negative"
               onPress={handleUnapprove}
             >
-              <Text className="text-red-600 font-semibold">Unapprove</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      </View>
+              <ButtonText>Unapprove</ButtonText>
+            </Button>
+          </VStack>
+        </VStack>
+      </Card>
     </ScrollView>
   );
 }
