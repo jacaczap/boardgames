@@ -13,7 +13,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import { getSignedUrls } from "@/lib/storage";
+import { useSignedUrls } from "@/lib/storage";
 import type { BoardGame } from "@/lib/types";
 
 const GameRow = React.memo(function GameRow({
@@ -77,10 +77,14 @@ const GameRow = React.memo(function GameRow({
 export default function GamesListScreen() {
   const router = useRouter();
   const [games, setGames] = useState<BoardGame[]>([]);
-  const [imageUrls, setImageUrls] = useState<Map<string, string>>(new Map());
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+
+  const imagePaths = games
+    .map((g) => g.image_url)
+    .filter((p): p is string => !!p);
+  const imageUrls = useSignedUrls("game-images", imagePaths);
 
   const fetchGames = useCallback(async () => {
     try {
@@ -88,16 +92,7 @@ export default function GamesListScreen() {
         .from("board_games")
         .select("*")
         .order("name");
-      const list = (data as BoardGame[]) ?? [];
-      setGames(list);
-
-      const paths = list
-        .map((g) => g.image_url)
-        .filter((p): p is string => !!p);
-      if (paths.length) {
-        const urls = await getSignedUrls("game-images", paths);
-        setImageUrls(urls);
-      }
+      setGames((data as BoardGame[]) ?? []);
     } catch (e) {
       console.error("Failed to fetch games:", e);
     } finally {

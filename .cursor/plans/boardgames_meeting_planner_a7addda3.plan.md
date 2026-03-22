@@ -25,7 +25,13 @@ todos:
     status: completed
   - id: signed-url-refresh
     content: "Phase 7: Auto-refresh signed URLs before expiry -- add re-fetch interval or expiry-aware hook so images don't break after 1h"
-    status: pending
+    status: completed
+  - id: error-handling-gaps
+    content: "Phase 7a: Add error handling to handleUnapprove (check .update result), handleDelete (check storage.remove + .delete results), and wrap handleCreateSurvey in try/catch for network exceptions"
+    status: completed
+  - id: direct-nav-dep
+    content: "Phase 7b: Add @react-navigation/native as direct dependency -- useFocusEffect import relies on transitive dep from expo-router"
+    status: completed
   - id: orphaned-images
     content: "Phase 8: Delete old image from storage when replacing a game image, guard against orphaned uploads in new-game flow, and clean up storage on game deletion"
     status: pending

@@ -14,7 +14,7 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
-import { useSignedUrl, getSignedUrls } from "@/lib/storage";
+import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile } from "@/lib/types";
 
 export default function HomeScreen() {
@@ -22,13 +22,16 @@ export default function HomeScreen() {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [game, setGame] = useState<BoardGame | null>(null);
   const [attendees, setAttendees] = useState<Profile[]>([]);
-  const [avatarUrls, setAvatarUrls] = useState<Map<string, string>>(new Map());
   const [voterCount, setVoterCount] = useState(0);
   const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
 
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
+  const avatarPaths = attendees
+    .map((p) => p.avatar_url)
+    .filter((u): u is string => !!u);
+  const avatarUrls = useSignedUrls("avatars", avatarPaths);
 
   const fetchData = useCallback(async () => {
     try {
@@ -45,7 +48,6 @@ export default function HomeScreen() {
       if (!m) {
         setGame(null);
         setAttendees([]);
-        setAvatarUrls(new Map());
         return;
       }
 
@@ -88,18 +90,7 @@ export default function HomeScreen() {
                     "id",
                     votes.map((v) => v.user_id),
                   );
-                const profileList = (profiles as Profile[]) ?? [];
-                setAttendees(profileList);
-
-                const paths = profileList
-                  .map((p) => p.avatar_url)
-                  .filter((u): u is string => !!u);
-                if (paths.length) {
-                  const urlMap = await getSignedUrls("avatars", paths);
-                  setAvatarUrls(urlMap);
-                } else {
-                  setAvatarUrls(new Map());
-                }
+                setAttendees((profiles as Profile[]) ?? []);
               }
             }
           }
@@ -109,7 +100,6 @@ export default function HomeScreen() {
       if (m.status === "voting") {
         setGame(null);
         setAttendees([]);
-        setAvatarUrls(new Map());
         const { count } = await supabase
           .from("votes")
           .select("*", { count: "exact", head: true })
@@ -186,29 +176,41 @@ export default function HomeScreen() {
         text: "Unapprove",
         style: "destructive",
         onPress: async () => {
-          await supabase
-            .from("meetings")
-            .update({
-              status: "voting",
-              chosen_date: null,
-              chosen_game_id: null,
-              approved_by: null,
-              approved_at: null,
-            })
-            .eq("id", meeting.id);
-          fetchData();
+          try {
+            const { error } = await supabase
+              .from("meetings")
+              .update({
+                status: "voting",
+                chosen_date: null,
+                chosen_game_id: null,
+                approved_by: null,
+                approved_at: null,
+              })
+              .eq("id", meeting.id);
+            if (error) {
+              Alert.alert("Error", error.message);
+              return;
+            }
+            fetchData();
+          } catch (e: any) {
+            Alert.alert("Error", e?.message ?? "Failed to unapprove meeting");
+          }
         },
       },
     ]);
   };
 
   const handleCreateSurvey = async () => {
-    const { error } = await supabase.rpc("create_next_survey");
-    if (error) {
-      Alert.alert("Error", error.message);
-      return;
+    try {
+      const { error } = await supabase.rpc("create_next_survey");
+      if (error) {
+        Alert.alert("Error", error.message);
+        return;
+      }
+      fetchData();
+    } catch (e: any) {
+      Alert.alert("Error", e?.message ?? "Failed to create survey");
     }
-    fetchData();
   };
 
   if (loading) {

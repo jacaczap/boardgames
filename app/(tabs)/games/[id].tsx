@@ -117,13 +117,22 @@ export default function GameDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
-            if (game?.image_url) {
-              await supabase.storage
-                .from("game-images")
-                .remove([game.image_url]);
+            try {
+              if (game?.image_url) {
+                const { error: storageError } = await supabase.storage
+                  .from("game-images")
+                  .remove([game.image_url]);
+                if (storageError) console.warn("Failed to remove image:", storageError.message);
+              }
+              const { error } = await supabase.from("board_games").delete().eq("id", id!);
+              if (error) {
+                Alert.alert("Error", error.message);
+                return;
+              }
+              router.back();
+            } catch (e: any) {
+              Alert.alert("Error", e?.message ?? "Failed to delete game");
             }
-            await supabase.from("board_games").delete().eq("id", id!);
-            router.back();
           },
         },
       ],

@@ -1,47 +1,77 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { Alert } from "react-native";
 import { supabase } from "./supabase";
 
 const SIGNED_URL_EXPIRY = 3600;
+const REFRESH_INTERVAL_MS = (SIGNED_URL_EXPIRY - 300) * 1000; // refresh 5 min before expiry
 
 export function useSignedUrl(
   bucket: string,
   path: string | null | undefined,
 ): string | null {
   const [url, setUrl] = useState<string | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
 
   useEffect(() => {
     if (!path) {
       setUrl(null);
       return;
     }
+
     let cancelled = false;
-    supabase.storage
-      .from(bucket)
-      .createSignedUrl(path, SIGNED_URL_EXPIRY)
-      .then(({ data, error }) => {
-        if (!cancelled && !error && data) setUrl(data.signedUrl);
-      });
+
+    const fetchUrl = () => {
+      supabase.storage
+        .from(bucket)
+        .createSignedUrl(path, SIGNED_URL_EXPIRY)
+        .then(({ data, error }) => {
+          if (!cancelled && !error && data) setUrl(data.signedUrl);
+        });
+    };
+
+    fetchUrl();
+    timerRef.current = setInterval(fetchUrl, REFRESH_INTERVAL_MS);
+
     return () => {
       cancelled = true;
+      clearInterval(timerRef.current);
     };
   }, [bucket, path]);
 
   return url;
 }
 
-export async function getSignedUrls(
+export function useSignedUrls(
   bucket: string,
   paths: string[],
-): Promise<Map<string, string>> {
-  const map = new Map<string, string>();
-  if (!paths.length) return map;
-  const { data } = await supabase.storage.from(bucket).createSignedUrls(paths, SIGNED_URL_EXPIRY);
-  data?.forEach((item) => {
-    if (item.signedUrl) map.set(item.path!, item.signedUrl);
-  });
-  return map;
+): Map<string, string> {
+  const [urls, setUrls] = useState<Map<string, string>>(new Map());
+  const timerRef = useRef<ReturnType<typeof setInterval>>(undefined);
+  const pathsKey = paths.join("\0");
+
+  const fetchUrls = useCallback(async () => {
+    if (!paths.length) {
+      setUrls(new Map());
+      return;
+    }
+    const { data } = await supabase.storage
+      .from(bucket)
+      .createSignedUrls(paths, SIGNED_URL_EXPIRY);
+    const map = new Map<string, string>();
+    data?.forEach((item) => {
+      if (item.signedUrl) map.set(item.path!, item.signedUrl);
+    });
+    setUrls(map);
+  }, [bucket, pathsKey]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    fetchUrls();
+    timerRef.current = setInterval(fetchUrls, REFRESH_INTERVAL_MS);
+    return () => clearInterval(timerRef.current);
+  }, [fetchUrls]);
+
+  return urls;
 }
 
 export async function pickAndUploadImage(
