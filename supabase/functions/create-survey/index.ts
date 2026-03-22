@@ -47,8 +47,8 @@ Deno.serve(async (_req) => {
     if (tokens?.length) {
       const messages: PushMessage[] = tokens.map((t) => ({
         to: t.token,
-        title: "New Survey Available!",
-        body: "A new meeting survey is ready. Cast your vote!",
+        title: "Nowa ankieta!",
+        body: "Nowa ankieta jest gotowa. Zagłosuj!",
         data: { type: "survey", meetingId: newMeetingId },
       }));
       await sendPushNotifications(messages);

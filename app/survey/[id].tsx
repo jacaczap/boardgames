@@ -8,7 +8,9 @@ import {
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrls } from "@/lib/storage";
 import { isPolishHoliday } from "@/lib/holidays";
 import type {
@@ -45,15 +47,9 @@ interface VoterInfo {
   gameVoters: Map<string, Profile[]>;
 }
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr + "T00:00:00");
-  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
+  return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
 }
 
 function isPast(dateStr: string): boolean {
@@ -63,6 +59,8 @@ function isPast(dateStr: string): boolean {
 }
 
 export default function SurveyScreen() {
+  const { t } = useTranslation();
+  const locale = getDateLocale();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -284,12 +282,12 @@ export default function SurveyScreen() {
     const count = consecutiveCounts.get(gameId) ?? 0;
     if (count >= 3 && !selectedGames.has(gameId)) {
       Alert.alert(
-        "3-play limit",
-        "This game has been played 3+ times in a row. Consider picking a different game.",
+        t("survey.playLimitTitle"),
+        t("survey.playLimitMessage"),
         [
-          { text: "Cancel", style: "cancel" },
+          { text: t("common.cancel"), style: "cancel" },
           {
-            text: "Select anyway",
+            text: t("survey.selectAnyway"),
             onPress: () => {
               setSelectedGames((prev) => {
                 const next = new Set(prev);
@@ -330,27 +328,30 @@ export default function SurveyScreen() {
   const handleAddCustomDate = async () => {
     const trimmed = customDateInput.trim();
     if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-      Alert.alert("Invalid format", "Use YYYY-MM-DD format");
+      Alert.alert(t("survey.invalidFormat"), t("survey.useFormat"));
       return;
     }
     const d = new Date(trimmed + "T00:00:00");
     if (isNaN(d.getTime())) {
-      Alert.alert("Invalid date", "Please enter a valid date");
+      Alert.alert(t("survey.invalidDate"), t("survey.enterValidDate"));
       return;
     }
     if (isPast(trimmed)) {
-      Alert.alert("Past date", "Cannot add a past date");
+      Alert.alert(t("survey.pastDate"), t("survey.cannotAddPast"));
       return;
     }
     if (dateRange && (trimmed < dateRange.min || trimmed > dateRange.max)) {
       Alert.alert(
-        "Out of range",
-        `Date must be between ${formatDate(dateRange.min)} and ${formatDate(dateRange.max)}`,
+        t("survey.outOfRange"),
+        t("survey.dateRange", {
+          min: formatDate(dateRange.min, locale),
+          max: formatDate(dateRange.max, locale),
+        }),
       );
       return;
     }
     if (dateOptions.some((o) => o.date === trimmed)) {
-      Alert.alert("Duplicate", "This date is already an option");
+      Alert.alert(t("survey.duplicate"), t("survey.alreadyOption"));
       return;
     }
 
@@ -363,13 +364,13 @@ export default function SurveyScreen() {
         added_by: currentUserId,
       });
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         return;
       }
       setCustomDateInput("");
       await fetchData();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to add custom date");
+      Alert.alert(t("common.error"), e?.message ?? t("survey.failedAddDate"));
     } finally {
       setAddingDate(false);
     }
@@ -378,11 +379,11 @@ export default function SurveyScreen() {
   const handleSubmit = async () => {
     if (!currentUserId || !id) return;
     if (!notParticipating && selectedDates.size === 0) {
-      Alert.alert("Select dates", "Pick at least one date or mark 'Not participating'");
+      Alert.alert(t("survey.selectDatesTitle"), t("survey.selectDatesMessage"));
       return;
     }
     if (!notParticipating && selectedGames.size === 0) {
-      Alert.alert("Select games", "Pick at least one game or mark 'Not participating'");
+      Alert.alert(t("survey.selectGamesTitle"), t("survey.selectGamesMessage"));
       return;
     }
 
@@ -394,7 +395,7 @@ export default function SurveyScreen() {
           .delete()
           .eq("id", existingVote.id);
         if (delError) {
-          Alert.alert("Error", delError.message);
+          Alert.alert(t("common.error"), delError.message);
           return;
         }
       }
@@ -406,7 +407,7 @@ export default function SurveyScreen() {
         .single();
 
       if (voteError || !newVote) {
-        Alert.alert("Error", voteError?.message ?? "Failed to create vote");
+        Alert.alert(t("common.error"), voteError?.message ?? t("survey.failedCreateVote"));
         return;
       }
 
@@ -426,18 +427,18 @@ export default function SurveyScreen() {
         ]);
 
         if (dRes.error) {
-          Alert.alert("Error", dRes.error.message);
+          Alert.alert(t("common.error"), dRes.error.message);
           return;
         }
         if (gRes.error) {
-          Alert.alert("Error", gRes.error.message);
+          Alert.alert(t("common.error"), gRes.error.message);
           return;
         }
       }
 
       router.back();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to submit vote");
+      Alert.alert(t("common.error"), e?.message ?? t("survey.failedSubmit"));
     } finally {
       setSubmitting(false);
     }
@@ -454,7 +455,7 @@ export default function SurveyScreen() {
   if (!meeting || meeting.status !== "voting") {
     return (
       <Center className="flex-1 bg-white">
-        <Text className="text-gray-500">Survey not available</Text>
+        <Text className="text-gray-500">{t("survey.notAvailable")}</Text>
       </Center>
     );
   }
@@ -477,13 +478,13 @@ export default function SurveyScreen() {
       <VStack space="lg">
         {/* Header */}
         <VStack space="xs">
-          <Heading size="xl">Survey #{meeting.number}</Heading>
+          <Heading size="xl">{t("survey.surveyNumber", { number: meeting.number })}</Heading>
           <Text className="text-gray-500">
-            {allVotes.length} vote{allVotes.length !== 1 ? "s" : ""} submitted
+            {t("survey.votesSubmitted", { count: allVotes.length })}
           </Text>
           {existingVote && (
             <Badge action="success" className="self-start">
-              <BadgeText>You already voted — editing</BadgeText>
+              <BadgeText>{t("survey.alreadyVoted")}</BadgeText>
             </Badge>
           )}
         </VStack>
@@ -502,10 +503,10 @@ export default function SurveyScreen() {
               />
               <VStack>
                 <Text className={`font-medium ${notParticipating ? "text-orange-800" : "text-gray-700"}`}>
-                  Not participating
+                  {t("survey.notParticipating")}
                 </Text>
                 <Text size="xs" className="text-gray-500">
-                  Submit an empty vote (no dates or games)
+                  {t("survey.notParticipatingDesc")}
                 </Text>
               </VStack>
             </HStack>
@@ -515,7 +516,7 @@ export default function SurveyScreen() {
         {/* Not participating voters */}
         {notParticipatingVoters.length > 0 && (
           <VStack space="xs">
-            <Text size="sm" className="text-gray-500">Not participating:</Text>
+            <Text size="sm" className="text-gray-500">{t("survey.notParticipatingLabel")}</Text>
             <HStack space="sm" className="flex-wrap">
               {notParticipatingVoters.map((v) => {
                 const p = profiles.find((pr) => pr.id === v.user_id);
@@ -528,7 +529,7 @@ export default function SurveyScreen() {
 
         {/* Date Selection */}
         <VStack space="md">
-          <Heading size="lg">Pick dates</Heading>
+          <Heading size="lg">{t("survey.pickDates")}</Heading>
           {dateOptions.map((opt) => {
             const past = isPast(opt.date);
             const selected = selectedDates.has(opt.id);
@@ -567,26 +568,28 @@ export default function SurveyScreen() {
                               past ? "text-gray-400" : "text-gray-800"
                             }`}
                           >
-                            {formatDate(opt.date)}
+                            {formatDate(opt.date, locale)}
                           </Text>
                           {holiday && (
                             <Badge action="warning">
-                              <BadgeText action="warning">Holiday</BadgeText>
+                              <BadgeText action="warning">{t("survey.holiday")}</BadgeText>
                             </Badge>
                           )}
                           {opt.is_custom && (
                             <Badge action="info">
-                              <BadgeText action="info">Custom</BadgeText>
+                              <BadgeText action="info">{t("survey.custom")}</BadgeText>
                             </Badge>
                           )}
                           {isWeekend && !holiday && (
                             <Badge action="muted">
-                              <BadgeText action="muted">{d.getDay() === 6 ? "Sat" : "Sun"}</BadgeText>
+                              <BadgeText action="muted">
+                                {d.getDay() === 6 ? t("survey.sat") : t("survey.sun")}
+                              </BadgeText>
                             </Badge>
                           )}
                         </HStack>
                         {past && (
-                          <Text size="xs" className="text-gray-400">Past</Text>
+                          <Text size="xs" className="text-gray-400">{t("survey.past")}</Text>
                         )}
                       </VStack>
                     </HStack>
@@ -617,7 +620,7 @@ export default function SurveyScreen() {
           <Card variant="outline" className="p-3">
             <VStack space="sm">
               <Text size="sm" className="font-medium text-gray-600">
-                Add custom date (YYYY-MM-DD)
+                {t("survey.addCustomDate")}
               </Text>
               <HStack space="sm">
                 <Box className="flex-1">
@@ -625,7 +628,7 @@ export default function SurveyScreen() {
                     <InputField
                       value={customDateInput}
                       onChangeText={setCustomDateInput}
-                      placeholder="2026-04-15"
+                      placeholder={t("survey.customDatePlaceholder")}
                       autoCapitalize="none"
                       keyboardType={Platform.OS === "web" ? "default" : "numbers-and-punctuation"}
                     />
@@ -637,7 +640,7 @@ export default function SurveyScreen() {
                   isDisabled={addingDate || !customDateInput.trim()}
                   onPress={handleAddCustomDate}
                 >
-                  <ButtonText>{addingDate ? "..." : "Add"}</ButtonText>
+                  <ButtonText>{addingDate ? "..." : t("common.add")}</ButtonText>
                 </Button>
               </HStack>
             </VStack>
@@ -646,7 +649,7 @@ export default function SurveyScreen() {
 
         {/* Game Selection */}
         <VStack space="md">
-          <Heading size="lg">Pick games</Heading>
+          <Heading size="lg">{t("survey.pickGames")}</Heading>
           {games.map((game) => {
             const selected = selectedGames.has(game.id);
             const count = consecutiveCounts.get(game.id) ?? 0;
@@ -698,13 +701,13 @@ export default function SurveyScreen() {
                         )}
                         {(game.min_players != null || game.max_players != null) && (
                           <Text size="xs" className="text-gray-500">
-                            {game.min_players ?? "?"}-{game.max_players ?? "?"} players
+                            {game.min_players ?? "?"}-{game.max_players ?? "?"} {t("common.players")}
                           </Text>
                         )}
                         {count > 0 && (
                           <Badge action={count >= 3 ? "error" : "warning"}>
                             <BadgeText action={count >= 3 ? "error" : "warning"}>
-                              {count}x in a row
+                              {t("survey.inARow", { count })}
                             </BadgeText>
                           </Badge>
                         )}
@@ -740,10 +743,10 @@ export default function SurveyScreen() {
           >
             <ButtonText className="text-lg">
               {submitting
-                ? "Submitting..."
+                ? t("survey.submitting")
                 : existingVote
-                  ? "Update Vote"
-                  : "Submit Vote"}
+                  ? t("survey.updateVote")
+                  : t("survey.submitVote")}
             </ButtonText>
           </Button>
           <Button
@@ -751,7 +754,7 @@ export default function SurveyScreen() {
             action="secondary"
             onPress={() => router.back()}
           >
-            <ButtonText>Cancel</ButtonText>
+            <ButtonText>{t("common.cancel")}</ButtonText>
           </Button>
         </VStack>
       </VStack>

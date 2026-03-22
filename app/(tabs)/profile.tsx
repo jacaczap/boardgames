@@ -7,7 +7,9 @@ import {
 } from "react-native";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { setLanguagePreference } from "@/lib/i18n";
 import { clearPushToken } from "@/lib/notifications";
 import { useSignedUrl, pickAndUploadImage, removeStorageFile } from "@/lib/storage";
 import type { Profile } from "@/lib/types";
@@ -30,6 +32,7 @@ import {
 } from "@/components/ui/avatar";
 
 export default function ProfileScreen() {
+  const { t, i18n } = useTranslation();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -91,11 +94,11 @@ export default function ProfileScreen() {
     const reminderInterval = parseInt(notifReminderInterval, 10);
 
     if (isNaN(priorMeeting) || priorMeeting < 0) {
-      Alert.alert("Invalid", "Days before meeting must be 0 or more");
+      Alert.alert(t("profile.invalidTitle"), t("profile.daysBefore"));
       return;
     }
     if (isNaN(reminderInterval) || reminderInterval < 1) {
-      Alert.alert("Invalid", "Reminder interval must be at least 1 day");
+      Alert.alert(t("profile.invalidTitle"), t("profile.reminderInterval"));
       return;
     }
 
@@ -113,13 +116,13 @@ export default function ProfileScreen() {
         .eq("id", profile.id);
 
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         return;
       }
-      Alert.alert("Saved", "Profile updated successfully");
+      Alert.alert(t("profile.savedTitle"), t("profile.savedMessage"));
       await fetchProfile();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to save profile");
+      Alert.alert(t("common.error"), e?.message ?? t("profile.failedSave"));
     } finally {
       setSaving(false);
     }
@@ -139,7 +142,7 @@ export default function ProfileScreen() {
         .eq("id", profile.id);
 
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         await removeStorageFile("avatars", newPath);
         return;
       }
@@ -150,7 +153,7 @@ export default function ProfileScreen() {
 
       await fetchProfile();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to upload avatar");
+      Alert.alert(t("common.error"), e?.message ?? t("profile.failedSave"));
     } finally {
       setUploadingAvatar(false);
     }
@@ -158,15 +161,15 @@ export default function ProfileScreen() {
 
   const handleChangePassword = async () => {
     if (!newPassword.trim()) {
-      Alert.alert("Error", "Password cannot be empty");
+      Alert.alert(t("common.error"), t("profile.passwordEmpty"));
       return;
     }
     if (newPassword.length < 6) {
-      Alert.alert("Error", "Password must be at least 6 characters");
+      Alert.alert(t("common.error"), t("profile.passwordTooShort"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert("Error", "Passwords do not match");
+      Alert.alert(t("common.error"), t("profile.passwordMismatch"));
       return;
     }
 
@@ -174,24 +177,24 @@ export default function ProfileScreen() {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         return;
       }
-      Alert.alert("Success", "Password changed");
+      Alert.alert(t("profile.successTitle"), t("profile.passwordChanged"));
       setNewPassword("");
       setConfirmPassword("");
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to change password");
+      Alert.alert(t("common.error"), e?.message ?? t("profile.failedPassword"));
     } finally {
       setChangingPassword(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert("Log Out", "Are you sure you want to log out?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("profile.logOut"), t("profile.logoutConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Log Out",
+        text: t("profile.logOut"),
         style: "destructive",
         onPress: async () => {
           setLoggingOut(true);
@@ -204,10 +207,10 @@ export default function ProfileScreen() {
             }
             const { error } = await supabase.auth.signOut();
             if (error) {
-              Alert.alert("Error", error.message);
+              Alert.alert(t("common.error"), error.message);
             }
           } catch (e: any) {
-            Alert.alert("Error", e?.message ?? "Failed to log out");
+            Alert.alert(t("common.error"), e?.message ?? t("profile.failedLogout"));
           } finally {
             setLoggingOut(false);
           }
@@ -227,7 +230,7 @@ export default function ProfileScreen() {
   if (!profile) {
     return (
       <Center className="flex-1 bg-white">
-        <Text className="text-gray-500">Profile not found</Text>
+        <Text className="text-gray-500">{t("profile.notFound")}</Text>
       </Center>
     );
   }
@@ -254,7 +257,7 @@ export default function ProfileScreen() {
           <Center>
             <Pressable onPress={handleAvatarUpload} disabled={uploadingAvatar}>
               <Box className="relative">
-                <Avatar size="2xl">
+                <Avatar size="xl">
                   {avatarUrl ? (
                     <AvatarImage source={{ uri: avatarUrl }} />
                   ) : (
@@ -278,40 +281,68 @@ export default function ProfileScreen() {
             )}
           </Center>
 
+          {/* Language Switcher */}
+          <Card variant="outline" className="p-4">
+            <VStack space="md">
+              <HStack space="xs" className="items-center">
+                <Ionicons name="language-outline" size={20} color="#6b7280" />
+                <Heading size="md">{t("profile.language")}</Heading>
+              </HStack>
+              <HStack space="sm">
+                <Pressable
+                  onPress={() => setLanguagePreference("en")}
+                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "en" ? "bg-blue-100 border-2 border-blue-500" : "bg-gray-50 border border-gray-200"}`}
+                >
+                  <Text className={`font-medium ${i18n.language === "en" ? "text-blue-700" : "text-gray-600"}`}>
+                    {t("profile.languageEn")}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setLanguagePreference("pl")}
+                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "pl" ? "bg-blue-100 border-2 border-blue-500" : "bg-gray-50 border border-gray-200"}`}
+                >
+                  <Text className={`font-medium ${i18n.language === "pl" ? "text-blue-700" : "text-gray-600"}`}>
+                    {t("profile.languagePl")}
+                  </Text>
+                </Pressable>
+              </HStack>
+            </VStack>
+          </Card>
+
           {/* Profile Info */}
           <Card variant="outline" className="p-4">
             <VStack space="md">
-              <Heading size="md">Profile</Heading>
+              <Heading size="md">{t("profile.heading")}</Heading>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">Name</Text>
+                <Text size="sm" className="text-gray-500 font-medium">{t("profile.name")}</Text>
                 <Input>
                   <InputField
                     value={name}
                     onChangeText={setName}
-                    placeholder="First name"
+                    placeholder={t("profile.firstNamePlaceholder")}
                   />
                 </Input>
               </VStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">Surname</Text>
+                <Text size="sm" className="text-gray-500 font-medium">{t("profile.surname")}</Text>
                 <Input>
                   <InputField
                     value={surname}
                     onChangeText={setSurname}
-                    placeholder="Last name"
+                    placeholder={t("profile.lastNamePlaceholder")}
                   />
                 </Input>
               </VStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">Username</Text>
+                <Text size="sm" className="text-gray-500 font-medium">{t("profile.username")}</Text>
                 <Input>
                   <InputField
                     value={username}
                     onChangeText={setUsername}
-                    placeholder="username"
+                    placeholder={t("profile.usernamePlaceholder")}
                     autoCapitalize="none"
                   />
                 </Input>
@@ -324,15 +355,15 @@ export default function ProfileScreen() {
             <VStack space="md">
               <HStack space="xs" className="items-center">
                 <Ionicons name="notifications-outline" size={20} color="#6b7280" />
-                <Heading size="md">Notifications</Heading>
+                <Heading size="md">{t("profile.notifications")}</Heading>
               </HStack>
 
               <VStack space="xs">
                 <Text size="sm" className="text-gray-500 font-medium">
-                  Remind me before meeting (days)
+                  {t("profile.remindBeforeMeeting")}
                 </Text>
                 <Text size="xs" className="text-gray-400">
-                  Get a push notification this many days before an approved meeting
+                  {t("profile.remindBeforeMeetingDesc")}
                 </Text>
                 <Input>
                   <InputField
@@ -346,10 +377,10 @@ export default function ProfileScreen() {
 
               <VStack space="xs">
                 <Text size="sm" className="text-gray-500 font-medium">
-                  Survey reminder interval (days)
+                  {t("profile.surveyReminderInterval")}
                 </Text>
                 <Text size="xs" className="text-gray-400">
-                  If you haven't voted, get reminded every this many days
+                  {t("profile.surveyReminderIntervalDesc")}
                 </Text>
                 <Input>
                   <InputField
@@ -371,7 +402,7 @@ export default function ProfileScreen() {
             onPress={handleSave}
           >
             <ButtonText>
-              {saving ? "Saving..." : "Save Changes"}
+              {saving ? t("common.saving") : t("common.saveChanges")}
             </ButtonText>
           </Button>
 
@@ -380,30 +411,30 @@ export default function ProfileScreen() {
             <VStack space="md">
               <HStack space="xs" className="items-center">
                 <Ionicons name="lock-closed-outline" size={20} color="#6b7280" />
-                <Heading size="md">Change Password</Heading>
+                <Heading size="md">{t("profile.changePassword")}</Heading>
               </HStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">New password</Text>
+                <Text size="sm" className="text-gray-500 font-medium">{t("profile.newPassword")}</Text>
                 <Input>
                   <InputField
                     value={newPassword}
                     onChangeText={setNewPassword}
                     secureTextEntry
-                    placeholder="Min. 6 characters"
+                    placeholder={t("profile.newPasswordPlaceholder")}
                     textContentType="newPassword"
                   />
                 </Input>
               </VStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">Confirm password</Text>
+                <Text size="sm" className="text-gray-500 font-medium">{t("profile.confirmPassword")}</Text>
                 <Input>
                   <InputField
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
                     secureTextEntry
-                    placeholder="Re-enter password"
+                    placeholder={t("profile.confirmPasswordPlaceholder")}
                     textContentType="newPassword"
                   />
                 </Input>
@@ -416,7 +447,7 @@ export default function ProfileScreen() {
                 onPress={handleChangePassword}
               >
                 <ButtonText>
-                  {changingPassword ? "Changing..." : "Change Password"}
+                  {changingPassword ? t("profile.changingPassword") : t("profile.changePassword")}
                 </ButtonText>
               </Button>
             </VStack>
@@ -428,7 +459,7 @@ export default function ProfileScreen() {
             isDisabled={loggingOut}
             onPress={handleLogout}
           >
-            <ButtonText>{loggingOut ? "Logging out..." : "Log Out"}</ButtonText>
+            <ButtonText>{loggingOut ? t("profile.loggingOut") : t("profile.logOut")}</ButtonText>
           </Button>
         </VStack>
       </ScrollView>

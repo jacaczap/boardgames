@@ -94,7 +94,7 @@ todos:
     status: completed
   - id: i18n
     content: "Phase 19: i18n -- add expo-localization + i18next/react-i18next, extract all user-facing strings to en/pl translation files, auto-detect device locale, add language switcher in Profile, translate all screens (Home, Games, Survey, Approve, Profile, Auth)"
-    status: in_progress
+    status: completed
 isProject: false
 ---
 

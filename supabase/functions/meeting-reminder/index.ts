@@ -82,15 +82,15 @@ Deno.serve(async (_req) => {
       if (tokens?.length) {
         const daysText =
           daysUntil === 0
-            ? "today"
+            ? "dzisiaj"
             : daysUntil === 1
-              ? "tomorrow"
-              : `in ${daysUntil} days`;
+              ? "jutro"
+              : `za ${daysUntil} dni`;
 
         const messages: PushMessage[] = tokens.map((t) => ({
           to: t.token,
-          title: "Meeting Reminder",
-          body: `Board games meeting #${meeting.number} is ${daysText}!`,
+          title: "Przypomnienie o spotkaniu",
+          body: `Spotkanie planszówkowe #${meeting.number} jest ${daysText}!`,
           data: { type: "meeting", meetingId: meeting.id },
         }));
         await sendPushNotifications(messages);

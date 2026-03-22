@@ -10,7 +10,9 @@ import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Calendar from "expo-calendar";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile } from "@/lib/types";
 
@@ -32,6 +34,7 @@ import {
 } from "@/components/ui/avatar";
 
 export default function HomeScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [game, setGame] = useState<BoardGame | null>(null);
@@ -74,8 +77,8 @@ export default function HomeScreen() {
           .limit(1);
 
         if (lastCompleted?.[0]?.chosen_date) {
-          const [y, m, d] = lastCompleted[0].chosen_date.split("-").map(Number);
-          const surveyAvail = new Date(Date.UTC(y, m - 1, d + 7));
+          const [y, mo, d] = lastCompleted[0].chosen_date.split("-").map(Number);
+          const surveyAvail = new Date(Date.UTC(y, mo - 1, d + 7));
           setNextSurveyDate(surveyAvail);
         } else {
           setNextSurveyDate(null);
@@ -204,10 +207,10 @@ export default function HomeScreen() {
 
   const handleUnapprove = () => {
     if (!meeting || unapproving) return;
-    Alert.alert("Unapprove", "Revert this meeting back to voting?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("home.unapproveTitle"), t("home.unapproveConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Unapprove",
+        text: t("home.unapprove"),
         style: "destructive",
         onPress: async () => {
           setUnapproving(true);
@@ -223,12 +226,12 @@ export default function HomeScreen() {
               })
               .eq("id", meeting.id);
             if (error) {
-              Alert.alert("Error", error.message);
+              Alert.alert(t("common.error"), error.message);
               return;
             }
             fetchData();
           } catch (e: any) {
-            Alert.alert("Error", e?.message ?? "Failed to unapprove meeting");
+            Alert.alert(t("common.error"), e?.message ?? t("home.failedUnapprove"));
           } finally {
             setUnapproving(false);
           }
@@ -243,12 +246,12 @@ export default function HomeScreen() {
     try {
       const { error } = await supabase.rpc("create_next_survey");
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         return;
       }
       fetchData();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to create survey");
+      Alert.alert(t("common.error"), e?.message ?? t("home.failedCreateSurvey"));
     } finally {
       setCreatingSurvey(false);
     }
@@ -260,7 +263,7 @@ export default function HomeScreen() {
     try {
       const { status } = await Calendar.requestCalendarPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission denied", "Calendar access is required to create an event.");
+        Alert.alert(t("home.permissionDenied"), t("home.calendarAccessRequired"));
         return;
       }
 
@@ -277,13 +280,13 @@ export default function HomeScreen() {
       }
 
       if (!calendarId) {
-        Alert.alert("Error", "No writable calendar found on this device.");
+        Alert.alert(t("common.error"), t("home.noCalendarFound"));
         return;
       }
 
       const title = game?.name
-        ? `Board Games - ${game.name}`
-        : "Board Games Meeting";
+        ? t("home.calendarTitle", { game: game.name })
+        : t("home.calendarTitleDefault");
       const startDate = new Date(meeting.chosen_date + "T00:00:00");
       const endDate = new Date(meeting.chosen_date + "T23:59:59");
 
@@ -294,9 +297,9 @@ export default function HomeScreen() {
         allDay: true,
       });
 
-      Alert.alert("Done", "Event added to your calendar.");
+      Alert.alert(t("home.calendarDone"), t("home.calendarAdded"));
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to add calendar event");
+      Alert.alert(t("common.error"), e?.message ?? t("home.failedCalendar"));
     } finally {
       setAddingToCalendar(false);
     }
@@ -311,6 +314,7 @@ export default function HomeScreen() {
   }
 
   if (!meeting) {
+    const locale = getDateLocale();
     return (
       <ScrollView
         className="flex-1 bg-white"
@@ -326,30 +330,30 @@ export default function HomeScreen() {
       >
         <Ionicons name="calendar-outline" size={64} color="#d1d5db" />
         <Heading size="xl" className="mt-4 mb-2">
-          No upcoming meetings
+          {t("home.noUpcoming")}
         </Heading>
         {nextSurveyDate ? (
           nextSurveyDate <= new Date() ? (
             <Text className="text-gray-500 text-center mb-6">
-              A new survey is ready to be created.
+              {t("home.surveyReady")}
             </Text>
           ) : (
             <Text className="text-gray-500 text-center mb-6">
-              Next survey available{" "}
-              {nextSurveyDate.toLocaleDateString("en-GB", {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-              })}{" "}
-              ({Math.ceil(
-                (nextSurveyDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
-              )}{" "}
-              days)
+              {t("home.nextSurveyAvailable", {
+                date: nextSurveyDate.toLocaleDateString(locale, {
+                  weekday: "short",
+                  day: "numeric",
+                  month: "short",
+                }),
+                days: Math.ceil(
+                  (nextSurveyDate.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+                ),
+              })}
             </Text>
           )
         ) : (
           <Text className="text-gray-500 text-center mb-6">
-            When a new survey is created, it will appear here.
+            {t("home.surveyWillAppear")}
           </Text>
         )}
         <Button
@@ -359,7 +363,7 @@ export default function HomeScreen() {
           className="px-6"
         >
           <ButtonText>
-            {creatingSurvey ? "Creating..." : "Create New Survey Now"}
+            {creatingSurvey ? t("home.creating") : t("home.createSurvey")}
           </ButtonText>
         </Button>
       </ScrollView>
@@ -384,15 +388,15 @@ export default function HomeScreen() {
           <VStack space="md" className="items-center">
             <Ionicons name="clipboard-outline" size={48} color="#2563eb" />
             <Heading size="xl" className="text-blue-900">
-              Survey #{meeting.number}
+              {t("home.surveyNumber", { number: meeting.number })}
             </Heading>
-            <Text className="text-blue-700">Voting is open!</Text>
+            <Text className="text-blue-700">{t("home.votingOpen")}</Text>
           </VStack>
 
           <HStack space="sm" className="items-center justify-center my-6">
             <Ionicons name="people-outline" size={20} color="#6b7280" />
             <Text className="text-gray-600">
-              {voterCount} / {totalUsers} voted
+              {t("home.votedCount", { count: voterCount, total: totalUsers })}
             </Text>
           </HStack>
 
@@ -402,7 +406,7 @@ export default function HomeScreen() {
               size="lg"
               onPress={() => router.push(`/survey/${meeting.id}`)}
             >
-              <ButtonText className="text-lg">Vote Now</ButtonText>
+              <ButtonText className="text-lg">{t("home.voteNow")}</ButtonText>
             </Button>
             <Button
               variant="outline"
@@ -410,13 +414,15 @@ export default function HomeScreen() {
               size="lg"
               onPress={() => router.push(`/approve/${meeting.id}`)}
             >
-              <ButtonText className="text-lg">Approve Meeting</ButtonText>
+              <ButtonText className="text-lg">{t("home.approveMeeting")}</ButtonText>
             </Button>
           </VStack>
         </Card>
       </ScrollView>
     );
   }
+
+  const locale = getDateLocale();
 
   return (
     <ScrollView
@@ -438,12 +444,12 @@ export default function HomeScreen() {
           <HStack space="xs" className="items-center">
             <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
             <Text className="text-green-700 font-medium">
-              Meeting Approved
+              {t("home.meetingApproved")}
             </Text>
           </HStack>
 
           <Heading size="2xl" className="mt-1">
-            {game?.name ?? "No game selected"}
+            {game?.name ?? t("home.noGameSelected")}
           </Heading>
 
           {meeting.chosen_date && (
@@ -451,7 +457,7 @@ export default function HomeScreen() {
               <Ionicons name="calendar" size={16} color="#6b7280" />
               <Text className="text-gray-600">
                 {new Date(meeting.chosen_date + "T00:00:00").toLocaleDateString(
-                  "en-GB",
+                  locale,
                   {
                     weekday: "long",
                     year: "numeric",
@@ -479,7 +485,7 @@ export default function HomeScreen() {
               >
                 <ButtonIcon as={Ionicons} name="calendar-outline" size={18} />
                 <ButtonText className="text-blue-700 ml-1 text-sm">
-                  {addingToCalendar ? "Adding..." : "Add to Calendar"}
+                  {addingToCalendar ? t("home.addingToCalendar") : t("home.addToCalendar")}
                 </ButtonText>
               </Button>
             )}
@@ -497,7 +503,7 @@ export default function HomeScreen() {
                   size={18}
                 />
                 <ButtonText className="text-red-700 ml-1 text-sm">
-                  Tutorial
+                  {t("home.tutorial")}
                 </ButtonText>
               </Button>
             )}
@@ -515,7 +521,7 @@ export default function HomeScreen() {
                   size={18}
                 />
                 <ButtonText className="text-green-700 ml-1 text-sm">
-                  Playlist
+                  {t("home.playlist")}
                 </ButtonText>
               </Button>
             )}
@@ -524,7 +530,7 @@ export default function HomeScreen() {
           {attendees.length > 0 && (
             <VStack space="sm" className="mt-2">
               <Text size="sm" className="text-gray-500 font-medium">
-                Attendees
+                {t("home.attendees")}
               </Text>
               <AvatarGroup>
                 {attendees.map((p) => {
@@ -558,7 +564,7 @@ export default function HomeScreen() {
               action="primary"
               onPress={() => router.push(`/approve/${meeting.id}`)}
             >
-              <ButtonText>View Details</ButtonText>
+              <ButtonText>{t("home.viewDetails")}</ButtonText>
             </Button>
             <Button
               variant="outline"
@@ -566,7 +572,7 @@ export default function HomeScreen() {
               isDisabled={unapproving}
               onPress={handleUnapprove}
             >
-              <ButtonText>{unapproving ? "Unapproving..." : "Unapprove"}</ButtonText>
+              <ButtonText>{unapproving ? t("home.unapproving") : t("home.unapprove")}</ButtonText>
             </Button>
           </VStack>
         </VStack>

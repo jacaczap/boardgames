@@ -10,7 +10,9 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import * as Calendar from "expo-calendar";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import { isPolishHoliday } from "@/lib/holidays";
 import type {
@@ -42,19 +44,13 @@ import {
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { View } from "react-native";
 
-const DAY_NAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-const MONTH_NAMES = [
-  "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-  "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
-
-function formatDate(dateStr: string): string {
+function formatDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr + "T00:00:00");
-  return `${DAY_NAMES[d.getDay()]}, ${d.getDate()} ${MONTH_NAMES[d.getMonth()]}`;
+  return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
 }
 
-function formatDateLong(dateStr: string): string {
-  return new Date(dateStr + "T00:00:00").toLocaleDateString("en-GB", {
+function formatDateLong(dateStr: string, locale: string): string {
+  return new Date(dateStr + "T00:00:00").toLocaleDateString(locale, {
     weekday: "long",
     year: "numeric",
     month: "long",
@@ -71,6 +67,8 @@ function isPast(dateStr: string): boolean {
 type Mode = "approve" | "approved" | "editing";
 
 export default function ApproveScreen() {
+  const { t } = useTranslation();
+  const locale = getDateLocale();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -119,7 +117,6 @@ export default function ApproveScreen() {
     [profiles],
   );
 
-  // Vote counts per date option (excluding past dates)
   const dateVoteCounts = useMemo(() => {
     const counts = new Map<string, number>();
     for (const vd of allVoteDates) {
@@ -128,7 +125,6 @@ export default function ApproveScreen() {
     return counts;
   }, [allVoteDates]);
 
-  // Voters for each date option
   const dateVoterProfiles = useMemo(() => {
     const map = new Map<string, Profile[]>();
     for (const vd of allVoteDates) {
@@ -143,7 +139,6 @@ export default function ApproveScreen() {
     return map;
   }, [allVoteDates, voteUserMap, profileMap]);
 
-  // Future dates sorted by vote count (desc), then by date (asc)
   const sortedDates = useMemo(() => {
     return dateOptions
       .filter((o) => !isPast(o.date))
@@ -155,7 +150,6 @@ export default function ApproveScreen() {
       });
   }, [dateOptions, dateVoteCounts]);
 
-  // User IDs who voted for the selected date
   const voterIdsForSelectedDate = useMemo(() => {
     if (!selectedDateId) return new Set<string>();
     const ids = new Set<string>();
@@ -167,7 +161,6 @@ export default function ApproveScreen() {
     return ids;
   }, [selectedDateId, allVoteDates, voteUserMap]);
 
-  // Game vote counts filtered to voters who picked the selected date
   const gameVoteCountsForDate = useMemo(() => {
     const counts = new Map<string, number>();
     for (const vg of allVoteGames) {
@@ -178,7 +171,6 @@ export default function ApproveScreen() {
     return counts;
   }, [allVoteGames, voteUserMap, voterIdsForSelectedDate]);
 
-  // Game voter profiles filtered to selected date
   const gameVoterProfilesForDate = useMemo(() => {
     const map = new Map<string, Profile[]>();
     for (const vg of allVoteGames) {
@@ -193,7 +185,6 @@ export default function ApproveScreen() {
     return map;
   }, [allVoteGames, voteUserMap, voterIdsForSelectedDate, profileMap]);
 
-  // Games sorted by vote count for selected date (desc)
   const sortedGames = useMemo(() => {
     return [...games].sort((a, b) => {
       const ca = gameVoteCountsForDate.get(a.id) ?? 0;
@@ -203,7 +194,6 @@ export default function ApproveScreen() {
     });
   }, [games, gameVoteCountsForDate]);
 
-  // Attendees for approved meeting (voted for chosen date)
   const attendees = useMemo(() => {
     if (!meeting?.chosen_date) return [];
     const chosenDateOpt = dateOptions.find((o) => o.date === meeting.chosen_date);
@@ -211,7 +201,6 @@ export default function ApproveScreen() {
     return dateVoterProfiles.get(chosenDateOpt.id) ?? [];
   }, [meeting, dateOptions, dateVoterProfiles]);
 
-  // Whether current user already has a vote for the chosen date
   const currentUserHasVoteForChosenDate = useMemo(() => {
     if (!currentUserId || !meeting?.chosen_date) return false;
     const chosenDateOpt = dateOptions.find((o) => o.date === meeting.chosen_date);
@@ -335,12 +324,12 @@ export default function ApproveScreen() {
         .eq("id", id);
 
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         return;
       }
       await fetchData();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to approve meeting");
+      Alert.alert(t("common.error"), e?.message ?? t("approve.failedApprove"));
     } finally {
       setSubmitting(false);
     }
@@ -348,10 +337,10 @@ export default function ApproveScreen() {
 
   const handleUnapprove = () => {
     if (!meeting) return;
-    Alert.alert("Unapprove", "Revert this meeting back to voting?", [
-      { text: "Cancel", style: "cancel" },
+    Alert.alert(t("approve.unapproveTitle"), t("approve.unapproveConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
       {
-        text: "Unapprove",
+        text: t("approve.unapprove"),
         style: "destructive",
         onPress: async () => {
           try {
@@ -366,14 +355,14 @@ export default function ApproveScreen() {
               })
               .eq("id", meeting.id);
             if (error) {
-              Alert.alert("Error", error.message);
+              Alert.alert(t("common.error"), error.message);
               return;
             }
             setSelectedDateId(null);
             setSelectedGameId(null);
             await fetchData();
           } catch (e: any) {
-            Alert.alert("Error", e?.message ?? "Failed to unapprove");
+            Alert.alert(t("common.error"), e?.message ?? t("approve.failedUnapprove"));
           }
         },
       },
@@ -385,13 +374,12 @@ export default function ApproveScreen() {
 
     const chosenDateOpt = dateOptions.find((o) => o.date === meeting.chosen_date);
     if (!chosenDateOpt) {
-      Alert.alert("Error", "Could not find date option for chosen date");
+      Alert.alert(t("common.error"), t("approve.failedJoin"));
       return;
     }
 
     setSubmitting(true);
     try {
-      // Delete existing vote for this meeting if any
       const existingVote = allVotes.find((v) => v.user_id === currentUserId);
       if (existingVote) {
         await supabase.from("votes").delete().eq("id", existingVote.id);
@@ -404,7 +392,7 @@ export default function ApproveScreen() {
         .single();
 
       if (voteError || !newVote) {
-        Alert.alert("Error", voteError?.message ?? "Failed to create vote");
+        Alert.alert(t("common.error"), voteError?.message ?? t("approve.failedJoin"));
         return;
       }
 
@@ -420,17 +408,17 @@ export default function ApproveScreen() {
       ]);
 
       if (dRes.error) {
-        Alert.alert("Error", dRes.error.message);
+        Alert.alert(t("common.error"), dRes.error.message);
         return;
       }
       if (gRes.error) {
-        Alert.alert("Error", gRes.error.message);
+        Alert.alert(t("common.error"), gRes.error.message);
         return;
       }
 
       await fetchData();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to join");
+      Alert.alert(t("common.error"), e?.message ?? t("approve.failedJoin"));
     } finally {
       setSubmitting(false);
     }
@@ -438,7 +426,6 @@ export default function ApproveScreen() {
 
   const handleEditMeeting = () => {
     if (!meeting) return;
-    // Pre-select current chosen date/game and switch to editing mode
     const chosenDateOpt = dateOptions.find((o) => o.date === meeting.chosen_date);
     setSelectedDateId(chosenDateOpt?.id ?? null);
     setSelectedGameId(meeting.chosen_game_id ?? null);
@@ -463,12 +450,12 @@ export default function ApproveScreen() {
         .eq("id", id);
 
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         return;
       }
       await fetchData();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to save");
+      Alert.alert(t("common.error"), e?.message ?? t("approve.failedSave"));
     } finally {
       setSubmitting(false);
     }
@@ -486,7 +473,7 @@ export default function ApproveScreen() {
     try {
       const { status } = await Calendar.requestCalendarPermissionsAsync();
       if (status !== "granted") {
-        Alert.alert("Permission denied", "Calendar access is required.");
+        Alert.alert(t("approve.permissionDenied"), t("approve.calendarAccessRequired"));
         return;
       }
 
@@ -503,13 +490,13 @@ export default function ApproveScreen() {
       }
 
       if (!calendarId) {
-        Alert.alert("Error", "No writable calendar found.");
+        Alert.alert(t("common.error"), t("approve.noCalendarFound"));
         return;
       }
 
       const title = chosenGame?.name
-        ? `Board Games - ${chosenGame.name}`
-        : "Board Games Meeting";
+        ? t("approve.calendarTitle", { game: chosenGame.name })
+        : t("approve.calendarTitleDefault");
       const startDate = new Date(meeting.chosen_date + "T00:00:00");
       const endDate = new Date(meeting.chosen_date + "T23:59:59");
 
@@ -519,9 +506,9 @@ export default function ApproveScreen() {
         endDate,
         allDay: true,
       });
-      Alert.alert("Done", "Event added to your calendar.");
+      Alert.alert(t("approve.calendarDone"), t("approve.calendarAdded"));
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to add calendar event");
+      Alert.alert(t("common.error"), e?.message ?? t("approve.failedCalendar"));
     } finally {
       setAddingToCalendar(false);
     }
@@ -538,12 +525,11 @@ export default function ApproveScreen() {
   if (!meeting) {
     return (
       <Center className="flex-1 bg-white">
-        <Text className="text-gray-500">Meeting not found</Text>
+        <Text className="text-gray-500">{t("approve.notFound")}</Text>
       </Center>
     );
   }
 
-  // Approved view
   if (mode === "approved" && meeting.status === "approved") {
     return (
       <ScrollView
@@ -564,19 +550,19 @@ export default function ApproveScreen() {
               <HStack space="xs" className="items-center">
                 <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
                 <Text className="text-green-700 font-medium">
-                  Meeting #{meeting.number} Approved
+                  {t("approve.meetingApproved", { number: meeting.number })}
                 </Text>
               </HStack>
 
               <Heading size="2xl">
-                {chosenGame?.name ?? "No game selected"}
+                {chosenGame?.name ?? t("approve.noGameSelected")}
               </Heading>
 
               {meeting.chosen_date && (
                 <HStack space="xs" className="items-center">
                   <Ionicons name="calendar" size={16} color="#6b7280" />
                   <Text className="text-gray-600">
-                    {formatDateLong(meeting.chosen_date)}
+                    {formatDateLong(meeting.chosen_date, locale)}
                   </Text>
                 </HStack>
               )}
@@ -597,7 +583,7 @@ export default function ApproveScreen() {
                   >
                     <ButtonIcon as={Ionicons} name="calendar-outline" size={18} />
                     <ButtonText className="text-blue-700 ml-1 text-sm">
-                      {addingToCalendar ? "Adding..." : "Add to Calendar"}
+                      {addingToCalendar ? t("approve.addingToCalendar") : t("approve.addToCalendar")}
                     </ButtonText>
                   </Button>
                 )}
@@ -610,7 +596,7 @@ export default function ApproveScreen() {
                     className="bg-red-50 border-0"
                   >
                     <ButtonIcon as={Ionicons} name="play-circle-outline" size={18} />
-                    <ButtonText className="text-red-700 ml-1 text-sm">Tutorial</ButtonText>
+                    <ButtonText className="text-red-700 ml-1 text-sm">{t("approve.tutorial")}</ButtonText>
                   </Button>
                 )}
                 {chosenGame?.spotify_playlist_url && (
@@ -622,17 +608,16 @@ export default function ApproveScreen() {
                     className="bg-green-100 border-0"
                   >
                     <ButtonIcon as={Ionicons} name="musical-notes-outline" size={18} />
-                    <ButtonText className="text-green-700 ml-1 text-sm">Playlist</ButtonText>
+                    <ButtonText className="text-green-700 ml-1 text-sm">{t("approve.playlist")}</ButtonText>
                   </Button>
                 )}
               </HStack>
             </VStack>
           </Card>
 
-          {/* Attendees */}
           {attendees.length > 0 && (
             <VStack space="sm">
-              <Heading size="md">Attendees ({attendees.length})</Heading>
+              <Heading size="md">{t("approve.attendeesCount", { count: attendees.length })}</Heading>
               <HStack space="md" className="flex-wrap">
                 {attendees.map((p) => (
                   <VStack key={p.id} space="xs" className="items-center">
@@ -646,7 +631,6 @@ export default function ApproveScreen() {
 
           <View className="h-px bg-gray-200" />
 
-          {/* Late join */}
           {!currentUserHasVoteForChosenDate && (
             <Button
               action="primary"
@@ -655,7 +639,7 @@ export default function ApproveScreen() {
               onPress={handleLateJoin}
             >
               <ButtonText>
-                {submitting ? "Joining..." : "I Will Attend"}
+                {submitting ? t("approve.joining") : t("approve.iWillAttend")}
               </ButtonText>
             </Button>
           )}
@@ -665,7 +649,7 @@ export default function ApproveScreen() {
             action="primary"
             onPress={handleEditMeeting}
           >
-            <ButtonText>Edit Meeting</ButtonText>
+            <ButtonText>{t("approve.editMeeting")}</ButtonText>
           </Button>
 
           <Button
@@ -673,14 +657,13 @@ export default function ApproveScreen() {
             action="negative"
             onPress={handleUnapprove}
           >
-            <ButtonText>Unapprove</ButtonText>
+            <ButtonText>{t("approve.unapprove")}</ButtonText>
           </Button>
         </VStack>
       </ScrollView>
     );
   }
 
-  // Approve / Edit mode (selecting date + game)
   const isEditing = mode === "editing";
 
   return (
@@ -692,20 +675,22 @@ export default function ApproveScreen() {
       <VStack space="lg">
         <VStack space="xs">
           <Heading size="xl">
-            {isEditing ? `Edit Meeting #${meeting.number}` : `Approve Meeting #${meeting.number}`}
+            {isEditing
+              ? t("approve.editMeetingNumber", { number: meeting.number })
+              : t("approve.approveMeetingNumber", { number: meeting.number })}
           </Heading>
           <Text className="text-gray-500">
-            {allVotes.length} vote{allVotes.length !== 1 ? "s" : ""} submitted
+            {t("approve.votesSubmitted", { count: allVotes.length })}
           </Text>
         </VStack>
 
         {/* Step 1: Pick a date */}
         <VStack space="md">
           <Heading size="lg">
-            <Ionicons name="calendar-outline" size={18} /> Pick a date
+            <Ionicons name="calendar-outline" size={18} /> {t("approve.pickDate")}
           </Heading>
           {sortedDates.length === 0 && (
-            <Text className="text-gray-400">No future dates available</Text>
+            <Text className="text-gray-400">{t("approve.noFutureDates")}</Text>
           )}
           {sortedDates.map((opt) => {
             const selected = selectedDateId === opt.id;
@@ -738,28 +723,28 @@ export default function ApproveScreen() {
                       <VStack>
                         <HStack space="xs" className="items-center">
                           <Text className="font-medium text-gray-800">
-                            {formatDate(opt.date)}
+                            {formatDate(opt.date, locale)}
                           </Text>
                           {holiday && (
                             <Badge action="warning">
-                              <BadgeText action="warning">Holiday</BadgeText>
+                              <BadgeText action="warning">{t("approve.holiday")}</BadgeText>
                             </Badge>
                           )}
                           {opt.is_custom && (
                             <Badge action="info">
-                              <BadgeText action="info">Custom</BadgeText>
+                              <BadgeText action="info">{t("approve.custom")}</BadgeText>
                             </Badge>
                           )}
                           {isWeekend && !holiday && (
                             <Badge action="muted">
                               <BadgeText action="muted">
-                                {d.getDay() === 6 ? "Sat" : "Sun"}
+                                {d.getDay() === 6 ? t("approve.sat") : t("approve.sun")}
                               </BadgeText>
                             </Badge>
                           )}
                         </HStack>
                         <Text size="xs" className="text-gray-500">
-                          {voteCount} vote{voteCount !== 1 ? "s" : ""}
+                          {t("approve.voteCount", { count: voteCount })}
                         </Text>
                       </VStack>
                     </HStack>
@@ -786,15 +771,15 @@ export default function ApproveScreen() {
           })}
         </VStack>
 
-        {/* Step 2: Pick a game (shown after date selected) */}
+        {/* Step 2: Pick a game */}
         {selectedDateId && (
           <VStack space="md">
             <View className="h-px bg-gray-200" />
             <Heading size="lg">
-              <Ionicons name="game-controller-outline" size={18} /> Pick a game
+              <Ionicons name="game-controller-outline" size={18} /> {t("approve.pickGame")}
             </Heading>
             <Text size="sm" className="text-gray-500">
-              Sorted by votes from attendees of the selected date
+              {t("approve.sortedByVotes")}
             </Text>
             {sortedGames.map((game) => {
               const selected = selectedGameId === game.id;
@@ -843,11 +828,11 @@ export default function ApproveScreen() {
                           )}
                           {(game.min_players != null || game.max_players != null) && (
                             <Text size="xs" className="text-gray-500">
-                              {game.min_players ?? "?"}-{game.max_players ?? "?"} players
+                              {game.min_players ?? "?"}-{game.max_players ?? "?"} {t("common.players")}
                             </Text>
                           )}
                           <Text size="xs" className="text-gray-500">
-                            {voteCount} vote{voteCount !== 1 ? "s" : ""}
+                            {t("approve.voteCount", { count: voteCount })}
                           </Text>
                         </HStack>
                       </VStack>
@@ -881,19 +866,19 @@ export default function ApproveScreen() {
           >
             <ButtonText className="text-lg">
               {submitting
-                ? "Saving..."
+                ? t("common.saving")
                 : isEditing
-                  ? "Save Changes"
-                  : "Approve Meeting"}
+                  ? t("common.saveChanges")
+                  : t("approve.approveMeeting")}
             </ButtonText>
           </Button>
           {isEditing ? (
             <Button variant="outline" action="secondary" onPress={handleCancelEdit}>
-              <ButtonText>Cancel</ButtonText>
+              <ButtonText>{t("common.cancel")}</ButtonText>
             </Button>
           ) : (
             <Button variant="outline" action="secondary" onPress={() => router.back()}>
-              <ButtonText>Back</ButtonText>
+              <ButtonText>{t("common.back")}</ButtonText>
             </Button>
           )}
         </VStack>

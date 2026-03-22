@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { pickAndUploadImage, removeStorageFile, useSignedUrl } from "@/lib/storage";
 
@@ -15,6 +16,7 @@ import { Input, InputField } from "@/components/ui/input";
 import { Pressable } from "@/components/ui/pressable";
 
 export default function NewGameScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
@@ -52,21 +54,21 @@ export default function NewGameScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert("Validation", "Game name is required");
+      Alert.alert(t("common.validation"), t("games.nameRequired"));
       return;
     }
     const parsedMin = minPlayers ? parseInt(minPlayers, 10) : null;
     const parsedMax = maxPlayers ? parseInt(maxPlayers, 10) : null;
     if (minPlayers && (isNaN(parsedMin!) || parsedMin! < 1)) {
-      Alert.alert("Validation", "Min players must be a positive number");
+      Alert.alert(t("common.validation"), t("games.minPlayersPositive"));
       return;
     }
     if (maxPlayers && (isNaN(parsedMax!) || parsedMax! < 1)) {
-      Alert.alert("Validation", "Max players must be a positive number");
+      Alert.alert(t("common.validation"), t("games.maxPlayersPositive"));
       return;
     }
     if (parsedMin != null && parsedMax != null && parsedMin > parsedMax) {
-      Alert.alert("Validation", "Min players cannot exceed max players");
+      Alert.alert(t("common.validation"), t("games.minExceedsMax"));
       return;
     }
     setSaving(true);
@@ -89,13 +91,13 @@ export default function NewGameScreen() {
       });
 
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         return;
       }
       savedRef.current = true;
       router.back();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to add game");
+      Alert.alert(t("common.error"), e?.message ?? t("games.failedAdd"));
     } finally {
       setSaving(false);
     }
@@ -117,26 +119,26 @@ export default function NewGameScreen() {
         ) : (
           <Center className="w-full h-48 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300">
             <Ionicons name="camera-outline" size={32} color="#9ca3af" />
-            <Text className="text-gray-400 mt-1">Tap to add image</Text>
+            <Text className="text-gray-400 mt-1">{t("games.tapToAddImage")}</Text>
           </Center>
         )}
       </Pressable>
 
       <VStack space="md">
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">Name *</Text>
+          <Text size="sm" className="font-medium text-gray-700">{t("games.nameLabel")}</Text>
           <Input>
-            <InputField value={name} onChangeText={setName} placeholder="Game name" />
+            <InputField value={name} onChangeText={setName} placeholder={t("games.namePlaceholder")} />
           </Input>
         </VStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">Description</Text>
+          <Text size="sm" className="font-medium text-gray-700">{t("games.description")}</Text>
           <Input>
             <InputField
               value={description}
               onChangeText={setDescription}
-              placeholder="Description"
+              placeholder={t("games.descriptionPlaceholder")}
               multiline
               numberOfLines={3}
               textAlignVertical="top"
@@ -146,19 +148,19 @@ export default function NewGameScreen() {
         </VStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">Genre</Text>
+          <Text size="sm" className="font-medium text-gray-700">{t("games.genre")}</Text>
           <Input>
             <InputField
               value={genre}
               onChangeText={setGenre}
-              placeholder="e.g. Strategy, Party"
+              placeholder={t("games.genrePlaceholder")}
             />
           </Input>
         </VStack>
 
         <HStack space="md">
           <VStack space="xs" className="flex-1">
-            <Text size="sm" className="font-medium text-gray-700">Min Players</Text>
+            <Text size="sm" className="font-medium text-gray-700">{t("games.minPlayers")}</Text>
             <Input>
               <InputField
                 value={minPlayers}
@@ -169,7 +171,7 @@ export default function NewGameScreen() {
             </Input>
           </VStack>
           <VStack space="xs" className="flex-1">
-            <Text size="sm" className="font-medium text-gray-700">Max Players</Text>
+            <Text size="sm" className="font-medium text-gray-700">{t("games.maxPlayers")}</Text>
             <Input>
               <InputField
                 value={maxPlayers}
@@ -182,7 +184,7 @@ export default function NewGameScreen() {
         </HStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">Tutorial URL</Text>
+          <Text size="sm" className="font-medium text-gray-700">{t("games.tutorialUrl")}</Text>
           <Input>
             <InputField
               value={tutorialUrl}
@@ -195,7 +197,7 @@ export default function NewGameScreen() {
         </VStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">Spotify Playlist URL</Text>
+          <Text size="sm" className="font-medium text-gray-700">{t("games.spotifyUrl")}</Text>
           <Input>
             <InputField
               value={spotifyUrl}
@@ -208,12 +210,12 @@ export default function NewGameScreen() {
         </VStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">Owners (comma-separated)</Text>
+          <Text size="sm" className="font-medium text-gray-700">{t("games.ownersLabel")}</Text>
           <Input>
             <InputField
               value={owners}
               onChangeText={setOwners}
-              placeholder="Alice, Bob"
+              placeholder={t("games.ownersPlaceholder")}
             />
           </Input>
         </VStack>
@@ -224,7 +226,7 @@ export default function NewGameScreen() {
           onPress={handleSave}
           className="mt-3"
         >
-          <ButtonText>{saving ? "Saving..." : "Add Game"}</ButtonText>
+          <ButtonText>{saving ? t("common.saving") : t("games.addGame")}</ButtonText>
         </Button>
       </VStack>
     </ScrollView>

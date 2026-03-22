@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Alert, Switch } from "react-native";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { setStayLoggedIn as saveStayLoggedIn } from "@/lib/auth-storage";
 
@@ -12,6 +13,7 @@ import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { Input, InputField } from "@/components/ui/input";
 
 export default function LoginScreen() {
+  const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -19,7 +21,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert("Error", "Please fill in all fields");
+      Alert.alert(t("common.error"), t("auth.fillAllFields"));
       return;
     }
 
@@ -32,20 +34,20 @@ export default function LoginScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert("Login failed", error.message);
+      Alert.alert(t("auth.loginFailed"), error.message);
     }
   };
 
   return (
     <Box className="flex-1 justify-center px-8 bg-white">
       <Heading size="3xl" className="text-center mb-8">
-        BoardGames
+        {t("auth.appName")}
       </Heading>
 
       <VStack space="md">
         <Input variant="outline" className="rounded-lg">
           <InputField
-            placeholder="Email"
+            placeholder={t("auth.email")}
             value={email}
             onChangeText={setEmail}
             autoCapitalize="none"
@@ -56,7 +58,7 @@ export default function LoginScreen() {
 
         <Input variant="outline" className="rounded-lg">
           <InputField
-            placeholder="Password"
+            placeholder={t("auth.password")}
             value={password}
             onChangeText={setPassword}
             secureTextEntry
@@ -65,7 +67,7 @@ export default function LoginScreen() {
         </Input>
 
         <HStack className="items-center justify-between mb-2">
-          <Text className="text-gray-600">Stay logged in</Text>
+          <Text className="text-gray-600">{t("auth.stayLoggedIn")}</Text>
           <Switch value={stayLoggedIn} onValueChange={setStayLoggedIn} />
         </HStack>
 
@@ -79,7 +81,7 @@ export default function LoginScreen() {
           {loading ? (
             <ButtonSpinner />
           ) : (
-            <ButtonText>Log In</ButtonText>
+            <ButtonText>{t("auth.logIn")}</ButtonText>
           )}
         </Button>
       </VStack>

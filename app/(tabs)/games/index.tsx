@@ -7,6 +7,7 @@ import {
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { useSignedUrls } from "@/lib/storage";
 import type { BoardGame } from "@/lib/types";
@@ -26,10 +27,12 @@ const GameRow = React.memo(function GameRow({
   item,
   imageUri,
   onPress,
+  playersLabel,
 }: {
   item: BoardGame;
   imageUri: string | undefined;
   onPress: () => void;
+  playersLabel: string;
 }) {
   return (
     <Pressable
@@ -62,7 +65,7 @@ const GameRow = React.memo(function GameRow({
               <HStack space="xs" className="items-center">
                 <Ionicons name="people-outline" size={14} color="#9ca3af" />
                 <Text size="xs" className="text-gray-400">
-                  {item.min_players ?? "?"}-{item.max_players ?? "?"} players
+                  {item.min_players ?? "?"}-{item.max_players ?? "?"} {playersLabel}
                 </Text>
               </HStack>
             )}
@@ -82,6 +85,7 @@ const GameRow = React.memo(function GameRow({
 });
 
 export default function GamesListScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const [games, setGames] = useState<BoardGame[]>([]);
   const [search, setSearch] = useState("");
@@ -122,15 +126,18 @@ export default function GamesListScreen() {
     setRefreshing(false);
   }, [fetchGames]);
 
+  const playersLabel = t("common.players");
+
   const renderGameRow = useCallback(
     ({ item }: { item: BoardGame }) => (
       <GameRow
         item={item}
         imageUri={item.image_url ? imageUrlsRef.current.get(item.image_url) : undefined}
         onPress={() => router.push(`/(tabs)/games/${item.id}`)}
+        playersLabel={playersLabel}
       />
     ),
-    [router],
+    [router, playersLabel],
   );
 
   const filtered = games.filter(
@@ -156,7 +163,7 @@ export default function GamesListScreen() {
           </InputSlot>
           <InputField
             className="ml-2"
-            placeholder="Search games..."
+            placeholder={t("games.searchPlaceholder")}
             value={search}
             onChangeText={setSearch}
           />
@@ -182,7 +189,7 @@ export default function GamesListScreen() {
           <Center className="py-20">
             <Ionicons name="dice-outline" size={48} color="#d1d5db" />
             <Text className="text-gray-400 mt-3">
-              {search ? "No games match your search" : "No board games yet"}
+              {search ? t("games.noMatch") : t("games.noGames")}
             </Text>
           </Center>
         }

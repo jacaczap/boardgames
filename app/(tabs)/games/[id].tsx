@@ -7,6 +7,7 @@ import {
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { pickAndUploadImage, removeStorageFile, useSignedUrl } from "@/lib/storage";
 import type { BoardGame } from "@/lib/types";
@@ -25,6 +26,7 @@ import { Badge, BadgeText } from "@/components/ui/badge";
 import { Pressable } from "@/components/ui/pressable";
 
 export default function GameDetailScreen() {
+  const { t } = useTranslation();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const [game, setGame] = useState<BoardGame | null>(null);
@@ -92,21 +94,21 @@ export default function GameDetailScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert("Validation", "Game name is required");
+      Alert.alert(t("common.validation"), t("games.nameRequired"));
       return;
     }
     const parsedMin = minPlayers ? parseInt(minPlayers, 10) : null;
     const parsedMax = maxPlayers ? parseInt(maxPlayers, 10) : null;
     if (minPlayers && (isNaN(parsedMin!) || parsedMin! < 1)) {
-      Alert.alert("Validation", "Min players must be a positive number");
+      Alert.alert(t("common.validation"), t("games.minPlayersPositive"));
       return;
     }
     if (maxPlayers && (isNaN(parsedMax!) || parsedMax! < 1)) {
-      Alert.alert("Validation", "Max players must be a positive number");
+      Alert.alert(t("common.validation"), t("games.maxPlayersPositive"));
       return;
     }
     if (parsedMin != null && parsedMax != null && parsedMin > parsedMax) {
-      Alert.alert("Validation", "Min players cannot exceed max players");
+      Alert.alert(t("common.validation"), t("games.minExceedsMax"));
       return;
     }
     setSaving(true);
@@ -132,7 +134,7 @@ export default function GameDetailScreen() {
         .eq("id", id!);
 
       if (error) {
-        Alert.alert("Error", error.message);
+        Alert.alert(t("common.error"), error.message);
         return;
       }
       if (game?.image_url && game.image_url !== imagePath) {
@@ -146,7 +148,7 @@ export default function GameDetailScreen() {
       setEditing(false);
       fetchGame();
     } catch (e: any) {
-      Alert.alert("Error", e?.message ?? "Failed to save game");
+      Alert.alert(t("common.error"), e?.message ?? t("games.failedSave"));
     } finally {
       setSaving(false);
     }
@@ -154,12 +156,12 @@ export default function GameDetailScreen() {
 
   const handleDelete = () => {
     Alert.alert(
-      "Delete Game",
-      `Are you sure you want to delete "${game?.name}"?`,
+      t("games.deleteGame"),
+      t("games.deleteConfirm", { name: game?.name }),
       [
-        { text: "Cancel", style: "cancel" },
+        { text: t("common.cancel"), style: "cancel" },
         {
-          text: "Delete",
+          text: t("common.delete"),
           style: "destructive",
           onPress: async () => {
             setDeleting(true);
@@ -169,12 +171,12 @@ export default function GameDetailScreen() {
               }
               const { error } = await supabase.from("board_games").delete().eq("id", id!);
               if (error) {
-                Alert.alert("Error", error.message);
+                Alert.alert(t("common.error"), error.message);
                 return;
               }
               router.back();
             } catch (e: any) {
-              Alert.alert("Error", e?.message ?? "Failed to delete game");
+              Alert.alert(t("common.error"), e?.message ?? t("games.failedDelete"));
             } finally {
               setDeleting(false);
             }
@@ -195,7 +197,7 @@ export default function GameDetailScreen() {
   if (!game) {
     return (
       <Center className="flex-1 bg-white">
-        <Text className="text-gray-500">Game not found</Text>
+        <Text className="text-gray-500">{t("games.notFound")}</Text>
       </Center>
     );
   }
@@ -217,26 +219,26 @@ export default function GameDetailScreen() {
           ) : (
             <Center className="w-full h-48 rounded-xl bg-gray-100">
               <Ionicons name="camera-outline" size={32} color="#9ca3af" />
-              <Text className="text-gray-400 mt-1">Tap to add image</Text>
+              <Text className="text-gray-400 mt-1">{t("games.tapToAddImage")}</Text>
             </Center>
           )}
         </Pressable>
 
         <VStack space="md">
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">Name *</Text>
+            <Text size="sm" className="font-medium text-gray-700">{t("games.nameLabel")}</Text>
             <Input>
-              <InputField value={name} onChangeText={setName} placeholder="Game name" />
+              <InputField value={name} onChangeText={setName} placeholder={t("games.namePlaceholder")} />
             </Input>
           </VStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">Description</Text>
+            <Text size="sm" className="font-medium text-gray-700">{t("games.description")}</Text>
             <Input>
               <InputField
                 value={description}
                 onChangeText={setDescription}
-                placeholder="Description"
+                placeholder={t("games.descriptionPlaceholder")}
                 multiline
                 numberOfLines={3}
                 textAlignVertical="top"
@@ -246,19 +248,19 @@ export default function GameDetailScreen() {
           </VStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">Genre</Text>
+            <Text size="sm" className="font-medium text-gray-700">{t("games.genre")}</Text>
             <Input>
               <InputField
                 value={genre}
                 onChangeText={setGenre}
-                placeholder="e.g. Strategy, Party"
+                placeholder={t("games.genrePlaceholder")}
               />
             </Input>
           </VStack>
 
           <HStack space="md">
             <VStack space="xs" className="flex-1">
-              <Text size="sm" className="font-medium text-gray-700">Min Players</Text>
+              <Text size="sm" className="font-medium text-gray-700">{t("games.minPlayers")}</Text>
               <Input>
                 <InputField
                   value={minPlayers}
@@ -269,7 +271,7 @@ export default function GameDetailScreen() {
               </Input>
             </VStack>
             <VStack space="xs" className="flex-1">
-              <Text size="sm" className="font-medium text-gray-700">Max Players</Text>
+              <Text size="sm" className="font-medium text-gray-700">{t("games.maxPlayers")}</Text>
               <Input>
                 <InputField
                   value={maxPlayers}
@@ -282,7 +284,7 @@ export default function GameDetailScreen() {
           </HStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">Tutorial URL</Text>
+            <Text size="sm" className="font-medium text-gray-700">{t("games.tutorialUrl")}</Text>
             <Input>
               <InputField
                 value={tutorialUrl}
@@ -295,7 +297,7 @@ export default function GameDetailScreen() {
           </VStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">Spotify Playlist URL</Text>
+            <Text size="sm" className="font-medium text-gray-700">{t("games.spotifyUrl")}</Text>
             <Input>
               <InputField
                 value={spotifyUrl}
@@ -308,19 +310,19 @@ export default function GameDetailScreen() {
           </VStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">Owners (comma-separated)</Text>
+            <Text size="sm" className="font-medium text-gray-700">{t("games.ownersLabel")}</Text>
             <Input>
               <InputField
                 value={owners}
                 onChangeText={setOwners}
-                placeholder="Alice, Bob"
+                placeholder={t("games.ownersPlaceholder")}
               />
             </Input>
           </VStack>
 
           <VStack space="md" className="mt-3">
             <Button action="primary" isDisabled={saving} onPress={handleSave}>
-              <ButtonText>{saving ? "Saving..." : "Save Changes"}</ButtonText>
+              <ButtonText>{saving ? t("common.saving") : t("common.saveChanges")}</ButtonText>
             </Button>
             <Button
               variant="outline"
@@ -334,7 +336,7 @@ export default function GameDetailScreen() {
                 setEditing(false);
               }}
             >
-              <ButtonText>Cancel</ButtonText>
+              <ButtonText>{t("common.cancel")}</ButtonText>
             </Button>
           </VStack>
         </VStack>
@@ -372,7 +374,7 @@ export default function GameDetailScreen() {
           <HStack space="xs" className="items-center">
             <Ionicons name="people" size={16} color="#6b7280" />
             <Text className="text-gray-600">
-              {game.min_players ?? "?"} - {game.max_players ?? "?"} players
+              {game.min_players ?? "?"} - {game.max_players ?? "?"} {t("common.players")}
             </Text>
           </HStack>
         )}
@@ -383,7 +385,7 @@ export default function GameDetailScreen() {
 
         {game.owners?.length ? (
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-500">Owners</Text>
+            <Text size="sm" className="font-medium text-gray-500">{t("games.owners")}</Text>
             <Text className="text-gray-700">{game.owners.join(", ")}</Text>
           </VStack>
         ) : null}
@@ -397,7 +399,7 @@ export default function GameDetailScreen() {
               className="bg-red-50 border-0"
             >
               <ButtonIcon as={Ionicons} name="play-circle-outline" size={22} />
-              <ButtonText className="text-red-700 ml-2">Watch Tutorial</ButtonText>
+              <ButtonText className="text-red-700 ml-2">{t("games.watchTutorial")}</ButtonText>
             </Button>
           )}
           {game.spotify_playlist_url && (
@@ -408,14 +410,14 @@ export default function GameDetailScreen() {
               className="bg-green-50 border-0"
             >
               <ButtonIcon as={Ionicons} name="musical-notes-outline" size={22} />
-              <ButtonText className="text-green-700 ml-2">Spotify Playlist</ButtonText>
+              <ButtonText className="text-green-700 ml-2">{t("games.spotifyPlaylist")}</ButtonText>
             </Button>
           )}
         </VStack>
 
         <VStack space="md" className="mt-3">
           <Button action="primary" onPress={() => setEditing(true)}>
-            <ButtonText>Edit Game</ButtonText>
+            <ButtonText>{t("games.editGame")}</ButtonText>
           </Button>
           <Button
             variant="outline"
@@ -423,7 +425,7 @@ export default function GameDetailScreen() {
             isDisabled={deleting}
             onPress={handleDelete}
           >
-            <ButtonText>{deleting ? "Deleting..." : "Delete Game"}</ButtonText>
+            <ButtonText>{deleting ? t("games.deleting") : t("games.deleteGame")}</ButtonText>
           </Button>
         </VStack>
       </VStack>

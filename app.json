@@ -44,7 +44,8 @@
         {
           "calendarPermission": "Allow BoardGames to add meeting events to your calendar."
         }
-      ]
+      ],
+      "expo-localization"
     ]
   }
 }

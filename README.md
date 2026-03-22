@@ -60,7 +60,7 @@ EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_KEY=your-anon-key
 ```
 
-### 3. Set up Supabase
+### 3. Set up Supabase (for local Supabase deployment)
 
 Copy the config template and fill in your project ID:
 

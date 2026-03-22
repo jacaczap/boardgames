@@ -19,7 +19,7 @@ Deno.serve(async (req) => {
       .eq("id", user_id)
       .single();
 
-    let displayName = "Someone new";
+    let displayName = "Ktoś nowy";
     if (newUser?.name) {
       displayName = `${newUser.name}${newUser.surname ? " " + newUser.surname : ""}`;
     } else if (newUser?.username) {
@@ -39,8 +39,8 @@ Deno.serve(async (req) => {
     if (tokens?.length) {
       const messages: PushMessage[] = tokens.map((t) => ({
         to: t.token,
-        title: "New Member!",
-        body: `${displayName} joined the group!`,
+        title: "Nowy członek!",
+        body: `${displayName} dołączył do grupy!`,
         data: { type: "new_user" },
       }));
       await sendPushNotifications(messages);

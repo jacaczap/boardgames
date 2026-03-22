@@ -1,9 +1,11 @@
 import "../global.css";
+import "@/lib/i18n";
 import React, { useEffect, useState, useRef } from "react";
 import { Platform } from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { Session } from "@supabase/supabase-js";
 import * as Notifications from "expo-notifications";
+import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import { getStayLoggedIn } from "@/lib/auth-storage";
@@ -16,6 +18,7 @@ import { Center } from "@/components/ui/center";
 import { Spinner } from "@/components/ui/spinner";
 
 export default function RootLayout() {
+  const { t } = useTranslation();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const segments = useSegments();
@@ -101,11 +104,11 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="survey/[id]"
-          options={{ title: "Survey", headerShown: true }}
+          options={{ title: t("nav.survey"), headerShown: true }}
         />
         <Stack.Screen
           name="approve/[id]"
-          options={{ title: "Approve Meeting", headerShown: true }}
+          options={{ title: t("nav.approveMeeting"), headerShown: true }}
         />
       </Stack>
     </GluestackUIProvider>
