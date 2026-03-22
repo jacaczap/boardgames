@@ -19,12 +19,15 @@ todos:
     status: completed
   - id: stale-data-focus
     content: "Phase 6: Fix stale data on screen focus -- add useFocusEffect to Games list and Home screen, subscribe Realtime to votes table for live voter count"
-    status: pending
+    status: completed
+  - id: review-bugfixes
+    content: "Phase 6b: Review bugfixes -- add votes to Realtime publication, delete game image on game delete, reset Home state on voting transition, add try/catch to fetches, remove nested supabase/ dir"
+    status: completed
   - id: signed-url-refresh
     content: "Phase 7: Auto-refresh signed URLs before expiry -- add re-fetch interval or expiry-aware hook so images don't break after 1h"
     status: pending
   - id: orphaned-images
-    content: "Phase 8: Delete old image from storage when replacing a game image, and guard against orphaned uploads in new-game flow"
+    content: "Phase 8: Delete old image from storage when replacing a game image, guard against orphaned uploads in new-game flow, and clean up storage on game deletion"
     status: pending
   - id: player-count-validation
     content: "Phase 9: Add local numeric validation for min/max player fields in game forms (reject NaN before Supabase call)"

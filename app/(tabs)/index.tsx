@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -11,6 +11,7 @@ import {
   Alert,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { useSignedUrl, getSignedUrls } from "@/lib/storage";
@@ -30,106 +31,139 @@ export default function HomeScreen() {
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
 
   const fetchData = useCallback(async () => {
-    const { data: meetings } = await supabase
-      .from("meetings")
-      .select("*")
-      .in("status", ["voting", "approved"])
-      .order("number", { ascending: false })
-      .limit(1);
-
-    const m = (meetings?.[0] as Meeting) ?? null;
-    setMeeting(m);
-
-    if (!m) {
-      setGame(null);
-      setAttendees([]);
-      setAvatarUrls(new Map());
-      setLoading(false);
-      return;
-    }
-
-    if (m.status === "approved" && m.chosen_game_id) {
-      const { data: gameData } = await supabase
-        .from("board_games")
+    try {
+      const { data: meetings } = await supabase
+        .from("meetings")
         .select("*")
-        .eq("id", m.chosen_game_id)
-        .single();
-      setGame(gameData as BoardGame | null);
+        .in("status", ["voting", "approved"])
+        .order("number", { ascending: false })
+        .limit(1);
 
-      if (m.chosen_date) {
-        const { data: dateOpt } = await supabase
-          .from("date_options")
-          .select("id")
-          .eq("meeting_id", m.id)
-          .eq("date", m.chosen_date)
+      const m = (meetings?.[0] as Meeting) ?? null;
+      setMeeting(m);
+
+      if (!m) {
+        setGame(null);
+        setAttendees([]);
+        setAvatarUrls(new Map());
+        return;
+      }
+
+      if (m.status === "approved" && m.chosen_game_id) {
+        const { data: gameData } = await supabase
+          .from("board_games")
+          .select("*")
+          .eq("id", m.chosen_game_id)
           .single();
+        setGame(gameData as BoardGame | null);
 
-        if (dateOpt) {
-          const { data: vds } = await supabase
-            .from("vote_dates")
-            .select("vote_id")
-            .eq("date_option_id", dateOpt.id);
+        if (m.chosen_date) {
+          const { data: dateOpt } = await supabase
+            .from("date_options")
+            .select("id")
+            .eq("meeting_id", m.id)
+            .eq("date", m.chosen_date)
+            .single();
 
-          if (vds?.length) {
-            const { data: votes } = await supabase
-              .from("votes")
-              .select("user_id")
-              .in(
-                "id",
-                vds.map((v) => v.vote_id),
-              );
+          if (dateOpt) {
+            const { data: vds } = await supabase
+              .from("vote_dates")
+              .select("vote_id")
+              .eq("date_option_id", dateOpt.id);
 
-            if (votes?.length) {
-              const { data: profiles } = await supabase
-                .from("profiles")
-                .select("id, name, surname, avatar_url")
+            if (vds?.length) {
+              const { data: votes } = await supabase
+                .from("votes")
+                .select("user_id")
                 .in(
                   "id",
-                  votes.map((v) => v.user_id),
+                  vds.map((v) => v.vote_id),
                 );
-              const profileList = (profiles as Profile[]) ?? [];
-              setAttendees(profileList);
 
-              const paths = profileList
-                .map((p) => p.avatar_url)
-                .filter((u): u is string => !!u);
-              if (paths.length) {
-                const urlMap = await getSignedUrls("avatars", paths);
-                setAvatarUrls(urlMap);
-              } else {
-                setAvatarUrls(new Map());
+              if (votes?.length) {
+                const { data: profiles } = await supabase
+                  .from("profiles")
+                  .select("id, name, surname, avatar_url")
+                  .in(
+                    "id",
+                    votes.map((v) => v.user_id),
+                  );
+                const profileList = (profiles as Profile[]) ?? [];
+                setAttendees(profileList);
+
+                const paths = profileList
+                  .map((p) => p.avatar_url)
+                  .filter((u): u is string => !!u);
+                if (paths.length) {
+                  const urlMap = await getSignedUrls("avatars", paths);
+                  setAvatarUrls(urlMap);
+                } else {
+                  setAvatarUrls(new Map());
+                }
               }
             }
           }
         }
       }
+
+      if (m.status === "voting") {
+        setGame(null);
+        setAttendees([]);
+        setAvatarUrls(new Map());
+        const { count } = await supabase
+          .from("votes")
+          .select("*", { count: "exact", head: true })
+          .eq("meeting_id", m.id);
+        setVoterCount(count ?? 0);
+
+        const { count: userCount } = await supabase
+          .from("profiles")
+          .select("*", { count: "exact", head: true });
+        setTotalUsers(userCount ?? 0);
+      }
+    } catch (e) {
+      console.error("Failed to fetch home data:", e);
+    } finally {
+      setLoading(false);
     }
-
-    if (m.status === "voting") {
-      const { count } = await supabase
-        .from("votes")
-        .select("*", { count: "exact", head: true })
-        .eq("meeting_id", m.id);
-      setVoterCount(count ?? 0);
-
-      const { count: userCount } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true });
-      setTotalUsers(userCount ?? 0);
-    }
-
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchData();
+  const meetingRef = useRef<Meeting | null>(null);
+  meetingRef.current = meeting;
 
+  useFocusEffect(
+    useCallback(() => {
+      fetchData();
+    }, [fetchData]),
+  );
+
+  useEffect(() => {
     const channel = supabase
-      .channel("meetings-home")
+      .channel("home-realtime")
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meetings" },
         () => fetchData(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "votes" },
+        async (payload) => {
+          const m = meetingRef.current;
+          if (!m || m.status !== "voting") return;
+          const meetingId =
+            payload.new && typeof payload.new === "object" && "meeting_id" in payload.new
+              ? (payload.new as { meeting_id: string }).meeting_id
+              : payload.old && typeof payload.old === "object" && "meeting_id" in payload.old
+                ? (payload.old as { meeting_id: string }).meeting_id
+                : null;
+          if (meetingId && meetingId !== m.id) return;
+          const { count } = await supabase
+            .from("votes")
+            .select("*", { count: "exact", head: true })
+            .eq("meeting_id", m.id);
+          setVoterCount(count ?? 0);
+        },
       )
       .subscribe();
 

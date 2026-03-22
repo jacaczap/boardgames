@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
 } from "react-native";
 import { useRouter } from "expo-router";
+import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { supabase } from "@/lib/supabase";
 import { getSignedUrls } from "@/lib/storage";
@@ -82,27 +83,33 @@ export default function GamesListScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const fetchGames = useCallback(async () => {
-    const { data } = await supabase
-      .from("board_games")
-      .select("*")
-      .order("name");
-    const list = (data as BoardGame[]) ?? [];
-    setGames(list);
+    try {
+      const { data } = await supabase
+        .from("board_games")
+        .select("*")
+        .order("name");
+      const list = (data as BoardGame[]) ?? [];
+      setGames(list);
 
-    const paths = list
-      .map((g) => g.image_url)
-      .filter((p): p is string => !!p);
-    if (paths.length) {
-      const urls = await getSignedUrls("game-images", paths);
-      setImageUrls(urls);
+      const paths = list
+        .map((g) => g.image_url)
+        .filter((p): p is string => !!p);
+      if (paths.length) {
+        const urls = await getSignedUrls("game-images", paths);
+        setImageUrls(urls);
+      }
+    } catch (e) {
+      console.error("Failed to fetch games:", e);
+    } finally {
+      setLoading(false);
     }
-
-    setLoading(false);
   }, []);
 
-  useEffect(() => {
-    fetchGames();
-  }, [fetchGames]);
+  useFocusEffect(
+    useCallback(() => {
+      fetchGames();
+    }, [fetchGames]),
+  );
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);

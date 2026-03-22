@@ -117,6 +117,11 @@ export default function GameDetailScreen() {
           text: "Delete",
           style: "destructive",
           onPress: async () => {
+            if (game?.image_url) {
+              await supabase.storage
+                .from("game-images")
+                .remove([game.image_url]);
+            }
             await supabase.from("board_games").delete().eq("id", id!);
             router.back();
           },
