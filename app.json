@@ -41,7 +41,8 @@
         "expo-image-picker",
         {
           "photosPermission": "Allow BoardGames to access your photos for game images.",
-          "cameraPermission": false
+          "cameraPermission": false,
+          "microphonePermission": false
         }
       ],
       [
@@ -50,16 +51,7 @@
           "calendarPermission": "Allow BoardGames to add meeting events to your calendar."
         }
       ],
-      "expo-localization",
-      [
-        "expo-build-properties",
-        {
-          "android": {
-            "blockedPermissions": ["android.permission.RECORD_AUDIO"]
-          }
-        }
-      ],
-      "expo-build-properties"
+      "expo-localization"
     ],
     "extra": {
       "router": {},
