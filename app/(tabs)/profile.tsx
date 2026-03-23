@@ -133,7 +133,7 @@ export default function ProfileScreen() {
     setUploadingAvatar(true);
     try {
       const oldPath = profile.avatar_url;
-      const newPath = await pickAndUploadImage("avatars", `avatar_${profile.id}`);
+      const newPath = await pickAndUploadImage("avatars", `avatar_${profile.id}`, [1, 1]);
       if (!newPath) return;
 
       const { error } = await supabase

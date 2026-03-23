@@ -86,11 +86,12 @@ export async function removeStorageFile(
 export async function pickAndUploadImage(
   bucket: string,
   filePrefix: string,
+  aspect: [number, number] = [16, 9],
 ): Promise<string | null> {
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ["images"],
     allowsEditing: true,
-    aspect: [16, 9],
+    aspect,
     quality: 0.8,
   });
 
