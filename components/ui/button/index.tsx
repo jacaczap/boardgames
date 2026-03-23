@@ -131,9 +131,21 @@ const ButtonBase = React.forwardRef<View, ButtonProps>(
 );
 ButtonBase.displayName = "Button";
 
-export const Button = withStyleContext(ButtonBase, "BUTTON") as React.ForwardRefExoticComponent<
-  ButtonProps & { context?: any } & React.RefAttributes<View>
->;
+const ButtonWithStyleContext = withStyleContext(ButtonBase, "BUTTON");
+
+export const Button = React.forwardRef<View, ButtonProps>(
+  ({ action, variant, size, ...props }, ref) => (
+    <ButtonWithStyleContext
+      ref={ref}
+      action={action}
+      variant={variant}
+      size={size}
+      context={{ action, variant, size }}
+      {...props}
+    />
+  ),
+);
+Button.displayName = "Button";
 
 export const ButtonText = React.forwardRef<Text, TextProps & { className?: string }>(
   ({ className, ...props }, ref) => {
