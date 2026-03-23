@@ -96,7 +96,38 @@ In Supabase Dashboard > Authentication > Settings:
 - Disable anonymous sign-in
 - Disable social/OAuth providers
 
-### 5. Run the app
+### 5. Configure EAS Build environment
+
+For EAS builds (preview/production), set the Supabase env vars so they are available at build time:
+
+```bash
+eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-project.supabase.co" --visibility sensitive --environment preview --environment production
+eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "your-anon-key" --visibility sensitive --environment preview --environment production
+```
+
+Verify with `eas env:list`.
+
+### 6. Build
+
+Cloud build (default):
+
+```bash
+eas build --platform android --profile production
+```
+
+Local build (faster, requires JDK 17 + Android SDK):
+
+```bash
+eas build --platform android --profile production --local
+```
+
+Submit to Google Play:
+
+```bash
+eas submit --platform android
+```
+
+### 7. Run the app
 
 ```bash
 npx expo start

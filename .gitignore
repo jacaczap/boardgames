@@ -43,3 +43,8 @@ yarn-error.*
 supabase/.temp/
 supabase/.branches/
 supabase/config.toml
+
+# EAS build artifacts
+*.aab
+*.apk
+*.ipa
