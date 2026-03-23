@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "BoardGames",
+    "name": "Planszówki",
     "slug": "boardgames",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -23,7 +23,12 @@
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
-      "package": "com.boardgames.app"
+      "package": "com.boardgames.app",
+      "permissions": [
+        "android.permission.RECORD_AUDIO",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png",
@@ -46,6 +51,12 @@
         }
       ],
       "expo-localization"
-    ]
+    ],
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7e6bb5e3-0ee3-4378-af42-19a9d7cf60a0"
+      }
+    }
   }
 }
