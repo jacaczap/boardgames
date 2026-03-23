@@ -9,7 +9,7 @@ import {
 import { tva } from "@gluestack-ui/nativewind-utils/tva";
 
 const inputStyle = tva({
-  base: "flex-row items-center bg-gray-50 border border-gray-200 rounded-xl",
+  base: "flex-row items-center bg-stone-50 border border-stone-200 rounded-xl",
   variants: {
     size: {
       sm: "px-2 py-1.5",
@@ -17,9 +17,9 @@ const inputStyle = tva({
       lg: "px-4 py-3",
     },
     variant: {
-      outline: "bg-white border border-gray-200",
-      filled: "bg-gray-50 border border-gray-200",
-      underlined: "bg-transparent border-b border-gray-200 rounded-none px-0",
+      outline: "bg-white border border-stone-200",
+      filled: "bg-stone-50 border border-stone-200",
+      underlined: "bg-transparent border-b border-stone-200 rounded-none px-0",
     },
     isDisabled: {
       true: "opacity-50",
@@ -32,7 +32,7 @@ const inputStyle = tva({
 });
 
 const inputFieldStyle = tva({
-  base: "flex-1 text-base text-gray-900",
+  base: "flex-1 text-base text-stone-900",
   variants: {
     size: {
       sm: "text-sm",
@@ -73,7 +73,7 @@ export const InputField = React.forwardRef<TextInput, InputFieldProps>(
   ({ className, ...props }, ref) => (
     <TextInput
       ref={ref}
-      placeholderTextColor="#9ca3af"
+      placeholderTextColor="#a8a29e"
       className={inputFieldStyle({ className })}
       {...props}
     />
@@ -101,6 +101,6 @@ export const InputIcon: React.FC<InputIconProps> = ({
   as: IconComponent,
   name,
   size = 18,
-  color = "#9ca3af",
+  color = "#a8a29e",
 }) => <IconComponent name={name} size={size} color={color} />;
 InputIcon.displayName = "InputIcon";

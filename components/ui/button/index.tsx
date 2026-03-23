@@ -37,12 +37,12 @@ const buttonStyle = tva({
     },
   },
   compoundVariants: [
-    { action: "primary", variant: "solid", class: "bg-blue-600 active:bg-blue-700" },
-    { action: "secondary", variant: "solid", class: "bg-gray-600 active:bg-gray-700" },
+    { action: "primary", variant: "solid", class: "bg-amber-700 active:bg-amber-800" },
+    { action: "secondary", variant: "solid", class: "bg-stone-600 active:bg-stone-700" },
     { action: "positive", variant: "solid", class: "bg-green-600 active:bg-green-700" },
     { action: "negative", variant: "solid", class: "bg-red-600 active:bg-red-700" },
-    { action: "primary", variant: "outline", class: "border-blue-300" },
-    { action: "secondary", variant: "outline", class: "border-gray-300" },
+    { action: "primary", variant: "outline", class: "border-amber-400" },
+    { action: "secondary", variant: "outline", class: "border-stone-300" },
     { action: "positive", variant: "outline", class: "border-green-300" },
     { action: "negative", variant: "outline", class: "border-red-300" },
   ],
@@ -74,10 +74,10 @@ const buttonTextStyle = tva({
     },
   },
   compoundVariants: [
-    { action: "primary", variant: "outline", class: "text-blue-600" },
-    { action: "primary", variant: "link", class: "text-blue-600" },
-    { action: "secondary", variant: "outline", class: "text-gray-600" },
-    { action: "secondary", variant: "link", class: "text-gray-600" },
+    { action: "primary", variant: "outline", class: "text-amber-700" },
+    { action: "primary", variant: "link", class: "text-amber-700" },
+    { action: "secondary", variant: "outline", class: "text-stone-600" },
+    { action: "secondary", variant: "link", class: "text-stone-600" },
     { action: "positive", variant: "outline", class: "text-green-600" },
     { action: "positive", variant: "link", class: "text-green-600" },
     { action: "negative", variant: "outline", class: "text-red-600" },
@@ -168,7 +168,7 @@ ButtonText.displayName = "ButtonText";
 
 export const ButtonSpinner: React.FC<{ className?: string }> = ({ className }) => {
   const { variant } = (useStyleContext("BUTTON") as { variant?: ButtonVariant }) ?? {};
-  const color = variant === "solid" ? "#ffffff" : "#2563eb";
+  const color = variant === "solid" ? "#ffffff" : "#b45309";
   return <ActivityIndicator size="small" color={color} className={className} />;
 };
 ButtonSpinner.displayName = "ButtonSpinner";
@@ -194,8 +194,8 @@ export const ButtonIcon: React.FC<ButtonIconProps> = ({
 
   const colorMap: Record<string, Record<string, string>> = {
     solid: { primary: "#fff", secondary: "#fff", positive: "#fff", negative: "#fff" },
-    outline: { primary: "#2563eb", secondary: "#4b5563", positive: "#16a34a", negative: "#dc2626" },
-    link: { primary: "#2563eb", secondary: "#4b5563", positive: "#16a34a", negative: "#dc2626" },
+    outline: { primary: "#b45309", secondary: "#57534e", positive: "#16a34a", negative: "#dc2626" },
+    link: { primary: "#b45309", secondary: "#57534e", positive: "#16a34a", negative: "#dc2626" },
   };
   const color = colorMap[variant ?? "solid"]?.[action ?? "primary"] ?? "#fff";
   return <IconComponent name={name} size={size} color={color} className={className} />;

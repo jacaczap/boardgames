@@ -105,7 +105,7 @@ export default function NewGameScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-white"
+      className="flex-1 bg-stone-50"
       contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
       keyboardShouldPersistTaps="handled"
     >
@@ -117,23 +117,23 @@ export default function NewGameScreen() {
             resizeMode="cover"
           />
         ) : (
-          <Center className="w-full h-48 rounded-xl bg-gray-100 border-2 border-dashed border-gray-300">
-            <Ionicons name="camera-outline" size={32} color="#9ca3af" />
-            <Text className="text-gray-400 mt-1">{t("games.tapToAddImage")}</Text>
+          <Center className="w-full h-48 rounded-xl bg-stone-200 border-2 border-dashed border-stone-300">
+            <Ionicons name="camera-outline" size={32} color="#a8a29e" />
+            <Text className="text-stone-400 mt-1">{t("games.tapToAddImage")}</Text>
           </Center>
         )}
       </Pressable>
 
       <VStack space="md">
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">{t("games.nameLabel")}</Text>
+          <Text size="sm" className="font-medium text-stone-700">{t("games.nameLabel")}</Text>
           <Input>
             <InputField value={name} onChangeText={setName} placeholder={t("games.namePlaceholder")} />
           </Input>
         </VStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">{t("games.description")}</Text>
+          <Text size="sm" className="font-medium text-stone-700">{t("games.description")}</Text>
           <Input>
             <InputField
               value={description}
@@ -148,7 +148,7 @@ export default function NewGameScreen() {
         </VStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">{t("games.genre")}</Text>
+          <Text size="sm" className="font-medium text-stone-700">{t("games.genre")}</Text>
           <Input>
             <InputField
               value={genre}
@@ -160,7 +160,7 @@ export default function NewGameScreen() {
 
         <HStack space="md">
           <VStack space="xs" className="flex-1">
-            <Text size="sm" className="font-medium text-gray-700">{t("games.minPlayers")}</Text>
+            <Text size="sm" className="font-medium text-stone-700">{t("games.minPlayers")}</Text>
             <Input>
               <InputField
                 value={minPlayers}
@@ -171,7 +171,7 @@ export default function NewGameScreen() {
             </Input>
           </VStack>
           <VStack space="xs" className="flex-1">
-            <Text size="sm" className="font-medium text-gray-700">{t("games.maxPlayers")}</Text>
+            <Text size="sm" className="font-medium text-stone-700">{t("games.maxPlayers")}</Text>
             <Input>
               <InputField
                 value={maxPlayers}
@@ -184,7 +184,7 @@ export default function NewGameScreen() {
         </HStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">{t("games.tutorialUrl")}</Text>
+          <Text size="sm" className="font-medium text-stone-700">{t("games.tutorialUrl")}</Text>
           <Input>
             <InputField
               value={tutorialUrl}
@@ -197,7 +197,7 @@ export default function NewGameScreen() {
         </VStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">{t("games.spotifyUrl")}</Text>
+          <Text size="sm" className="font-medium text-stone-700">{t("games.spotifyUrl")}</Text>
           <Input>
             <InputField
               value={spotifyUrl}
@@ -210,7 +210,7 @@ export default function NewGameScreen() {
         </VStack>
 
         <VStack space="xs">
-          <Text size="sm" className="font-medium text-gray-700">{t("games.ownersLabel")}</Text>
+          <Text size="sm" className="font-medium text-stone-700">{t("games.ownersLabel")}</Text>
           <Input>
             <InputField
               value={owners}

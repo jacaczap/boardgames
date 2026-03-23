@@ -446,7 +446,7 @@ export default function SurveyScreen() {
 
   if (loading) {
     return (
-      <Center className="flex-1 bg-white">
+      <Center className="flex-1 bg-stone-50">
         <Spinner />
       </Center>
     );
@@ -454,8 +454,8 @@ export default function SurveyScreen() {
 
   if (!meeting || meeting.status !== "voting") {
     return (
-      <Center className="flex-1 bg-white">
-        <Text className="text-gray-500">{t("survey.notAvailable")}</Text>
+      <Center className="flex-1 bg-stone-50">
+        <Text className="text-stone-500">{t("survey.notAvailable")}</Text>
       </Center>
     );
   }
@@ -468,7 +468,7 @@ export default function SurveyScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-white"
+      className="flex-1 bg-stone-50"
       contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -479,7 +479,7 @@ export default function SurveyScreen() {
         {/* Header */}
         <VStack space="xs">
           <Heading size="xl">{t("survey.surveyNumber", { number: meeting.number })}</Heading>
-          <Text className="text-gray-500">
+          <Text className="text-stone-500">
             {t("survey.votesSubmitted", { count: allVotes.length })}
           </Text>
           {existingVote && (
@@ -493,19 +493,19 @@ export default function SurveyScreen() {
         <Pressable onPress={toggleNotParticipating}>
           <Card
             variant="filled"
-            className={`p-4 ${notParticipating ? "bg-orange-100 border-2 border-orange-400" : "bg-gray-50"}`}
+            className={`p-4 ${notParticipating ? "bg-orange-100 border-2 border-orange-400" : "bg-stone-100"}`}
           >
             <HStack space="sm" className="items-center">
               <Ionicons
                 name={notParticipating ? "checkbox" : "square-outline"}
                 size={24}
-                color={notParticipating ? "#ea580c" : "#9ca3af"}
+                color={notParticipating ? "#ea580c" : "#a8a29e"}
               />
               <VStack>
-                <Text className={`font-medium ${notParticipating ? "text-orange-800" : "text-gray-700"}`}>
+                <Text className={`font-medium ${notParticipating ? "text-orange-800" : "text-stone-700"}`}>
                   {t("survey.notParticipating")}
                 </Text>
-                <Text size="xs" className="text-gray-500">
+                <Text size="xs" className="text-stone-500">
                   {t("survey.notParticipatingDesc")}
                 </Text>
               </VStack>
@@ -516,7 +516,7 @@ export default function SurveyScreen() {
         {/* Not participating voters */}
         {notParticipatingVoters.length > 0 && (
           <VStack space="xs">
-            <Text size="sm" className="text-gray-500">{t("survey.notParticipatingLabel")}</Text>
+            <Text size="sm" className="text-stone-500">{t("survey.notParticipatingLabel")}</Text>
             <HStack space="sm" className="flex-wrap">
               {notParticipatingVoters.map((v) => {
                 const p = profiles.find((pr) => pr.id === v.user_id);
@@ -548,10 +548,10 @@ export default function SurveyScreen() {
                   variant="filled"
                   className={`p-3 ${
                     past
-                      ? "bg-gray-100 opacity-50"
+                      ? "bg-stone-200 opacity-50"
                       : selected
-                        ? "bg-blue-100 border-2 border-blue-500"
-                        : "bg-gray-50"
+                        ? "bg-amber-200 border-2 border-amber-600"
+                        : "bg-stone-100"
                   }`}
                 >
                   <HStack space="sm" className="items-center justify-between">
@@ -559,13 +559,13 @@ export default function SurveyScreen() {
                       <Ionicons
                         name={selected ? "checkbox" : "square-outline"}
                         size={22}
-                        color={past ? "#d1d5db" : selected ? "#2563eb" : "#9ca3af"}
+                        color={past ? "#d6d3d1" : selected ? "#b45309" : "#a8a29e"}
                       />
                       <VStack>
                         <HStack space="xs" className="items-center">
                           <Text
                             className={`font-medium ${
-                              past ? "text-gray-400" : "text-gray-800"
+                              past ? "text-stone-400" : "text-stone-800"
                             }`}
                           >
                             {formatDate(opt.date, locale)}
@@ -589,13 +589,13 @@ export default function SurveyScreen() {
                           )}
                         </HStack>
                         {past && (
-                          <Text size="xs" className="text-gray-400">{t("survey.past")}</Text>
+                          <Text size="xs" className="text-stone-400">{t("survey.past")}</Text>
                         )}
                       </VStack>
                     </HStack>
                     {voters.length > 0 && (
                       <HStack space="xs" className="items-center">
-                        <Text size="xs" className="text-gray-500">{voters.length}</Text>
+                        <Text size="xs" className="text-stone-500">{voters.length}</Text>
                         <HStack className="flex-row-reverse">
                           {voters.slice(0, 5).map((p) => (
                             <Box key={p.id} className="-ml-2">
@@ -604,7 +604,7 @@ export default function SurveyScreen() {
                           ))}
                         </HStack>
                         {voters.length > 5 && (
-                          <Text size="xs" className="text-gray-400">
+                          <Text size="xs" className="text-stone-400">
                             +{voters.length - 5}
                           </Text>
                         )}
@@ -619,7 +619,7 @@ export default function SurveyScreen() {
           {/* Add custom date */}
           <Card variant="outline" className="p-3">
             <VStack space="sm">
-              <Text size="sm" className="font-medium text-gray-600">
+              <Text size="sm" className="font-medium text-stone-600">
                 {t("survey.addCustomDate")}
               </Text>
               <HStack space="sm">
@@ -666,8 +666,8 @@ export default function SurveyScreen() {
                   variant="filled"
                   className={`overflow-hidden ${
                     selected
-                      ? "bg-blue-100 border-2 border-blue-500"
-                      : "bg-gray-50"
+                      ? "bg-amber-200 border-2 border-amber-600"
+                      : "bg-stone-100"
                   } ${notParticipating ? "opacity-50" : ""}`}
                 >
                   <HStack space="md" className="items-center p-3">
@@ -678,8 +678,8 @@ export default function SurveyScreen() {
                         resizeMode="cover"
                       />
                     ) : (
-                      <Center className="w-16 h-16 rounded-lg bg-gray-200">
-                        <Ionicons name="dice-outline" size={24} color="#9ca3af" />
+                      <Center className="w-16 h-16 rounded-lg bg-stone-300">
+                        <Ionicons name="dice-outline" size={24} color="#a8a29e" />
                       </Center>
                     )}
                     <VStack className="flex-1" space="xs">
@@ -687,9 +687,9 @@ export default function SurveyScreen() {
                         <Ionicons
                           name={selected ? "checkbox" : "square-outline"}
                           size={22}
-                          color={selected ? "#2563eb" : "#9ca3af"}
+                          color={selected ? "#b45309" : "#a8a29e"}
                         />
-                        <Text className="font-semibold text-gray-800 flex-1">
+                        <Text className="font-semibold text-stone-800 flex-1">
                           {game.name}
                         </Text>
                       </HStack>
@@ -700,7 +700,7 @@ export default function SurveyScreen() {
                           </Badge>
                         )}
                         {(game.min_players != null || game.max_players != null) && (
-                          <Text size="xs" className="text-gray-500">
+                          <Text size="xs" className="text-stone-500">
                             {game.min_players ?? "?"}-{game.max_players ?? "?"} {t("common.players")}
                           </Text>
                         )}
@@ -715,12 +715,12 @@ export default function SurveyScreen() {
                     </VStack>
                     {voters.length > 0 && (
                       <VStack space="xs" className="items-center">
-                        <Text size="xs" className="text-gray-500">{voters.length}</Text>
+                        <Text size="xs" className="text-stone-500">{voters.length}</Text>
                         {voters.slice(0, 3).map((p) => (
                           <VoterAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="sm" />
                         ))}
                         {voters.length > 3 && (
-                          <Text size="xs" className="text-gray-400">
+                          <Text size="xs" className="text-stone-400">
                             +{voters.length - 3}
                           </Text>
                         )}

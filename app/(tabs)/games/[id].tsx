@@ -188,7 +188,7 @@ export default function GameDetailScreen() {
 
   if (loading) {
     return (
-      <Center className="flex-1 bg-white">
+      <Center className="flex-1 bg-stone-50">
         <Spinner />
       </Center>
     );
@@ -196,8 +196,8 @@ export default function GameDetailScreen() {
 
   if (!game) {
     return (
-      <Center className="flex-1 bg-white">
-        <Text className="text-gray-500">{t("games.notFound")}</Text>
+      <Center className="flex-1 bg-stone-50">
+        <Text className="text-stone-500">{t("games.notFound")}</Text>
       </Center>
     );
   }
@@ -205,7 +205,7 @@ export default function GameDetailScreen() {
   if (editing) {
     return (
       <ScrollView
-        className="flex-1 bg-white"
+        className="flex-1 bg-stone-50"
         contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         keyboardShouldPersistTaps="handled"
       >
@@ -217,23 +217,23 @@ export default function GameDetailScreen() {
               resizeMode="cover"
             />
           ) : (
-            <Center className="w-full h-48 rounded-xl bg-gray-100">
-              <Ionicons name="camera-outline" size={32} color="#9ca3af" />
-              <Text className="text-gray-400 mt-1">{t("games.tapToAddImage")}</Text>
+            <Center className="w-full h-48 rounded-xl bg-stone-200">
+              <Ionicons name="camera-outline" size={32} color="#a8a29e" />
+              <Text className="text-stone-400 mt-1">{t("games.tapToAddImage")}</Text>
             </Center>
           )}
         </Pressable>
 
         <VStack space="md">
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">{t("games.nameLabel")}</Text>
+            <Text size="sm" className="font-medium text-stone-700">{t("games.nameLabel")}</Text>
             <Input>
               <InputField value={name} onChangeText={setName} placeholder={t("games.namePlaceholder")} />
             </Input>
           </VStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">{t("games.description")}</Text>
+            <Text size="sm" className="font-medium text-stone-700">{t("games.description")}</Text>
             <Input>
               <InputField
                 value={description}
@@ -248,7 +248,7 @@ export default function GameDetailScreen() {
           </VStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">{t("games.genre")}</Text>
+            <Text size="sm" className="font-medium text-stone-700">{t("games.genre")}</Text>
             <Input>
               <InputField
                 value={genre}
@@ -260,7 +260,7 @@ export default function GameDetailScreen() {
 
           <HStack space="md">
             <VStack space="xs" className="flex-1">
-              <Text size="sm" className="font-medium text-gray-700">{t("games.minPlayers")}</Text>
+              <Text size="sm" className="font-medium text-stone-700">{t("games.minPlayers")}</Text>
               <Input>
                 <InputField
                   value={minPlayers}
@@ -271,7 +271,7 @@ export default function GameDetailScreen() {
               </Input>
             </VStack>
             <VStack space="xs" className="flex-1">
-              <Text size="sm" className="font-medium text-gray-700">{t("games.maxPlayers")}</Text>
+              <Text size="sm" className="font-medium text-stone-700">{t("games.maxPlayers")}</Text>
               <Input>
                 <InputField
                   value={maxPlayers}
@@ -284,7 +284,7 @@ export default function GameDetailScreen() {
           </HStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">{t("games.tutorialUrl")}</Text>
+            <Text size="sm" className="font-medium text-stone-700">{t("games.tutorialUrl")}</Text>
             <Input>
               <InputField
                 value={tutorialUrl}
@@ -297,7 +297,7 @@ export default function GameDetailScreen() {
           </VStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">{t("games.spotifyUrl")}</Text>
+            <Text size="sm" className="font-medium text-stone-700">{t("games.spotifyUrl")}</Text>
             <Input>
               <InputField
                 value={spotifyUrl}
@@ -310,7 +310,7 @@ export default function GameDetailScreen() {
           </VStack>
 
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-700">{t("games.ownersLabel")}</Text>
+            <Text size="sm" className="font-medium text-stone-700">{t("games.ownersLabel")}</Text>
             <Input>
               <InputField
                 value={owners}
@@ -346,7 +346,7 @@ export default function GameDetailScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-white"
+      className="flex-1 bg-stone-50"
       contentContainerStyle={{ paddingBottom: 40 }}
     >
       {imageDisplayUrl ? (
@@ -356,8 +356,8 @@ export default function GameDetailScreen() {
           resizeMode="cover"
         />
       ) : (
-        <Center className="w-full h-40 bg-gray-100">
-          <Ionicons name="dice-outline" size={48} color="#d1d5db" />
+        <Center className="w-full h-40 bg-stone-200">
+          <Ionicons name="dice-outline" size={48} color="#d6d3d1" />
         </Center>
       )}
 
@@ -372,21 +372,21 @@ export default function GameDetailScreen() {
 
         {(game.min_players != null || game.max_players != null) && (
           <HStack space="xs" className="items-center">
-            <Ionicons name="people" size={16} color="#6b7280" />
-            <Text className="text-gray-600">
+            <Ionicons name="people" size={16} color="#78716c" />
+            <Text className="text-stone-600">
               {game.min_players ?? "?"} - {game.max_players ?? "?"} {t("common.players")}
             </Text>
           </HStack>
         )}
 
         {game.description && (
-          <Text className="text-gray-600 leading-6">{game.description}</Text>
+          <Text className="text-stone-600 leading-6">{game.description}</Text>
         )}
 
         {game.owners?.length ? (
           <VStack space="xs">
-            <Text size="sm" className="font-medium text-gray-500">{t("games.owners")}</Text>
-            <Text className="text-gray-700">{game.owners.join(", ")}</Text>
+            <Text size="sm" className="font-medium text-stone-500">{t("games.owners")}</Text>
+            <Text className="text-stone-700">{game.owners.join(", ")}</Text>
           </VStack>
         ) : null}
 

@@ -17,8 +17,8 @@ const fabStyle = tva({
       lg: "w-14 h-14",
     },
     action: {
-      primary: "bg-blue-600 active:bg-blue-700",
-      secondary: "bg-gray-600 active:bg-gray-700",
+      primary: "bg-amber-700 active:bg-amber-800",
+      secondary: "bg-stone-600 active:bg-stone-700",
     },
   },
   defaultVariants: {

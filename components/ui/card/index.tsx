@@ -7,9 +7,9 @@ const cardStyle = tva({
   variants: {
     variant: {
       elevated: "bg-white shadow-md",
-      outline: "bg-white border border-gray-200",
+      outline: "bg-white border border-stone-200",
       ghost: "bg-transparent",
-      filled: "bg-gray-50",
+      filled: "bg-stone-100",
     },
   },
   defaultVariants: {

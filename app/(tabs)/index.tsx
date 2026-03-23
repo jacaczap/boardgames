@@ -307,7 +307,7 @@ export default function HomeScreen() {
 
   if (loading) {
     return (
-      <Center className="flex-1 bg-white">
+      <Center className="flex-1 bg-stone-50">
         <Spinner />
       </Center>
     );
@@ -317,7 +317,7 @@ export default function HomeScreen() {
     const locale = getDateLocale();
     return (
       <ScrollView
-        className="flex-1 bg-white"
+        className="flex-1 bg-stone-50"
         contentContainerStyle={{
           flexGrow: 1,
           alignItems: "center",
@@ -328,17 +328,17 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Ionicons name="calendar-outline" size={64} color="#d1d5db" />
+        <Ionicons name="calendar-outline" size={64} color="#d6d3d1" />
         <Heading size="xl" className="mt-4 mb-2">
           {t("home.noUpcoming")}
         </Heading>
         {nextSurveyDate ? (
           nextSurveyDate <= new Date() ? (
-            <Text className="text-gray-500 text-center mb-6">
+            <Text className="text-stone-500 text-center mb-6">
               {t("home.surveyReady")}
             </Text>
           ) : (
-            <Text className="text-gray-500 text-center mb-6">
+            <Text className="text-stone-500 text-center mb-6">
               {t("home.nextSurveyAvailable", {
                 date: nextSurveyDate.toLocaleDateString(locale, {
                   weekday: "short",
@@ -352,7 +352,7 @@ export default function HomeScreen() {
             </Text>
           )
         ) : (
-          <Text className="text-gray-500 text-center mb-6">
+          <Text className="text-stone-500 text-center mb-6">
             {t("home.surveyWillAppear")}
           </Text>
         )}
@@ -373,7 +373,7 @@ export default function HomeScreen() {
   if (meeting.status === "voting") {
     return (
       <ScrollView
-        className="flex-1 bg-white"
+        className="flex-1 bg-stone-50"
         contentContainerStyle={{
           flexGrow: 1,
           alignItems: "center",
@@ -384,18 +384,18 @@ export default function HomeScreen() {
           <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
         }
       >
-        <Card variant="filled" className="bg-blue-50 p-6 w-full max-w-md">
+        <Card variant="filled" className="bg-amber-100 p-6 w-full max-w-md">
           <VStack space="md" className="items-center">
-            <Ionicons name="clipboard-outline" size={48} color="#2563eb" />
-            <Heading size="xl" className="text-blue-900">
+            <Ionicons name="clipboard-outline" size={48} color="#b45309" />
+            <Heading size="xl" className="text-amber-900">
               {t("home.surveyNumber", { number: meeting.number })}
             </Heading>
-            <Text className="text-blue-700">{t("home.votingOpen")}</Text>
+            <Text className="text-amber-700">{t("home.votingOpen")}</Text>
           </VStack>
 
           <HStack space="sm" className="items-center justify-center my-6">
-            <Ionicons name="people-outline" size={20} color="#6b7280" />
-            <Text className="text-gray-600">
+            <Ionicons name="people-outline" size={20} color="#78716c" />
+            <Text className="text-stone-600">
               {t("home.votedCount", { count: voterCount, total: totalUsers })}
             </Text>
           </HStack>
@@ -426,7 +426,7 @@ export default function HomeScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-white"
+      className="flex-1 bg-stone-50"
       contentContainerStyle={{ padding: 24 }}
       refreshControl={
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
@@ -454,8 +454,8 @@ export default function HomeScreen() {
 
           {meeting.chosen_date && (
             <HStack space="xs" className="items-center">
-              <Ionicons name="calendar" size={16} color="#6b7280" />
-              <Text className="text-gray-600">
+              <Ionicons name="calendar" size={16} color="#78716c" />
+              <Text className="text-stone-600">
                 {new Date(meeting.chosen_date + "T00:00:00").toLocaleDateString(
                   locale,
                   {
@@ -470,7 +470,7 @@ export default function HomeScreen() {
           )}
 
           {game?.description && (
-            <Text className="text-gray-600">{game.description}</Text>
+            <Text className="text-stone-600">{game.description}</Text>
           )}
 
           <HStack space="md" className="flex-wrap mt-1">
@@ -481,10 +481,10 @@ export default function HomeScreen() {
                 size="sm"
                 onPress={handleAddToCalendar}
                 isDisabled={addingToCalendar}
-                className="bg-blue-50 border-0"
+                className="bg-amber-100 border-0"
               >
                 <ButtonIcon as={Ionicons} name="calendar-outline" size={18} />
-                <ButtonText className="text-blue-700 ml-1 text-sm">
+                <ButtonText className="text-amber-700 ml-1 text-sm">
                   {addingToCalendar ? t("home.addingToCalendar") : t("home.addToCalendar")}
                 </ButtonText>
               </Button>
@@ -529,7 +529,7 @@ export default function HomeScreen() {
 
           {attendees.length > 0 && (
             <VStack space="sm" className="mt-2">
-              <Text size="sm" className="text-gray-500 font-medium">
+              <Text size="sm" className="text-stone-500 font-medium">
                 {t("home.attendees")}
               </Text>
               <AvatarGroup>
@@ -549,7 +549,7 @@ export default function HomeScreen() {
                           </AvatarFallbackText>
                         )}
                       </Avatar>
-                      <Text size="xs" className="text-gray-500">
+                      <Text size="xs" className="text-stone-500">
                         {p.name}
                       </Text>
                     </VStack>

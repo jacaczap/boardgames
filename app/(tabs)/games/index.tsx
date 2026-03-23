@@ -36,7 +36,7 @@ const GameRow = React.memo(function GameRow({
 }) {
   return (
     <Pressable
-      className="bg-white rounded-xl mx-4 mb-3 overflow-hidden border border-gray-100"
+      className="bg-amber-50 rounded-xl mx-4 mb-3 overflow-hidden border border-stone-200"
       onPress={onPress}
     >
       <HStack>
@@ -47,37 +47,37 @@ const GameRow = React.memo(function GameRow({
             resizeMode="cover"
           />
         ) : (
-          <Center className="w-20 h-20 bg-gray-100 rounded-l-xl">
-            <Ionicons name="dice-outline" size={28} color="#d1d5db" />
+          <Center className="w-20 h-20 bg-stone-200 rounded-l-xl">
+            <Ionicons name="dice-outline" size={28} color="#d6d3d1" />
           </Center>
         )}
         <VStack className="flex-1 p-3 justify-center">
-          <Text className="font-semibold text-gray-900">
+          <Text className="font-semibold text-stone-900">
             {item.name}
           </Text>
           {item.genre && (
-            <Text size="sm" className="text-gray-500 mt-0.5">
+            <Text size="sm" className="text-stone-500 mt-0.5">
               {item.genre}
             </Text>
           )}
           <HStack space="md" className="items-center mt-1">
             {(item.min_players != null || item.max_players != null) && (
               <HStack space="xs" className="items-center">
-                <Ionicons name="people-outline" size={14} color="#9ca3af" />
-                <Text size="xs" className="text-gray-400">
+                <Ionicons name="people-outline" size={14} color="#a8a29e" />
+                <Text size="xs" className="text-stone-400">
                   {item.min_players ?? "?"}-{item.max_players ?? "?"} {playersLabel}
                 </Text>
               </HStack>
             )}
             {item.owners?.length ? (
-              <Text size="xs" className="text-gray-400" numberOfLines={1}>
+              <Text size="xs" className="text-stone-400" numberOfLines={1}>
                 {item.owners.join(", ")}
               </Text>
             ) : null}
           </HStack>
         </VStack>
         <Center className="pr-3">
-          <Ionicons name="chevron-forward" size={20} color="#d1d5db" />
+          <Ionicons name="chevron-forward" size={20} color="#d6d3d1" />
         </Center>
       </HStack>
     </Pressable>
@@ -148,14 +148,14 @@ export default function GamesListScreen() {
 
   if (loading) {
     return (
-      <Center className="flex-1 bg-gray-50">
+      <Center className="flex-1 bg-stone-100">
         <Spinner />
       </Center>
     );
   }
 
   return (
-    <Box className="flex-1 bg-gray-50">
+    <Box className="flex-1 bg-stone-100">
       <Box className="px-4 pt-3 pb-2">
         <Input variant="outline" className="rounded-xl">
           <InputSlot className="ml-3">
@@ -170,7 +170,7 @@ export default function GamesListScreen() {
           {search.length > 0 && (
             <InputSlot className="mr-3">
               <TouchableOpacity onPress={() => setSearch("")}>
-                <Ionicons name="close-circle" size={18} color="#9ca3af" />
+                <Ionicons name="close-circle" size={18} color="#a8a29e" />
               </TouchableOpacity>
             </InputSlot>
           )}
@@ -187,8 +187,8 @@ export default function GamesListScreen() {
         }
         ListEmptyComponent={
           <Center className="py-20">
-            <Ionicons name="dice-outline" size={48} color="#d1d5db" />
-            <Text className="text-gray-400 mt-3">
+            <Ionicons name="dice-outline" size={48} color="#d6d3d1" />
+            <Text className="text-stone-400 mt-3">
               {search ? t("games.noMatch") : t("games.noGames")}
             </Text>
           </Center>

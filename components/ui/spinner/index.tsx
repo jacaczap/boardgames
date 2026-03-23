@@ -7,7 +7,7 @@ interface SpinnerProps extends Omit<ActivityIndicatorProps, "size"> {
 
 export const Spinner: React.FC<SpinnerProps> = ({
   size = "large",
-  color = "#2563eb",
+  color = "#b45309",
   ...props
 }) => <ActivityIndicator size={size} color={color} {...props} />;
 Spinner.displayName = "Spinner";

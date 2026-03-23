@@ -6,11 +6,11 @@ const badgeStyle = tva({
   base: "self-start rounded-full px-3 py-1",
   variants: {
     action: {
-      info: "bg-blue-50",
+      info: "bg-amber-100",
       success: "bg-green-50",
-      warning: "bg-amber-50",
+      warning: "bg-orange-100",
       error: "bg-red-50",
-      muted: "bg-gray-100",
+      muted: "bg-stone-200",
     },
   },
   defaultVariants: {
@@ -22,11 +22,11 @@ const badgeTextStyle = tva({
   base: "text-sm font-medium",
   variants: {
     action: {
-      info: "text-blue-700",
+      info: "text-amber-800",
       success: "text-green-700",
-      warning: "text-amber-700",
+      warning: "text-orange-700",
       error: "text-red-700",
-      muted: "text-gray-600",
+      muted: "text-stone-600",
     },
   },
   defaultVariants: {

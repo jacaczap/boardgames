@@ -516,7 +516,7 @@ export default function ApproveScreen() {
 
   if (loading) {
     return (
-      <Center className="flex-1 bg-white">
+      <Center className="flex-1 bg-stone-50">
         <Spinner />
       </Center>
     );
@@ -524,8 +524,8 @@ export default function ApproveScreen() {
 
   if (!meeting) {
     return (
-      <Center className="flex-1 bg-white">
-        <Text className="text-gray-500">{t("approve.notFound")}</Text>
+      <Center className="flex-1 bg-stone-50">
+        <Text className="text-stone-500">{t("approve.notFound")}</Text>
       </Center>
     );
   }
@@ -533,7 +533,7 @@ export default function ApproveScreen() {
   if (mode === "approved" && meeting.status === "approved") {
     return (
       <ScrollView
-        className="flex-1 bg-white"
+        className="flex-1 bg-stone-50"
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       >
@@ -560,15 +560,15 @@ export default function ApproveScreen() {
 
               {meeting.chosen_date && (
                 <HStack space="xs" className="items-center">
-                  <Ionicons name="calendar" size={16} color="#6b7280" />
-                  <Text className="text-gray-600">
+                  <Ionicons name="calendar" size={16} color="#78716c" />
+                  <Text className="text-stone-600">
                     {formatDateLong(meeting.chosen_date, locale)}
                   </Text>
                 </HStack>
               )}
 
               {chosenGame?.description && (
-                <Text className="text-gray-600">{chosenGame.description}</Text>
+                <Text className="text-stone-600">{chosenGame.description}</Text>
               )}
 
               <HStack space="md" className="flex-wrap mt-1">
@@ -579,10 +579,10 @@ export default function ApproveScreen() {
                     size="sm"
                     onPress={handleAddToCalendar}
                     isDisabled={addingToCalendar}
-                    className="bg-blue-50 border-0"
+                    className="bg-amber-100 border-0"
                   >
                     <ButtonIcon as={Ionicons} name="calendar-outline" size={18} />
-                    <ButtonText className="text-blue-700 ml-1 text-sm">
+                    <ButtonText className="text-amber-700 ml-1 text-sm">
                       {addingToCalendar ? t("approve.addingToCalendar") : t("approve.addToCalendar")}
                     </ButtonText>
                   </Button>
@@ -622,14 +622,14 @@ export default function ApproveScreen() {
                 {attendees.map((p) => (
                   <VStack key={p.id} space="xs" className="items-center">
                     <SmallAvatar profile={p} avatarUrls={avatarUrls} />
-                    <Text size="xs" className="text-gray-500">{p.name}</Text>
+                    <Text size="xs" className="text-stone-500">{p.name}</Text>
                   </VStack>
                 ))}
               </HStack>
             </VStack>
           )}
 
-          <View className="h-px bg-gray-200" />
+          <View className="h-px bg-stone-200" />
 
           {!currentUserHasVoteForChosenDate && (
             <Button
@@ -668,7 +668,7 @@ export default function ApproveScreen() {
 
   return (
     <ScrollView
-      className="flex-1 bg-white"
+      className="flex-1 bg-stone-50"
       contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
@@ -679,7 +679,7 @@ export default function ApproveScreen() {
               ? t("approve.editMeetingNumber", { number: meeting.number })
               : t("approve.approveMeetingNumber", { number: meeting.number })}
           </Heading>
-          <Text className="text-gray-500">
+          <Text className="text-stone-500">
             {t("approve.votesSubmitted", { count: allVotes.length })}
           </Text>
         </VStack>
@@ -690,7 +690,7 @@ export default function ApproveScreen() {
             <Ionicons name="calendar-outline" size={18} /> {t("approve.pickDate")}
           </Heading>
           {sortedDates.length === 0 && (
-            <Text className="text-gray-400">{t("approve.noFutureDates")}</Text>
+            <Text className="text-stone-400">{t("approve.noFutureDates")}</Text>
           )}
           {sortedDates.map((opt) => {
             const selected = selectedDateId === opt.id;
@@ -709,8 +709,8 @@ export default function ApproveScreen() {
                   variant="filled"
                   className={`p-3 ${
                     selected
-                      ? "bg-blue-100 border-2 border-blue-500"
-                      : "bg-gray-50"
+                      ? "bg-amber-200 border-2 border-amber-600"
+                      : "bg-stone-100"
                   }`}
                 >
                   <HStack space="sm" className="items-center justify-between">
@@ -718,11 +718,11 @@ export default function ApproveScreen() {
                       <Ionicons
                         name={selected ? "radio-button-on" : "radio-button-off"}
                         size={22}
-                        color={selected ? "#2563eb" : "#9ca3af"}
+                        color={selected ? "#b45309" : "#a8a29e"}
                       />
                       <VStack>
                         <HStack space="xs" className="items-center">
-                          <Text className="font-medium text-gray-800">
+                          <Text className="font-medium text-stone-800">
                             {formatDate(opt.date, locale)}
                           </Text>
                           {holiday && (
@@ -743,7 +743,7 @@ export default function ApproveScreen() {
                             </Badge>
                           )}
                         </HStack>
-                        <Text size="xs" className="text-gray-500">
+                        <Text size="xs" className="text-stone-500">
                           {t("approve.voteCount", { count: voteCount })}
                         </Text>
                       </VStack>
@@ -758,7 +758,7 @@ export default function ApproveScreen() {
                           ))}
                         </HStack>
                         {voters.length > 5 && (
-                          <Text size="xs" className="text-gray-400">
+                          <Text size="xs" className="text-stone-400">
                             +{voters.length - 5}
                           </Text>
                         )}
@@ -774,11 +774,11 @@ export default function ApproveScreen() {
         {/* Step 2: Pick a game */}
         {selectedDateId && (
           <VStack space="md">
-            <View className="h-px bg-gray-200" />
+            <View className="h-px bg-stone-200" />
             <Heading size="lg">
               <Ionicons name="game-controller-outline" size={18} /> {t("approve.pickGame")}
             </Heading>
-            <Text size="sm" className="text-gray-500">
+            <Text size="sm" className="text-stone-500">
               {t("approve.sortedByVotes")}
             </Text>
             {sortedGames.map((game) => {
@@ -793,8 +793,8 @@ export default function ApproveScreen() {
                     variant="filled"
                     className={`overflow-hidden ${
                       selected
-                        ? "bg-blue-100 border-2 border-blue-500"
-                        : "bg-gray-50"
+                        ? "bg-amber-200 border-2 border-amber-600"
+                        : "bg-stone-100"
                     }`}
                   >
                     <HStack space="md" className="items-center p-3">
@@ -805,8 +805,8 @@ export default function ApproveScreen() {
                           resizeMode="cover"
                         />
                       ) : (
-                        <Center className="w-14 h-14 rounded-lg bg-gray-200">
-                          <Ionicons name="dice-outline" size={22} color="#9ca3af" />
+                        <Center className="w-14 h-14 rounded-lg bg-stone-300">
+                          <Ionicons name="dice-outline" size={22} color="#a8a29e" />
                         </Center>
                       )}
                       <VStack className="flex-1" space="xs">
@@ -814,9 +814,9 @@ export default function ApproveScreen() {
                           <Ionicons
                             name={selected ? "radio-button-on" : "radio-button-off"}
                             size={22}
-                            color={selected ? "#2563eb" : "#9ca3af"}
+                            color={selected ? "#b45309" : "#a8a29e"}
                           />
-                          <Text className="font-semibold text-gray-800 flex-1">
+                          <Text className="font-semibold text-stone-800 flex-1">
                             {game.name}
                           </Text>
                         </HStack>
@@ -827,11 +827,11 @@ export default function ApproveScreen() {
                             </Badge>
                           )}
                           {(game.min_players != null || game.max_players != null) && (
-                            <Text size="xs" className="text-gray-500">
+                            <Text size="xs" className="text-stone-500">
                               {game.min_players ?? "?"}-{game.max_players ?? "?"} {t("common.players")}
                             </Text>
                           )}
-                          <Text size="xs" className="text-gray-500">
+                          <Text size="xs" className="text-stone-500">
                             {t("approve.voteCount", { count: voteCount })}
                           </Text>
                         </HStack>
@@ -842,7 +842,7 @@ export default function ApproveScreen() {
                             <SmallAvatar key={p.id} profile={p} avatarUrls={avatarUrls} />
                           ))}
                           {voters.length > 3 && (
-                            <Text size="xs" className="text-gray-400">
+                            <Text size="xs" className="text-stone-400">
                               +{voters.length - 3}
                             </Text>
                           )}

@@ -104,11 +104,23 @@ export default function RootLayout() {
         <Stack.Screen name="(tabs)" />
         <Stack.Screen
           name="survey/[id]"
-          options={{ title: t("nav.survey"), headerShown: true }}
+          options={{
+            title: t("nav.survey"),
+            headerShown: true,
+            headerStyle: { backgroundColor: "#4a3228" },
+            headerTintColor: "#fef3c7",
+            headerTitleStyle: { color: "#fef3c7" },
+          }}
         />
         <Stack.Screen
           name="approve/[id]"
-          options={{ title: t("nav.approveMeeting"), headerShown: true }}
+          options={{
+            title: t("nav.approveMeeting"),
+            headerShown: true,
+            headerStyle: { backgroundColor: "#4a3228" },
+            headerTintColor: "#fef3c7",
+            headerTitleStyle: { color: "#fef3c7" },
+          }}
         />
       </Stack>
     </GluestackUIProvider>

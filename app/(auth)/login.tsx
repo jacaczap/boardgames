@@ -39,7 +39,7 @@ export default function LoginScreen() {
   };
 
   return (
-    <Box className="flex-1 justify-center px-8 bg-white">
+    <Box className="flex-1 justify-center px-8 bg-stone-50">
       <Heading size="3xl" className="text-center mb-8">
         {t("auth.appName")}
       </Heading>
@@ -67,7 +67,7 @@ export default function LoginScreen() {
         </Input>
 
         <HStack className="items-center justify-between mb-2">
-          <Text className="text-gray-600">{t("auth.stayLoggedIn")}</Text>
+          <Text className="text-stone-600">{t("auth.stayLoggedIn")}</Text>
           <Switch value={stayLoggedIn} onValueChange={setStayLoggedIn} />
         </HStack>
 

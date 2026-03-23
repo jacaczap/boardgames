@@ -221,7 +221,7 @@ export default function ProfileScreen() {
 
   if (loading) {
     return (
-      <Center className="flex-1 bg-white">
+      <Center className="flex-1 bg-stone-50">
         <Spinner />
       </Center>
     );
@@ -229,8 +229,8 @@ export default function ProfileScreen() {
 
   if (!profile) {
     return (
-      <Center className="flex-1 bg-white">
-        <Text className="text-gray-500">{t("profile.notFound")}</Text>
+      <Center className="flex-1 bg-stone-50">
+        <Text className="text-stone-500">{t("profile.notFound")}</Text>
       </Center>
     );
   }
@@ -248,7 +248,7 @@ export default function ProfileScreen() {
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
-        className="flex-1 bg-white"
+        className="flex-1 bg-stone-50"
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         keyboardShouldPersistTaps="handled"
       >
@@ -267,7 +267,7 @@ export default function ProfileScreen() {
                     </AvatarFallbackText>
                   )}
                 </Avatar>
-                <Center className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-blue-600">
+                <Center className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-amber-700">
                   {uploadingAvatar ? (
                     <Spinner size="small" color="white" />
                   ) : (
@@ -277,7 +277,7 @@ export default function ProfileScreen() {
               </Box>
             </Pressable>
             {profile.username && (
-              <Text className="text-gray-500 mt-2">@{profile.username}</Text>
+              <Text className="text-stone-500 mt-2">@{profile.username}</Text>
             )}
           </Center>
 
@@ -285,23 +285,23 @@ export default function ProfileScreen() {
           <Card variant="outline" className="p-4">
             <VStack space="md">
               <HStack space="xs" className="items-center">
-                <Ionicons name="language-outline" size={20} color="#6b7280" />
+                <Ionicons name="language-outline" size={20} color="#78716c" />
                 <Heading size="md">{t("profile.language")}</Heading>
               </HStack>
               <HStack space="sm">
                 <Pressable
                   onPress={() => setLanguagePreference("en")}
-                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "en" ? "bg-blue-100 border-2 border-blue-500" : "bg-gray-50 border border-gray-200"}`}
+                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "en" ? "bg-amber-200 border-2 border-amber-600" : "bg-stone-100 border border-stone-200"}`}
                 >
-                  <Text className={`font-medium ${i18n.language === "en" ? "text-blue-700" : "text-gray-600"}`}>
+                  <Text className={`font-medium ${i18n.language === "en" ? "text-amber-700" : "text-stone-600"}`}>
                     {t("profile.languageEn")}
                   </Text>
                 </Pressable>
                 <Pressable
                   onPress={() => setLanguagePreference("pl")}
-                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "pl" ? "bg-blue-100 border-2 border-blue-500" : "bg-gray-50 border border-gray-200"}`}
+                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "pl" ? "bg-amber-200 border-2 border-amber-600" : "bg-stone-100 border border-stone-200"}`}
                 >
-                  <Text className={`font-medium ${i18n.language === "pl" ? "text-blue-700" : "text-gray-600"}`}>
+                  <Text className={`font-medium ${i18n.language === "pl" ? "text-amber-700" : "text-stone-600"}`}>
                     {t("profile.languagePl")}
                   </Text>
                 </Pressable>
@@ -315,7 +315,7 @@ export default function ProfileScreen() {
               <Heading size="md">{t("profile.heading")}</Heading>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">{t("profile.name")}</Text>
+                <Text size="sm" className="text-stone-500 font-medium">{t("profile.name")}</Text>
                 <Input>
                   <InputField
                     value={name}
@@ -326,7 +326,7 @@ export default function ProfileScreen() {
               </VStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">{t("profile.surname")}</Text>
+                <Text size="sm" className="text-stone-500 font-medium">{t("profile.surname")}</Text>
                 <Input>
                   <InputField
                     value={surname}
@@ -337,7 +337,7 @@ export default function ProfileScreen() {
               </VStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">{t("profile.username")}</Text>
+                <Text size="sm" className="text-stone-500 font-medium">{t("profile.username")}</Text>
                 <Input>
                   <InputField
                     value={username}
@@ -354,15 +354,15 @@ export default function ProfileScreen() {
           <Card variant="outline" className="p-4">
             <VStack space="md">
               <HStack space="xs" className="items-center">
-                <Ionicons name="notifications-outline" size={20} color="#6b7280" />
+                <Ionicons name="notifications-outline" size={20} color="#78716c" />
                 <Heading size="md">{t("profile.notifications")}</Heading>
               </HStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">
+                <Text size="sm" className="text-stone-500 font-medium">
                   {t("profile.remindBeforeMeeting")}
                 </Text>
-                <Text size="xs" className="text-gray-400">
+                <Text size="xs" className="text-stone-400">
                   {t("profile.remindBeforeMeetingDesc")}
                 </Text>
                 <Input>
@@ -376,10 +376,10 @@ export default function ProfileScreen() {
               </VStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">
+                <Text size="sm" className="text-stone-500 font-medium">
                   {t("profile.surveyReminderInterval")}
                 </Text>
-                <Text size="xs" className="text-gray-400">
+                <Text size="xs" className="text-stone-400">
                   {t("profile.surveyReminderIntervalDesc")}
                 </Text>
                 <Input>
@@ -410,12 +410,12 @@ export default function ProfileScreen() {
           <Card variant="outline" className="p-4">
             <VStack space="md">
               <HStack space="xs" className="items-center">
-                <Ionicons name="lock-closed-outline" size={20} color="#6b7280" />
+                <Ionicons name="lock-closed-outline" size={20} color="#78716c" />
                 <Heading size="md">{t("profile.changePassword")}</Heading>
               </HStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">{t("profile.newPassword")}</Text>
+                <Text size="sm" className="text-stone-500 font-medium">{t("profile.newPassword")}</Text>
                 <Input>
                   <InputField
                     value={newPassword}
@@ -428,7 +428,7 @@ export default function ProfileScreen() {
               </VStack>
 
               <VStack space="xs">
-                <Text size="sm" className="text-gray-500 font-medium">{t("profile.confirmPassword")}</Text>
+                <Text size="sm" className="text-stone-500 font-medium">{t("profile.confirmPassword")}</Text>
                 <Input>
                   <InputField
                     value={confirmPassword}
