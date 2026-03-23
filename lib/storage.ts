@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
+import { File as ExpoFile } from "expo-file-system";
 import { Alert } from "react-native";
 import { supabase } from "./supabase";
 
@@ -100,10 +101,10 @@ export async function pickAndUploadImage(
   const fileName = `${filePrefix}_${Date.now()}.${ext}`;
 
   try {
-    const response = await fetch(asset.uri);
-    const blob = await response.blob();
+    const file = new ExpoFile(asset.uri);
+    const buffer = await file.arrayBuffer();
 
-    const { error } = await supabase.storage.from(bucket).upload(fileName, blob, {
+    const { error } = await supabase.storage.from(bucket).upload(fileName, buffer, {
       contentType: asset.mimeType ?? "image/jpeg",
       upsert: true,
     });
