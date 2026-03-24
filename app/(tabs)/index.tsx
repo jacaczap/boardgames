@@ -47,6 +47,7 @@ export default function HomeScreen() {
   const [creatingSurvey, setCreatingSurvey] = useState(false);
   const [addingToCalendar, setAddingToCalendar] = useState(false);
   const [nextSurveyDate, setNextSurveyDate] = useState<Date | null>(null);
+  const [hasVoted, setHasVoted] = useState(false);
 
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
   const avatarPaths = attendees
@@ -69,6 +70,7 @@ export default function HomeScreen() {
       if (!m) {
         setGame(null);
         setAttendees([]);
+        setHasVoted(false);
 
         const { data: lastCompleted } = await supabase
           .from("meetings")
@@ -136,16 +138,24 @@ export default function HomeScreen() {
       if (m.status === "voting") {
         setGame(null);
         setAttendees([]);
-        const { count } = await supabase
-          .from("votes")
-          .select("*", { count: "exact", head: true })
-          .eq("meeting_id", m.id);
+        const { data: { user } } = await supabase.auth.getUser();
+        const [{ count }, { count: userCount }, { count: myVoteCount }] = await Promise.all([
+          supabase
+            .from("votes")
+            .select("*", { count: "exact", head: true })
+            .eq("meeting_id", m.id),
+          supabase
+            .from("profiles")
+            .select("*", { count: "exact", head: true }),
+          supabase
+            .from("votes")
+            .select("*", { count: "exact", head: true })
+            .eq("meeting_id", m.id)
+            .eq("user_id", user?.id ?? ""),
+        ]);
         setVoterCount(count ?? 0);
-
-        const { count: userCount } = await supabase
-          .from("profiles")
-          .select("*", { count: "exact", head: true });
         setTotalUsers(userCount ?? 0);
+        setHasVoted((myVoteCount ?? 0) > 0);
       }
     } catch (e) {
       console.error("Failed to fetch home data:", e);
@@ -430,14 +440,16 @@ export default function HomeScreen() {
             >
               <ButtonText className="text-lg">{t("home.voteNow")}</ButtonText>
             </Button>
-            <Button
-              variant="outline"
-              action="positive"
-              size="lg"
-              onPress={() => router.push(`/approve/${meeting.id}`)}
-            >
-              <ButtonText className="text-lg">{t("home.approveMeeting")}</ButtonText>
-            </Button>
+            {voterCount > 0 && hasVoted && (
+              <Button
+                variant="outline"
+                action="positive"
+                size="lg"
+                onPress={() => router.push(`/approve/${meeting.id}`)}
+              >
+                <ButtonText className="text-lg">{t("home.approveMeeting")}</ButtonText>
+              </Button>
+            )}
           </VStack>
         </Card>
       </ScrollView>
