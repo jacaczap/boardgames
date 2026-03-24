@@ -39,6 +39,12 @@ export default function TabLayout() {
             <Ionicons name="game-controller-outline" size={size} color={color} />
           ),
         }}
+        listeners={({ navigation }) => ({
+          tabPress: (e) => {
+            e.preventDefault();
+            navigation.navigate("games", { screen: "index" });
+          },
+        })}
       />
       <Tabs.Screen
         name="profile"
