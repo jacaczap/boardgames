@@ -71,6 +71,9 @@ const pl = {
     surveyAlreadyExists: "Ankieta lub zatwierdzone spotkanie już istnieje.",
     failedCreateSurvey: "Nie udało się utworzyć ankiety",
     failedCalendar: "Nie udało się dodać wydarzenia",
+    votingResults: "Wyniki głosowania ({{count}} głosów)",
+    topDates: "Daty",
+    topGames: "Gry",
   },
 
   profile: {

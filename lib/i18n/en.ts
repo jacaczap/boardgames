@@ -71,6 +71,9 @@ const en = {
     surveyAlreadyExists: "A survey or approved meeting already exists.",
     failedCreateSurvey: "Failed to create survey",
     failedCalendar: "Failed to add calendar event",
+    votingResults: "Voting Results ({{count}} votes)",
+    topDates: "Dates",
+    topGames: "Games",
   },
 
   profile: {

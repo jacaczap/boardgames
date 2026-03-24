@@ -6,6 +6,7 @@ import {
   Alert,
   Platform,
   AppState,
+  View,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -54,6 +55,11 @@ export default function HomeScreen() {
   const [hasVoted, setHasVoted] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [chosenDateOptionId, setChosenDateOptionId] = useState<string | null>(null);
+  const [votingResults, setVotingResults] = useState<{
+    dates: { date: string; count: number; isChosen: boolean }[];
+    games: { name: string; count: number; isChosen: boolean }[];
+    totalVotes: number;
+  } | null>(null);
 
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
   const avatarPaths = attendees
@@ -77,6 +83,7 @@ export default function HomeScreen() {
         setGame(null);
         setAttendees([]);
         setHasVoted(false);
+        setVotingResults(null);
 
         const { data: lastCompleted } = await supabase
           .from("meetings")
@@ -144,11 +151,50 @@ export default function HomeScreen() {
             }
           }
         }
+
+        const [dateOptsRes, votesRes, voteDatesRes, voteGamesRes, allGamesRes] =
+          await Promise.all([
+            supabase.from("date_options").select("id, date").eq("meeting_id", m.id).order("date"),
+            supabase.from("votes").select("id").eq("meeting_id", m.id),
+            supabase
+              .from("vote_dates")
+              .select("date_option_id, votes!inner(meeting_id)")
+              .eq("votes.meeting_id", m.id),
+            supabase
+              .from("vote_games")
+              .select("game_id, votes!inner(meeting_id)")
+              .eq("votes.meeting_id", m.id),
+            supabase.from("board_games").select("id, name"),
+          ]);
+
+        const dateCountMap = new Map<string, number>();
+        for (const vd of (voteDatesRes.data ?? []) as { date_option_id: string }[]) {
+          dateCountMap.set(vd.date_option_id, (dateCountMap.get(vd.date_option_id) ?? 0) + 1);
+        }
+        const dateOpts = (dateOptsRes.data ?? []) as { id: string; date: string }[];
+        const dateTallies = dateOpts
+          .map((o) => ({ date: o.date, count: dateCountMap.get(o.id) ?? 0, isChosen: o.date === m.chosen_date }))
+          .filter((d) => d.count > 0)
+          .sort((a, b) => b.count - a.count);
+
+        const gameCountMap = new Map<string, number>();
+        for (const vg of (voteGamesRes.data ?? []) as { game_id: string }[]) {
+          gameCountMap.set(vg.game_id, (gameCountMap.get(vg.game_id) ?? 0) + 1);
+        }
+        const gameNameMap = new Map(
+          ((allGamesRes.data ?? []) as { id: string; name: string }[]).map((g) => [g.id, g.name]),
+        );
+        const gameTallies = [...gameCountMap.entries()]
+          .map(([gid, count]) => ({ name: gameNameMap.get(gid) ?? "?", count, isChosen: gid === m.chosen_game_id }))
+          .sort((a, b) => b.count - a.count);
+
+        setVotingResults({ dates: dateTallies, games: gameTallies, totalVotes: votesRes.data?.length ?? 0 });
       }
 
       if (m.status === "voting") {
         setGame(null);
         setAttendees([]);
+        setVotingResults(null);
         const [{ count }, { count: userCount }, { count: myVoteCount }] = await Promise.all([
           supabase
             .from("votes")
@@ -665,6 +711,74 @@ export default function HomeScreen() {
                   );
                 })}
               </AvatarGroup>
+            </VStack>
+          )}
+
+          {votingResults && (votingResults.dates.length > 0 || votingResults.games.length > 0) && (
+            <VStack space="sm" className="mt-3">
+              <View className="h-px bg-green-200" />
+              <HStack space="xs" className="items-center">
+                <Ionicons name="bar-chart-outline" size={16} color="#78716c" />
+                <Text size="sm" className="text-stone-500 font-medium">
+                  {t("home.votingResults", { count: votingResults.totalVotes })}
+                </Text>
+              </HStack>
+
+              {votingResults.dates.length > 0 && (
+                <VStack space="xs">
+                  <Text size="xs" className="text-stone-400 font-medium uppercase tracking-wide">
+                    {t("home.topDates")}
+                  </Text>
+                  {votingResults.dates.slice(0, 5).map((d) => (
+                    <HStack key={d.date} space="sm" className="items-center">
+                      {d.isChosen ? (
+                        <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
+                      ) : (
+                        <View className="w-3.5" />
+                      )}
+                      <Text
+                        size="sm"
+                        className={d.isChosen ? "text-green-700 font-medium flex-1" : "text-stone-600 flex-1"}
+                      >
+                        {new Date(d.date + "T00:00:00").toLocaleDateString(locale, {
+                          weekday: "short",
+                          day: "numeric",
+                          month: "short",
+                        })}
+                      </Text>
+                      <Text size="xs" className="text-stone-400">
+                        {d.count}
+                      </Text>
+                    </HStack>
+                  ))}
+                </VStack>
+              )}
+
+              {votingResults.games.length > 0 && (
+                <VStack space="xs" className="mt-1">
+                  <Text size="xs" className="text-stone-400 font-medium uppercase tracking-wide">
+                    {t("home.topGames")}
+                  </Text>
+                  {votingResults.games.slice(0, 5).map((g) => (
+                    <HStack key={g.name} space="sm" className="items-center">
+                      {g.isChosen ? (
+                        <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
+                      ) : (
+                        <View className="w-3.5" />
+                      )}
+                      <Text
+                        size="sm"
+                        className={g.isChosen ? "text-green-700 font-medium flex-1" : "text-stone-600 flex-1"}
+                      >
+                        {g.name}
+                      </Text>
+                      <Text size="xs" className="text-stone-400">
+                        {g.count}
+                      </Text>
+                    </HStack>
+                  ))}
+                </VStack>
+              )}
             </VStack>
           )}
 
