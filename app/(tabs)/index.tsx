@@ -47,8 +47,11 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [creatingSurvey, setCreatingSurvey] = useState(false);
   const [addingToCalendar, setAddingToCalendar] = useState(false);
+  const [joiningMeeting, setJoiningMeeting] = useState(false);
   const [nextSurveyDate, setNextSurveyDate] = useState<Date | null>(null);
   const [hasVoted, setHasVoted] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+  const [chosenDateOptionId, setChosenDateOptionId] = useState<string | null>(null);
 
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
   const avatarPaths = attendees
@@ -90,6 +93,9 @@ export default function HomeScreen() {
         return;
       }
 
+      const { data: { user } } = await supabase.auth.getUser();
+      setCurrentUserId(user?.id ?? null);
+
       if (m.status === "approved" && m.chosen_game_id) {
         const { data: gameData } = await supabase
           .from("board_games")
@@ -105,6 +111,8 @@ export default function HomeScreen() {
             .eq("meeting_id", m.id)
             .eq("date", m.chosen_date)
             .single();
+
+          setChosenDateOptionId(dateOpt?.id ?? null);
 
           if (dateOpt) {
             const { data: vds } = await supabase
@@ -139,7 +147,6 @@ export default function HomeScreen() {
       if (m.status === "voting") {
         setGame(null);
         setAttendees([]);
-        const { data: { user } } = await supabase.auth.getUser();
         const [{ count }, { count: userCount }, { count: myVoteCount }] = await Promise.all([
           supabase
             .from("votes")
@@ -294,6 +301,57 @@ export default function HomeScreen() {
       Alert.alert(t("common.error"), e?.message ?? t("home.failedCreateSurvey"));
     } finally {
       setCreatingSurvey(false);
+    }
+  };
+
+  const isAttending = attendees.some((p) => p.id === currentUserId);
+
+  const handleLateJoin = async () => {
+    if (!meeting || !currentUserId || !meeting.chosen_date || !meeting.chosen_game_id || !chosenDateOptionId) return;
+    setJoiningMeeting(true);
+    try {
+      const { data: freshMeeting } = await supabase
+        .from("meetings")
+        .select("status")
+        .eq("id", meeting.id)
+        .single();
+      if (freshMeeting?.status !== "approved") {
+        Alert.alert(t("race.info"), t("home.noLongerApproved"));
+        await fetchData();
+        return;
+      }
+
+      const { data: existingVotes } = await supabase
+        .from("votes")
+        .select("id")
+        .eq("meeting_id", meeting.id)
+        .eq("user_id", currentUserId);
+
+      if (existingVotes?.length) {
+        await supabase.from("votes").delete().eq("id", existingVotes[0].id);
+      }
+
+      const { data: newVote, error: voteError } = await supabase
+        .from("votes")
+        .insert({ meeting_id: meeting.id, user_id: currentUserId })
+        .select()
+        .single();
+
+      if (voteError || !newVote) {
+        Alert.alert(t("common.error"), voteError?.message ?? t("home.failedJoin"));
+        return;
+      }
+
+      await Promise.all([
+        supabase.from("vote_dates").insert({ vote_id: newVote.id, date_option_id: chosenDateOptionId }),
+        supabase.from("vote_games").insert({ vote_id: newVote.id, game_id: meeting.chosen_game_id }),
+      ]);
+
+      await fetchData();
+    } catch (e: any) {
+      Alert.alert(t("common.error"), e?.message ?? t("home.failedJoin"));
+    } finally {
+      setJoiningMeeting(false);
     }
   };
 
@@ -602,11 +660,23 @@ export default function HomeScreen() {
           )}
 
           <VStack space="md" className="mt-2">
+            {!isAttending && (
+              <Button
+                action="primary"
+                isDisabled={joiningMeeting}
+                onPress={handleLateJoin}
+              >
+                <ButtonText>
+                  {joiningMeeting ? t("home.joining") : t("home.iWillAttend")}
+                </ButtonText>
+              </Button>
+            )}
             <Button
+              variant="outline"
               action="primary"
-              onPress={() => router.push(`/approve/${meeting.id}`)}
+              onPress={() => router.push(`/approve/${meeting.id}?edit=1`)}
             >
-              <ButtonText>{t("home.viewDetails")}</ButtonText>
+              <ButtonText>{t("home.editMeeting")}</ButtonText>
             </Button>
             <Button
               variant="outline"

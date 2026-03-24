@@ -67,8 +67,8 @@ export default function RootLayout() {
 
         if (data.type === "survey" && data.meetingId) {
           router.push(`/survey/${data.meetingId}`);
-        } else if (data.type === "meeting" && data.meetingId) {
-          router.push(`/approve/${data.meetingId}`);
+        } else if (data.type === "meeting") {
+          router.replace("/(tabs)");
         }
       });
 

@@ -1,20 +1,17 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   ScrollView,
   RefreshControl,
   Alert,
-  Linking,
-  Platform,
   AppState,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Calendar from "expo-calendar";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { getDateLocale } from "@/lib/i18n";
-import { useSignedUrl, useSignedUrls } from "@/lib/storage";
+import { useSignedUrls } from "@/lib/storage";
 import { isPolishHoliday } from "@/lib/holidays";
 import type {
   Meeting,
@@ -32,7 +29,7 @@ import { HStack } from "@/components/ui/hstack";
 import { Center } from "@/components/ui/center";
 import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
-import { Button, ButtonText, ButtonIcon } from "@/components/ui/button";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Image } from "@/components/ui/image";
 import { Card } from "@/components/ui/card";
@@ -46,33 +43,23 @@ function formatDate(dateStr: string, locale: string): string {
   return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
 }
 
-function formatDateLong(dateStr: string, locale: string): string {
-  return new Date(dateStr + "T00:00:00").toLocaleDateString(locale, {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
-
 function isPast(dateStr: string): boolean {
   const today = new Date();
   today.setHours(0, 0, 0, 0);
   return new Date(dateStr + "T00:00:00") < today;
 }
 
-type Mode = "approve" | "approved" | "editing";
+type Mode = "approve" | "editing";
 
 export default function ApproveScreen() {
   const { t } = useTranslation();
   const locale = getDateLocale();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, edit } = useLocalSearchParams<{ id: string; edit?: string }>();
   const router = useRouter();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [addingToCalendar, setAddingToCalendar] = useState(false);
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [dateOptions, setDateOptions] = useState<DateOption[]>([]);
@@ -98,12 +85,6 @@ export default function ApproveScreen() {
     [games],
   );
   const gameImageUrls = useSignedUrls("game-images", gameImagePaths);
-
-  const chosenGame = useMemo(
-    () => (meeting?.chosen_game_id ? games.find((g) => g.id === meeting.chosen_game_id) ?? null : null),
-    [meeting, games],
-  );
-  const chosenGameImageUrl = useSignedUrl("game-images", chosenGame?.image_url);
 
   const voteUserMap = useMemo(
     () => new Map(allVotes.map((v) => [v.id, v.user_id])),
@@ -191,20 +172,7 @@ export default function ApproveScreen() {
     });
   }, [games, gameVoteCountsForDate]);
 
-  const attendees = useMemo(() => {
-    if (!meeting?.chosen_date) return [];
-    const chosenDateOpt = dateOptions.find((o) => o.date === meeting.chosen_date);
-    if (!chosenDateOpt) return [];
-    return dateVoterProfiles.get(chosenDateOpt.id) ?? [];
-  }, [meeting, dateOptions, dateVoterProfiles]);
-
-  const currentUserHasVoteForChosenDate = useMemo(() => {
-    if (!currentUserId || !meeting?.chosen_date) return false;
-    const chosenDateOpt = dateOptions.find((o) => o.date === meeting.chosen_date);
-    if (!chosenDateOpt) return false;
-    const voters = dateVoterProfiles.get(chosenDateOpt.id) ?? [];
-    return voters.some((p) => p.id === currentUserId);
-  }, [currentUserId, meeting, dateOptions, dateVoterProfiles]);
+  const initialSelectionDone = useRef(false);
 
   const fetchData = useCallback(async () => {
     if (!id) return;
@@ -247,8 +215,16 @@ export default function ApproveScreen() {
         ) ?? [],
       );
 
-      if (m?.status === "approved") {
-        setMode("approved");
+      if (m?.status === "approved" && edit) {
+        setMode("editing");
+        if (!initialSelectionDone.current) {
+          initialSelectionDone.current = true;
+          const chosenDateOpt = (dateOptsRes.data as DateOption[])?.find(
+            (o) => o.date === m.chosen_date,
+          );
+          setSelectedDateId(chosenDateOpt?.id ?? null);
+          setSelectedGameId(m.chosen_game_id ?? null);
+        }
       } else if (m?.status === "voting") {
         setMode("approve");
       }
@@ -258,6 +234,12 @@ export default function ApproveScreen() {
       setLoading(false);
     }
   }, [id]);
+
+  useEffect(() => {
+    if (!loading && meeting?.status === "approved" && !edit) {
+      router.replace("/(tabs)");
+    }
+  }, [loading, meeting?.status, edit, router]);
 
   useFocusEffect(
     useCallback(() => {
@@ -387,81 +369,6 @@ export default function ApproveScreen() {
     ]);
   };
 
-  const handleLateJoin = async () => {
-    if (!meeting || !currentUserId || !meeting.chosen_date || !meeting.chosen_game_id) return;
-
-    const chosenDateOpt = dateOptions.find((o) => o.date === meeting.chosen_date);
-    if (!chosenDateOpt) {
-      Alert.alert(t("common.error"), t("approve.failedJoin"));
-      return;
-    }
-
-    setSubmitting(true);
-    try {
-      const { data: freshMeeting } = await supabase
-        .from("meetings")
-        .select("status")
-        .eq("id", meeting.id)
-        .single();
-      if (freshMeeting?.status !== "approved") {
-        Alert.alert(t("race.info"), t("approve.noLongerApproved"));
-        await fetchData();
-        setSubmitting(false);
-        return;
-      }
-
-      const existingVote = allVotes.find((v) => v.user_id === currentUserId);
-      if (existingVote) {
-        await supabase.from("votes").delete().eq("id", existingVote.id);
-      }
-
-      const { data: newVote, error: voteError } = await supabase
-        .from("votes")
-        .insert({ meeting_id: meeting.id, user_id: currentUserId })
-        .select()
-        .single();
-
-      if (voteError || !newVote) {
-        Alert.alert(t("common.error"), voteError?.message ?? t("approve.failedJoin"));
-        return;
-      }
-
-      const [dRes, gRes] = await Promise.all([
-        supabase.from("vote_dates").insert({
-          vote_id: newVote.id,
-          date_option_id: chosenDateOpt.id,
-        }),
-        supabase.from("vote_games").insert({
-          vote_id: newVote.id,
-          game_id: meeting.chosen_game_id,
-        }),
-      ]);
-
-      if (dRes.error) {
-        Alert.alert(t("common.error"), dRes.error.message);
-        return;
-      }
-      if (gRes.error) {
-        Alert.alert(t("common.error"), gRes.error.message);
-        return;
-      }
-
-      await fetchData();
-    } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("approve.failedJoin"));
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleEditMeeting = () => {
-    if (!meeting) return;
-    const chosenDateOpt = dateOptions.find((o) => o.date === meeting.chosen_date);
-    setSelectedDateId(chosenDateOpt?.id ?? null);
-    setSelectedGameId(meeting.chosen_game_id ?? null);
-    setMode("editing");
-  };
-
   const handleSaveEdit = async () => {
     if (!id || !selectedDateId || !selectedGameId || !currentUserId) return;
     const dateOpt = dateOptions.find((o) => o.id === selectedDateId);
@@ -490,7 +397,7 @@ export default function ApproveScreen() {
         await fetchData();
         return;
       }
-      await fetchData();
+      router.back();
     } catch (e: any) {
       Alert.alert(t("common.error"), e?.message ?? t("approve.failedSave"));
     } finally {
@@ -499,56 +406,7 @@ export default function ApproveScreen() {
   };
 
   const handleCancelEdit = () => {
-    setSelectedDateId(null);
-    setSelectedGameId(null);
-    setMode("approved");
-  };
-
-  const handleAddToCalendar = async () => {
-    if (!meeting?.chosen_date || addingToCalendar) return;
-    setAddingToCalendar(true);
-    try {
-      const { status } = await Calendar.requestCalendarPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(t("approve.permissionDenied"), t("approve.calendarAccessRequired"));
-        return;
-      }
-
-      let calendarId: string | undefined;
-      if (Platform.OS === "ios") {
-        const defaultCal = await Calendar.getDefaultCalendarAsync();
-        calendarId = defaultCal.id;
-      } else if (Platform.OS === "android") {
-        const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-        const primary = calendars.find(
-          (c) => c.isPrimary || c.accessLevel === Calendar.CalendarAccessLevel.OWNER,
-        );
-        calendarId = primary?.id ?? calendars[0]?.id;
-      }
-
-      if (!calendarId) {
-        Alert.alert(t("common.error"), t("approve.noCalendarFound"));
-        return;
-      }
-
-      const title = chosenGame?.name
-        ? t("approve.calendarTitle", { game: chosenGame.name })
-        : t("approve.calendarTitleDefault");
-      const startDate = new Date(meeting.chosen_date + "T00:00:00");
-      const endDate = new Date(meeting.chosen_date + "T23:59:59");
-
-      await Calendar.createEventAsync(calendarId, {
-        title,
-        startDate,
-        endDate,
-        allDay: true,
-      });
-      Alert.alert(t("approve.calendarDone"), t("approve.calendarAdded"));
-    } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("approve.failedCalendar"));
-    } finally {
-      setAddingToCalendar(false);
-    }
+    router.back();
   };
 
   if (loading) {
@@ -564,140 +422,6 @@ export default function ApproveScreen() {
       <Center className="flex-1 bg-stone-50">
         <Text className="text-stone-500">{t("approve.notFound")}</Text>
       </Center>
-    );
-  }
-
-  if (mode === "approved" && meeting.status === "approved") {
-    return (
-      <ScrollView
-        className="flex-1 bg-stone-50"
-        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
-        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
-      >
-        <VStack space="lg">
-          <Card variant="filled" className="bg-green-50 overflow-hidden">
-            {chosenGameImageUrl && (
-              <Image
-                source={{ uri: chosenGameImageUrl }}
-                className="w-full h-48"
-                resizeMode="cover"
-              />
-            )}
-            <VStack space="md" className="p-5">
-              <HStack space="xs" className="items-center">
-                <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
-                <Text className="text-green-700 font-medium">
-                  {t("approve.meetingApproved", { number: meeting.number })}
-                </Text>
-              </HStack>
-
-              <Heading size="2xl">
-                {chosenGame?.name ?? t("approve.noGameSelected")}
-              </Heading>
-
-              {meeting.chosen_date && (
-                <HStack space="xs" className="items-center">
-                  <Ionicons name="calendar" size={16} color="#78716c" />
-                  <Text className="text-stone-600">
-                    {formatDateLong(meeting.chosen_date, locale)}
-                  </Text>
-                </HStack>
-              )}
-
-              {chosenGame?.description && (
-                <Text className="text-stone-600">{chosenGame.description}</Text>
-              )}
-
-              <HStack space="md" className="flex-wrap mt-1">
-                {meeting.chosen_date && Platform.OS !== "web" && (
-                  <Button
-                    variant="outline"
-                    action="primary"
-                    size="sm"
-                    onPress={handleAddToCalendar}
-                    isDisabled={addingToCalendar}
-                    className="bg-amber-100 border-0"
-                  >
-                    <ButtonIcon as={Ionicons} name="calendar-outline" size={18} />
-                    <ButtonText className="text-amber-700 ml-1 text-sm">
-                      {addingToCalendar ? t("approve.addingToCalendar") : t("approve.addToCalendar")}
-                    </ButtonText>
-                  </Button>
-                )}
-                {chosenGame?.tutorial_url && (
-                  <Button
-                    variant="outline"
-                    action="negative"
-                    size="sm"
-                    onPress={() => Linking.openURL(chosenGame.tutorial_url!)}
-                    className="bg-red-50 border-0"
-                  >
-                    <ButtonIcon as={Ionicons} name="play-circle-outline" size={18} />
-                    <ButtonText className="text-red-700 ml-1 text-sm">{t("approve.tutorial")}</ButtonText>
-                  </Button>
-                )}
-                {chosenGame?.spotify_playlist_url && (
-                  <Button
-                    variant="outline"
-                    action="positive"
-                    size="sm"
-                    onPress={() => Linking.openURL(chosenGame.spotify_playlist_url!)}
-                    className="bg-green-100 border-0"
-                  >
-                    <ButtonIcon as={Ionicons} name="musical-notes-outline" size={18} />
-                    <ButtonText className="text-green-700 ml-1 text-sm">{t("approve.playlist")}</ButtonText>
-                  </Button>
-                )}
-              </HStack>
-            </VStack>
-          </Card>
-
-          {attendees.length > 0 && (
-            <VStack space="sm">
-              <Heading size="md">{t("approve.attendeesCount", { count: attendees.length })}</Heading>
-              <HStack space="md" className="flex-wrap">
-                {attendees.map((p) => (
-                  <VStack key={p.id} space="xs" className="items-center">
-                    <UserAvatar profile={p} avatarUrls={avatarUrls} />
-                    <Text size="xs" className="text-stone-500">{p.name}</Text>
-                  </VStack>
-                ))}
-              </HStack>
-            </VStack>
-          )}
-
-          <View className="h-px bg-stone-200" />
-
-          {!currentUserHasVoteForChosenDate && (
-            <Button
-              action="primary"
-              size="lg"
-              isDisabled={submitting}
-              onPress={handleLateJoin}
-            >
-              <ButtonText>
-                {submitting ? t("approve.joining") : t("approve.iWillAttend")}
-              </ButtonText>
-            </Button>
-          )}
-
-          <Button
-            variant="outline"
-            action="primary"
-            onPress={handleEditMeeting}
-          >
-            <ButtonText>{t("approve.editMeeting")}</ButtonText>
-          </Button>
-
-          <Button
-            variant="outline"
-            action="negative"
-            onPress={handleUnapprove}
-          >
-            <ButtonText>{t("approve.unapprove")}</ButtonText>
-          </Button>
-        </VStack>
-      </ScrollView>
     );
   }
 
