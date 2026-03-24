@@ -237,6 +237,17 @@ const en = {
     custom: "Custom",
     sat: "Sat",
     sun: "Sun",
+    alreadyApproved: "This meeting has already been approved by someone else.",
+    alreadyVoting: "This meeting has already been reverted to voting.",
+    noLongerApproved: "This meeting is no longer approved.",
+  },
+
+  race: {
+    info: "Info",
+    meetingApprovedTitle: "Meeting Approved",
+    meetingApprovedWhileVoting: "This meeting was approved while you were voting. Your vote was still saved.",
+    meetingApprovedBanner: "This meeting has been approved by someone else. You can still submit your vote.",
+    alreadyVoting: "This meeting has already been reverted to voting.",
   },
 } as const;
 

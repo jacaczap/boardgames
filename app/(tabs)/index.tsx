@@ -220,7 +220,7 @@ export default function HomeScreen() {
         onPress: async () => {
           setUnapproving(true);
           try {
-            const { error } = await supabase
+            const { data, error } = await supabase
               .from("meetings")
               .update({
                 status: "voting",
@@ -229,9 +229,16 @@ export default function HomeScreen() {
                 approved_by: null,
                 approved_at: null,
               })
-              .eq("id", meeting.id);
+              .eq("id", meeting.id)
+              .eq("status", "approved")
+              .select();
             if (error) {
               Alert.alert(t("common.error"), error.message);
+              return;
+            }
+            if (!data || data.length === 0) {
+              Alert.alert(t("race.info"), t("race.alreadyVoting"));
+              fetchData();
               return;
             }
             fetchData();

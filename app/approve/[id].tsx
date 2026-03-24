@@ -312,7 +312,7 @@ export default function ApproveScreen() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("meetings")
         .update({
           status: "approved",
@@ -321,10 +321,17 @@ export default function ApproveScreen() {
           approved_by: currentUserId,
           approved_at: new Date().toISOString(),
         })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("status", "voting")
+        .select();
 
       if (error) {
         Alert.alert(t("common.error"), error.message);
+        return;
+      }
+      if (!data || data.length === 0) {
+        Alert.alert(t("race.info"), t("approve.alreadyApproved"));
+        await fetchData();
         return;
       }
       await fetchData();
@@ -344,7 +351,7 @@ export default function ApproveScreen() {
         style: "destructive",
         onPress: async () => {
           try {
-            const { error } = await supabase
+            const { data, error } = await supabase
               .from("meetings")
               .update({
                 status: "voting",
@@ -353,9 +360,16 @@ export default function ApproveScreen() {
                 approved_by: null,
                 approved_at: null,
               })
-              .eq("id", meeting.id);
+              .eq("id", meeting.id)
+              .eq("status", "approved")
+              .select();
             if (error) {
               Alert.alert(t("common.error"), error.message);
+              return;
+            }
+            if (!data || data.length === 0) {
+              Alert.alert(t("race.info"), t("approve.alreadyVoting"));
+              await fetchData();
               return;
             }
             setSelectedDateId(null);
@@ -380,6 +394,18 @@ export default function ApproveScreen() {
 
     setSubmitting(true);
     try {
+      const { data: freshMeeting } = await supabase
+        .from("meetings")
+        .select("status")
+        .eq("id", meeting.id)
+        .single();
+      if (freshMeeting?.status !== "approved") {
+        Alert.alert(t("race.info"), t("approve.noLongerApproved"));
+        await fetchData();
+        setSubmitting(false);
+        return;
+      }
+
       const existingVote = allVotes.find((v) => v.user_id === currentUserId);
       if (existingVote) {
         await supabase.from("votes").delete().eq("id", existingVote.id);
@@ -439,7 +465,7 @@ export default function ApproveScreen() {
 
     setSubmitting(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("meetings")
         .update({
           chosen_date: dateOpt.date,
@@ -447,10 +473,17 @@ export default function ApproveScreen() {
           approved_by: currentUserId,
           approved_at: new Date().toISOString(),
         })
-        .eq("id", id);
+        .eq("id", id)
+        .eq("status", "approved")
+        .select();
 
       if (error) {
         Alert.alert(t("common.error"), error.message);
+        return;
+      }
+      if (!data || data.length === 0) {
+        Alert.alert(t("race.info"), t("approve.noLongerApproved"));
+        await fetchData();
         return;
       }
       await fetchData();

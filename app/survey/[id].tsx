@@ -69,6 +69,7 @@ export default function SurveyScreen() {
   const [selectedDates, setSelectedDates] = useState<Set<string>>(new Set());
   const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
   const [notParticipating, setNotParticipating] = useState(false);
+  const [meetingApprovedByOther, setMeetingApprovedByOther] = useState(false);
 
   const avatarPaths = useMemo(
     () => profiles.map((p) => p.avatar_url).filter((u): u is string => !!u),
@@ -214,6 +215,17 @@ export default function SurveyScreen() {
       .channel(`survey-${id}`)
       .on(
         "postgres_changes",
+        { event: "*", schema: "public", table: "meetings" },
+        (payload) => {
+          const row = payload.new as { id?: string; status?: string } | undefined;
+          if (row?.id === id && row?.status === "approved") {
+            setMeetingApprovedByOther(true);
+            Alert.alert(t("race.meetingApprovedTitle"), t("race.meetingApprovedBanner"));
+          }
+        },
+      )
+      .on(
+        "postgres_changes",
         { event: "*", schema: "public", table: "votes" },
         (payload) => {
           const mid =
@@ -245,7 +257,7 @@ export default function SurveyScreen() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [id, fetchData]);
+  }, [id, fetchData, t]);
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
@@ -340,6 +352,13 @@ export default function SurveyScreen() {
 
     setSubmitting(true);
     try {
+      const { data: freshMeeting } = await supabase
+        .from("meetings")
+        .select("status")
+        .eq("id", id)
+        .single();
+      const wasApprovedDuringVote = freshMeeting?.status === "approved";
+
       if (existingVote) {
         const { error: delError } = await supabase
           .from("votes")
@@ -388,6 +407,13 @@ export default function SurveyScreen() {
       }
 
       signalVoteCast(!existingVote);
+
+      if (wasApprovedDuringVote) {
+        Alert.alert(
+          t("race.meetingApprovedTitle"),
+          t("race.meetingApprovedWhileVoting"),
+        );
+      }
       router.back();
     } catch (e: any) {
       Alert.alert(t("common.error"), e?.message ?? t("survey.failedSubmit"));
@@ -404,7 +430,7 @@ export default function SurveyScreen() {
     );
   }
 
-  if (!meeting || meeting.status !== "voting") {
+  if (!meeting || (meeting.status !== "voting" && !meetingApprovedByOther)) {
     return (
       <Center className="flex-1 bg-stone-50">
         <Text className="text-stone-500">{t("survey.notAvailable")}</Text>
@@ -440,6 +466,17 @@ export default function SurveyScreen() {
             </Badge>
           )}
         </VStack>
+
+        {meetingApprovedByOther && (
+          <Card variant="filled" className="bg-orange-100 p-4">
+            <HStack space="sm" className="items-center">
+              <Ionicons name="warning-outline" size={20} color="#ea580c" />
+              <Text className="text-orange-800 flex-1">
+                {t("race.meetingApprovedBanner")}
+              </Text>
+            </HStack>
+          </Card>
+        )}
 
         {/* Not Participating Toggle */}
         <Pressable onPress={toggleNotParticipating}>

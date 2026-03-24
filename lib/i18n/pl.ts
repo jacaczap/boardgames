@@ -237,6 +237,17 @@ const pl = {
     custom: "Dodany",
     sat: "Sob",
     sun: "Ndz",
+    alreadyApproved: "To spotkanie zostało już zatwierdzone przez kogoś innego.",
+    alreadyVoting: "To spotkanie zostało już cofnięte do głosowania.",
+    noLongerApproved: "To spotkanie nie jest już zatwierdzone.",
+  },
+
+  race: {
+    info: "Informacja",
+    meetingApprovedTitle: "Spotkanie zatwierdzone",
+    meetingApprovedWhileVoting: "To spotkanie zostało zatwierdzone w trakcie głosowania. Twój głos został zapisany.",
+    meetingApprovedBanner: "To spotkanie zostało zatwierdzone przez kogoś innego. Nadal możesz wysłać swój głos.",
+    alreadyVoting: "To spotkanie zostało już cofnięte do głosowania.",
   },
 } as const;
 
