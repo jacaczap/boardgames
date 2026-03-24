@@ -1,18 +1,15 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   ScrollView,
   RefreshControl,
   Alert,
-  Platform,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
-import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrls } from "@/lib/storage";
-import { isPolishHoliday } from "@/lib/holidays";
 import type {
   Meeting,
   BoardGame,
@@ -22,6 +19,7 @@ import type {
   VoteDate,
   VoteGame,
 } from "@/lib/types";
+import CalendarDatePicker from "@/components/CalendarDatePicker";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
@@ -34,7 +32,6 @@ import { Spinner } from "@/components/ui/spinner";
 import { Image } from "@/components/ui/image";
 import { Card } from "@/components/ui/card";
 import { Pressable } from "@/components/ui/pressable";
-import { Input, InputField } from "@/components/ui/input";
 import {
   Avatar,
   AvatarImage,
@@ -47,20 +44,9 @@ interface VoterInfo {
   gameVoters: Map<string, Profile[]>;
 }
 
-function formatDate(dateStr: string, locale: string): string {
-  const d = new Date(dateStr + "T00:00:00");
-  return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
-}
-
-function isPast(dateStr: string): boolean {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return new Date(dateStr + "T00:00:00") < today;
-}
 
 export default function SurveyScreen() {
   const { t } = useTranslation();
-  const locale = getDateLocale();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -68,7 +54,6 @@ export default function SurveyScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [addingDate, setAddingDate] = useState(false);
-  const [customDateInput, setCustomDateInput] = useState("");
 
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [dateOptions, setDateOptions] = useState<DateOption[]>([]);
@@ -319,47 +304,13 @@ export default function SurveyScreen() {
     });
   };
 
-  const dateRange = useMemo(() => {
-    if (!dateOptions.length) return null;
-    const sorted = [...dateOptions].sort((a, b) => a.date.localeCompare(b.date));
-    return { min: sorted[0].date, max: sorted[sorted.length - 1].date };
-  }, [dateOptions]);
-
-  const handleAddCustomDate = async () => {
-    const trimmed = customDateInput.trim();
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
-      Alert.alert(t("survey.invalidFormat"), t("survey.useFormat"));
-      return;
-    }
-    const d = new Date(trimmed + "T00:00:00");
-    if (isNaN(d.getTime())) {
-      Alert.alert(t("survey.invalidDate"), t("survey.enterValidDate"));
-      return;
-    }
-    if (isPast(trimmed)) {
-      Alert.alert(t("survey.pastDate"), t("survey.cannotAddPast"));
-      return;
-    }
-    if (dateRange && (trimmed < dateRange.min || trimmed > dateRange.max)) {
-      Alert.alert(
-        t("survey.outOfRange"),
-        t("survey.dateRange", {
-          min: formatDate(dateRange.min, locale),
-          max: formatDate(dateRange.max, locale),
-        }),
-      );
-      return;
-    }
-    if (dateOptions.some((o) => o.date === trimmed)) {
-      Alert.alert(t("survey.duplicate"), t("survey.alreadyOption"));
-      return;
-    }
-
+  const handleAddCustomDate = useCallback(async (dateStr: string) => {
+    if (addingDate) return;
     setAddingDate(true);
     try {
       const { error } = await supabase.from("date_options").insert({
         meeting_id: id,
-        date: trimmed,
+        date: dateStr,
         is_custom: true,
         added_by: currentUserId,
       });
@@ -367,14 +318,13 @@ export default function SurveyScreen() {
         Alert.alert(t("common.error"), error.message);
         return;
       }
-      setCustomDateInput("");
       await fetchData();
     } catch (e: any) {
       Alert.alert(t("common.error"), e?.message ?? t("survey.failedAddDate"));
     } finally {
       setAddingDate(false);
     }
-  };
+  }, [addingDate, id, currentUserId, t, fetchData]);
 
   const handleSubmit = async () => {
     if (!currentUserId || !id) return;
@@ -527,124 +477,18 @@ export default function SurveyScreen() {
           </VStack>
         )}
 
-        {/* Date Selection */}
+        {/* Date Selection — Calendar */}
         <VStack space="md">
           <Heading size="lg">{t("survey.pickDates")}</Heading>
-          {dateOptions.map((opt) => {
-            const past = isPast(opt.date);
-            const selected = selectedDates.has(opt.id);
-            const holiday = isPolishHoliday(opt.date);
-            const d = new Date(opt.date + "T00:00:00");
-            const isWeekend = d.getDay() === 0 || d.getDay() === 6;
-            const voters = voterInfo.dateVoters.get(opt.id) ?? [];
-
-            return (
-              <Pressable
-                key={opt.id}
-                onPress={() => !past && toggleDate(opt.id)}
-                disabled={past || notParticipating}
-              >
-                <Card
-                  variant="filled"
-                  className={`p-3 ${
-                    past
-                      ? "bg-stone-200 opacity-50"
-                      : selected
-                        ? "bg-amber-200 border-2 border-amber-600"
-                        : "bg-stone-100"
-                  }`}
-                >
-                  <HStack space="sm" className="items-center justify-between">
-                    <HStack space="sm" className="items-center flex-1">
-                      <Ionicons
-                        name={selected ? "checkbox" : "square-outline"}
-                        size={22}
-                        color={past ? "#d6d3d1" : selected ? "#b45309" : "#a8a29e"}
-                      />
-                      <VStack>
-                        <HStack space="xs" className="items-center">
-                          <Text
-                            className={`font-medium ${
-                              past ? "text-stone-400" : "text-stone-800"
-                            }`}
-                          >
-                            {formatDate(opt.date, locale)}
-                          </Text>
-                          {holiday && (
-                            <Badge action="warning">
-                              <BadgeText action="warning">{t("survey.holiday")}</BadgeText>
-                            </Badge>
-                          )}
-                          {opt.is_custom && (
-                            <Badge action="info">
-                              <BadgeText action="info">{t("survey.custom")}</BadgeText>
-                            </Badge>
-                          )}
-                          {isWeekend && !holiday && (
-                            <Badge action="muted">
-                              <BadgeText action="muted">
-                                {d.getDay() === 6 ? t("survey.sat") : t("survey.sun")}
-                              </BadgeText>
-                            </Badge>
-                          )}
-                        </HStack>
-                        {past && (
-                          <Text size="xs" className="text-stone-400">{t("survey.past")}</Text>
-                        )}
-                      </VStack>
-                    </HStack>
-                    {voters.length > 0 && (
-                      <HStack space="xs" className="items-center">
-                        <Text size="xs" className="text-stone-500">{voters.length}</Text>
-                        <HStack className="flex-row-reverse">
-                          {voters.slice(0, 5).map((p) => (
-                            <Box key={p.id} className="-ml-2">
-                              <VoterAvatar profile={p} avatarUrls={avatarUrls} size="sm" />
-                            </Box>
-                          ))}
-                        </HStack>
-                        {voters.length > 5 && (
-                          <Text size="xs" className="text-stone-400">
-                            +{voters.length - 5}
-                          </Text>
-                        )}
-                      </HStack>
-                    )}
-                  </HStack>
-                </Card>
-              </Pressable>
-            );
-          })}
-
-          {/* Add custom date */}
-          <Card variant="outline" className="p-3">
-            <VStack space="sm">
-              <Text size="sm" className="font-medium text-stone-600">
-                {t("survey.addCustomDate")}
-              </Text>
-              <HStack space="sm">
-                <Box className="flex-1">
-                  <Input>
-                    <InputField
-                      value={customDateInput}
-                      onChangeText={setCustomDateInput}
-                      placeholder={t("survey.customDatePlaceholder")}
-                      autoCapitalize="none"
-                      keyboardType={Platform.OS === "web" ? "default" : "numbers-and-punctuation"}
-                    />
-                  </Input>
-                </Box>
-                <Button
-                  action="primary"
-                  size="sm"
-                  isDisabled={addingDate || !customDateInput.trim()}
-                  onPress={handleAddCustomDate}
-                >
-                  <ButtonText>{addingDate ? "..." : t("common.add")}</ButtonText>
-                </Button>
-              </HStack>
-            </VStack>
-          </Card>
+          <CalendarDatePicker
+            dateOptions={dateOptions}
+            selectedDates={selectedDates}
+            onToggleDate={toggleDate}
+            onAddCustomDate={handleAddCustomDate}
+            disabled={notParticipating}
+            dateVoters={voterInfo.dateVoters}
+            avatarUrls={avatarUrls}
+          />
         </VStack>
 
         {/* Game Selection */}
