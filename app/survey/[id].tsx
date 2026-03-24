@@ -482,7 +482,7 @@ export default function SurveyScreen() {
         <Pressable onPress={toggleNotParticipating}>
           <Card
             variant="filled"
-            className={`p-4 ${notParticipating ? "bg-orange-100 border-2 border-orange-400" : "bg-stone-100"}`}
+            className={`p-4 border-2 ${notParticipating ? "bg-orange-100 border-orange-400" : "bg-stone-100 border-transparent"}`}
           >
             <HStack space="sm" className="items-center">
               <Ionicons
@@ -547,10 +547,10 @@ export default function SurveyScreen() {
               >
                 <Card
                   variant="filled"
-                  className={`overflow-hidden ${
+                  className={`overflow-hidden border-2 ${
                     selected
-                      ? "bg-amber-200 border-2 border-amber-600"
-                      : "bg-stone-100"
+                      ? "bg-amber-200 border-amber-600"
+                      : "bg-stone-100 border-transparent"
                   } ${notParticipating ? "opacity-50" : ""}`}
                 >
                   <HStack space="md" className="items-center p-3">

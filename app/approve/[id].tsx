@@ -740,10 +740,10 @@ export default function ApproveScreen() {
               }}>
                 <Card
                   variant="filled"
-                  className={`p-3 ${
+                  className={`p-3 border-2 ${
                     selected
-                      ? "bg-amber-200 border-2 border-amber-600"
-                      : "bg-stone-100"
+                      ? "bg-amber-200 border-amber-600"
+                      : "bg-stone-100 border-transparent"
                   }`}
                 >
                   <HStack space="sm" className="items-center justify-between">
@@ -824,10 +824,10 @@ export default function ApproveScreen() {
                 <Pressable key={game.id} onPress={() => setSelectedGameId(game.id)}>
                   <Card
                     variant="filled"
-                    className={`overflow-hidden ${
+                    className={`overflow-hidden border-2 ${
                       selected
-                        ? "bg-amber-200 border-2 border-amber-600"
-                        : "bg-stone-100"
+                        ? "bg-amber-200 border-amber-600"
+                        : "bg-stone-100 border-transparent"
                     }`}
                   >
                     <HStack space="md" className="items-center p-3">
