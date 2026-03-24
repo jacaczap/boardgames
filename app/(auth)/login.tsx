@@ -10,13 +10,15 @@ import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
 import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
-import { Input, InputField } from "@/components/ui/input";
+import { Input, InputField, InputSlot, InputIcon } from "@/components/ui/input";
+import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
   const { t } = useTranslation();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const [stayLoggedIn, setStayLoggedIn] = useState(true);
 
   const handleLogin = async () => {
@@ -72,11 +74,14 @@ export default function LoginScreen() {
                 placeholder={t("auth.password")}
                 value={password}
                 onChangeText={setPassword}
-                secureTextEntry
+                secureTextEntry={!showPassword}
                 textContentType="password"
                 autoComplete="password"
                 importantForAutofill="yes"
               />
+              <InputSlot className="pr-3" onPress={() => setShowPassword((v) => !v)}>
+                <InputIcon as={Ionicons} name={showPassword ? "eye-off" : "eye"} />
+              </InputSlot>
             </Input>
 
             <HStack className="items-center justify-between mb-2">

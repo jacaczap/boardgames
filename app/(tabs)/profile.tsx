@@ -23,7 +23,7 @@ import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
 import { Button, ButtonText } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import { Input, InputField } from "@/components/ui/input";
+import { Input, InputField, InputSlot, InputIcon } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
 import { Pressable } from "@/components/ui/pressable";
 import {
@@ -50,6 +50,8 @@ export default function ProfileScreen() {
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const avatarUrl = useSignedUrl("avatars", profile?.avatar_url);
 
@@ -431,10 +433,13 @@ export default function ProfileScreen() {
                   <InputField
                     value={newPassword}
                     onChangeText={setNewPassword}
-                    secureTextEntry
+                    secureTextEntry={!showNewPassword}
                     placeholder={t("profile.newPasswordPlaceholder")}
                     textContentType="newPassword"
                   />
+                  <InputSlot className="pr-3" onPress={() => setShowNewPassword((v) => !v)}>
+                    <InputIcon as={Ionicons} name={showNewPassword ? "eye-off" : "eye"} />
+                  </InputSlot>
                 </Input>
               </VStack>
 
@@ -444,10 +449,13 @@ export default function ProfileScreen() {
                   <InputField
                     value={confirmPassword}
                     onChangeText={setConfirmPassword}
-                    secureTextEntry
+                    secureTextEntry={!showConfirmPassword}
                     placeholder={t("profile.confirmPasswordPlaceholder")}
                     textContentType="newPassword"
                   />
+                  <InputSlot className="pr-3" onPress={() => setShowConfirmPassword((v) => !v)}>
+                    <InputIcon as={Ionicons} name={showConfirmPassword ? "eye-off" : "eye"} />
+                  </InputSlot>
                 </Input>
               </VStack>
 
