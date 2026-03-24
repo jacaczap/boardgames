@@ -12,6 +12,7 @@ import { Ionicons } from "@expo/vector-icons";
 import * as Calendar from "expo-calendar";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { consumeVoteSignal } from "@/lib/voteSignal";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile } from "@/lib/types";
@@ -158,6 +159,10 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      const increment = consumeVoteSignal();
+      if (increment > 0) {
+        setVoterCount((prev) => prev + increment);
+      }
       fetchData();
     }, [fetchData]),
   );

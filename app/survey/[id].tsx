@@ -10,6 +10,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { useSignedUrls } from "@/lib/storage";
+import { signalVoteCast } from "@/lib/voteSignal";
 import type {
   Meeting,
   BoardGame,
@@ -386,6 +387,7 @@ export default function SurveyScreen() {
         }
       }
 
+      signalVoteCast(!existingVote);
       router.back();
     } catch (e: any) {
       Alert.alert(t("common.error"), e?.message ?? t("survey.failedSubmit"));
