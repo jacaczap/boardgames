@@ -10,7 +10,7 @@ import {
 import { tva } from "@gluestack-ui/nativewind-utils/tva";
 
 const avatarStyle = tva({
-  base: "rounded-full items-center justify-center overflow-hidden bg-amber-200",
+  base: "rounded-full items-center justify-center overflow-hidden bg-amber-600",
   variants: {
     size: {
       xs: "w-6 h-6",
@@ -26,7 +26,7 @@ const avatarStyle = tva({
 });
 
 const fallbackTextStyle = tva({
-  base: "font-bold text-amber-800",
+  base: "font-bold text-amber-50",
   variants: {
     size: {
       xs: "text-2xs",
