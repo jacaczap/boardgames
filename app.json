@@ -52,7 +52,8 @@
           "calendarPermission": "Allow BoardGames to add meeting events to your calendar."
         }
       ],
-      "expo-localization"
+      "expo-localization",
+      "expo-sharing"
     ],
     "extra": {
       "router": {},

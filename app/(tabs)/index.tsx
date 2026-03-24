@@ -10,7 +10,9 @@ import {
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
-import * as Calendar from "expo-calendar";
+import * as IntentLauncher from "expo-intent-launcher";
+import * as Sharing from "expo-sharing";
+import * as FileSystem from "expo-file-system";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { consumeVoteSignal } from "@/lib/voteSignal";
@@ -359,43 +361,50 @@ export default function HomeScreen() {
     if (!meeting?.chosen_date || addingToCalendar) return;
     setAddingToCalendar(true);
     try {
-      const { status } = await Calendar.requestCalendarPermissionsAsync();
-      if (status !== "granted") {
-        Alert.alert(t("home.permissionDenied"), t("home.calendarAccessRequired"));
-        return;
-      }
-
-      let calendarId: string | undefined;
-      if (Platform.OS === "ios") {
-        const defaultCal = await Calendar.getDefaultCalendarAsync();
-        calendarId = defaultCal.id;
-      } else if (Platform.OS === "android") {
-        const calendars = await Calendar.getCalendarsAsync(Calendar.EntityTypes.EVENT);
-        const primary = calendars.find(
-          (c) => c.isPrimary || c.accessLevel === Calendar.CalendarAccessLevel.OWNER,
-        );
-        calendarId = primary?.id ?? calendars[0]?.id;
-      }
-
-      if (!calendarId) {
-        Alert.alert(t("common.error"), t("home.noCalendarFound"));
-        return;
-      }
-
       const title = game?.name
         ? t("home.calendarTitle", { game: game.name })
         : t("home.calendarTitleDefault");
-      const startDate = new Date(meeting.chosen_date + "T00:00:00");
-      const endDate = new Date(meeting.chosen_date + "T23:59:59");
 
-      await Calendar.createEventAsync(calendarId, {
-        title,
-        startDate,
-        endDate,
-        allDay: true,
-      });
+      if (Platform.OS === "android") {
+        const startDate = new Date(meeting.chosen_date + "T00:00:00");
+        const endDate = new Date(meeting.chosen_date + "T23:59:59");
+        await IntentLauncher.startActivityAsync(
+          "android.intent.action.INSERT",
+          {
+            data: "content://com.android.calendar/events",
+            extra: {
+              title,
+              beginTime: startDate.getTime(),
+              endTime: endDate.getTime(),
+              allDay: true,
+            },
+          },
+        );
+      } else if (Platform.OS === "ios") {
+        const dtstart = meeting.chosen_date.replace(/-/g, "");
+        const nextDay = new Date(meeting.chosen_date + "T00:00:00");
+        nextDay.setDate(nextDay.getDate() + 1);
+        const dtend = nextDay.toISOString().slice(0, 10).replace(/-/g, "");
 
-      Alert.alert(t("home.calendarDone"), t("home.calendarAdded"));
+        const ics = [
+          "BEGIN:VCALENDAR",
+          "VERSION:2.0",
+          "PRODID:-//BoardGames//EN",
+          "BEGIN:VEVENT",
+          `DTSTART;VALUE=DATE:${dtstart}`,
+          `DTEND;VALUE=DATE:${dtend}`,
+          `SUMMARY:${title}`,
+          "END:VEVENT",
+          "END:VCALENDAR",
+        ].join("\r\n");
+
+        const uri = FileSystem.cacheDirectory + "event.ics";
+        await FileSystem.writeAsStringAsync(uri, ics);
+        await Sharing.shareAsync(uri, {
+          mimeType: "text/calendar",
+          UTI: "com.apple.ical.ics",
+        });
+      }
     } catch (e: any) {
       Alert.alert(t("common.error"), e?.message ?? t("home.failedCalendar"));
     } finally {
