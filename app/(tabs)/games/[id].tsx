@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import {
   ScrollView,
+  RefreshControl,
   TouchableOpacity,
   Alert,
   Linking,
@@ -34,6 +35,7 @@ export default function GameDetailScreen() {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -82,6 +84,12 @@ export default function GameDetailScreen() {
 
   useEffect(() => {
     fetchGame();
+  }, [fetchGame]);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchGame();
+    setRefreshing(false);
   }, [fetchGame]);
 
   const handlePickImage = async () => {
@@ -348,6 +356,9 @@ export default function GameDetailScreen() {
     <ScrollView
       className="flex-1 bg-stone-50"
       contentContainerStyle={{ paddingBottom: 40 }}
+      refreshControl={
+        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+      }
     >
       {imageDisplayUrl ? (
         <Image

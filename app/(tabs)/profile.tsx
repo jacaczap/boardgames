@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
+  RefreshControl,
   Alert,
   Platform,
   KeyboardAvoidingView,
@@ -38,6 +39,7 @@ export default function ProfileScreen() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
@@ -86,6 +88,12 @@ export default function ProfileScreen() {
       fetchProfile();
     }, [fetchProfile]),
   );
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchProfile();
+    setRefreshing(false);
+  }, [fetchProfile]);
 
   const handleSave = async () => {
     if (!profile) return;
@@ -251,6 +259,9 @@ export default function ProfileScreen() {
         className="flex-1 bg-stone-50"
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
         keyboardShouldPersistTaps="handled"
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       >
         <VStack space="xl">
           {/* Avatar */}
