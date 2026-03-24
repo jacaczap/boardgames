@@ -36,12 +36,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Image } from "@/components/ui/image";
 import { Card } from "@/components/ui/card";
 import { Pressable } from "@/components/ui/pressable";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallbackText,
-} from "@/components/ui/avatar";
 import { Badge, BadgeText } from "@/components/ui/badge";
+import UserAvatar from "@/components/UserAvatar";
 import { View } from "react-native";
 
 function formatDate(dateStr: string, locale: string): string {
@@ -654,7 +650,7 @@ export default function ApproveScreen() {
               <HStack space="md" className="flex-wrap">
                 {attendees.map((p) => (
                   <VStack key={p.id} space="xs" className="items-center">
-                    <SmallAvatar profile={p} avatarUrls={avatarUrls} />
+                    <UserAvatar profile={p} avatarUrls={avatarUrls} />
                     <Text size="xs" className="text-stone-500">{p.name}</Text>
                   </VStack>
                 ))}
@@ -786,7 +782,7 @@ export default function ApproveScreen() {
                         <HStack className="flex-row-reverse">
                           {voters.slice(0, 5).map((p) => (
                             <Box key={p.id} className="-ml-2">
-                              <SmallAvatar profile={p} avatarUrls={avatarUrls} />
+                              <UserAvatar profile={p} avatarUrls={avatarUrls} />
                             </Box>
                           ))}
                         </HStack>
@@ -872,7 +868,7 @@ export default function ApproveScreen() {
                       {voters.length > 0 && (
                         <VStack space="xs" className="items-center">
                           {voters.slice(0, 3).map((p) => (
-                            <SmallAvatar key={p.id} profile={p} avatarUrls={avatarUrls} />
+                            <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} />
                           ))}
                           {voters.length > 3 && (
                             <Text size="xs" className="text-stone-400">
@@ -920,23 +916,3 @@ export default function ApproveScreen() {
   );
 }
 
-interface SmallAvatarProps {
-  profile: Profile;
-  avatarUrls: Map<string, string>;
-}
-
-const SmallAvatar: React.FC<SmallAvatarProps> = React.memo(({ profile, avatarUrls }) => {
-  const uri = profile.avatar_url ? avatarUrls.get(profile.avatar_url) : undefined;
-  return (
-    <Avatar size="sm">
-      {uri ? (
-        <AvatarImage source={{ uri }} />
-      ) : (
-        <AvatarFallbackText>
-          {(profile.name?.[0] ?? "").toUpperCase()}
-          {(profile.surname?.[0] ?? "").toUpperCase()}
-        </AvatarFallbackText>
-      )}
-    </Avatar>
-  );
-});

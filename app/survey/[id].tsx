@@ -33,12 +33,8 @@ import { Spinner } from "@/components/ui/spinner";
 import { Image } from "@/components/ui/image";
 import { Card } from "@/components/ui/card";
 import { Pressable } from "@/components/ui/pressable";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallbackText,
-} from "@/components/ui/avatar";
 import { Badge, BadgeText } from "@/components/ui/badge";
+import UserAvatar from "@/components/UserAvatar";
 
 interface VoterInfo {
   dateVoters: Map<string, Profile[]>;
@@ -510,7 +506,7 @@ export default function SurveyScreen() {
               {notParticipatingVoters.map((v) => {
                 const p = profiles.find((pr) => pr.id === v.user_id);
                 if (!p) return null;
-                return <VoterAvatar key={v.id} profile={p} avatarUrls={avatarUrls} />;
+                return <UserAvatar key={v.id} profile={p} avatarUrls={avatarUrls} />;
               })}
             </HStack>
           </VStack>
@@ -600,7 +596,7 @@ export default function SurveyScreen() {
                       <VStack space="xs" className="items-center">
                         <Text size="xs" className="text-stone-500">{voters.length}</Text>
                         {voters.slice(0, 3).map((p) => (
-                          <VoterAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="sm" />
+                          <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="sm" />
                         ))}
                         {voters.length > 3 && (
                           <Text size="xs" className="text-stone-400">
@@ -645,26 +641,3 @@ export default function SurveyScreen() {
   );
 }
 
-interface VoterAvatarProps {
-  profile: Profile;
-  avatarUrls: Map<string, string>;
-  size?: "sm" | "md";
-}
-
-const VoterAvatar: React.FC<VoterAvatarProps> = React.memo(
-  ({ profile, avatarUrls, size = "sm" }) => {
-    const uri = profile.avatar_url ? avatarUrls.get(profile.avatar_url) : undefined;
-    return (
-      <Avatar size={size}>
-        {uri ? (
-          <AvatarImage source={{ uri }} />
-        ) : (
-          <AvatarFallbackText>
-            {(profile.name?.[0] ?? "").toUpperCase()}
-            {(profile.surname?.[0] ?? "").toUpperCase()}
-          </AvatarFallbackText>
-        )}
-      </Avatar>
-    );
-  },
-);

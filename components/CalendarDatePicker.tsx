@@ -11,11 +11,7 @@ import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
 import { Text } from "@/components/ui/text";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallbackText,
-} from "@/components/ui/avatar";
+import UserAvatar from "@/components/UserAvatar";
 
 const COLORS = {
   weekend: "#60a5fa",
@@ -94,30 +90,16 @@ const VoterModal: React.FC<VoterModalProps> = React.memo(
                 </Text>
               ) : (
                 <VStack space="sm">
-                  {voters.map((p) => {
-                    const uri = p.avatar_url
-                      ? avatarUrls.get(p.avatar_url)
-                      : undefined;
-                    return (
-                      <HStack key={p.id} space="sm" className="items-center">
-                        <Avatar size="sm">
-                          {uri ? (
-                            <AvatarImage source={{ uri }} />
-                          ) : (
-                            <AvatarFallbackText>
-                              {(p.name?.[0] ?? "").toUpperCase()}
-                              {(p.surname?.[0] ?? "").toUpperCase()}
-                            </AvatarFallbackText>
-                          )}
-                        </Avatar>
-                        <Text className="text-stone-700">
-                          {[p.name, p.surname].filter(Boolean).join(" ") ||
-                            p.username ||
-                            "?"}
-                        </Text>
-                      </HStack>
-                    );
-                  })}
+                  {voters.map((p) => (
+                    <HStack key={p.id} space="sm" className="items-center">
+                      <UserAvatar profile={p} avatarUrls={avatarUrls} />
+                      <Text className="text-stone-700">
+                        {[p.name, p.surname].filter(Boolean).join(" ") ||
+                          p.username ||
+                          "?"}
+                      </Text>
+                    </HStack>
+                  ))}
                 </VStack>
               )}
             </VStack>
