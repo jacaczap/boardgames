@@ -64,6 +64,7 @@ const en = {
     calendarDone: "Done",
     calendarAdded: "Event added to your calendar.",
     failedUnapprove: "Failed to unapprove meeting",
+    surveyAlreadyExists: "A survey or approved meeting already exists.",
     failedCreateSurvey: "Failed to create survey",
     failedCalendar: "Failed to add calendar event",
   },

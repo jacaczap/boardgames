@@ -256,6 +256,16 @@ export default function HomeScreen() {
     if (creatingSurvey) return;
     setCreatingSurvey(true);
     try {
+      const { count } = await supabase
+        .from("meetings")
+        .select("*", { count: "exact", head: true })
+        .in("status", ["voting", "approved"]);
+      if (count && count > 0) {
+        Alert.alert(t("race.info"), t("home.surveyAlreadyExists"));
+        fetchData();
+        return;
+      }
+
       const { error } = await supabase.rpc("create_next_survey");
       if (error) {
         Alert.alert(t("common.error"), error.message);

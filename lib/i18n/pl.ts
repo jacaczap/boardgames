@@ -64,6 +64,7 @@ const pl = {
     calendarDone: "Gotowe",
     calendarAdded: "Wydarzenie dodane do kalendarza.",
     failedUnapprove: "Nie udało się cofnąć zatwierdzenia",
+    surveyAlreadyExists: "Ankieta lub zatwierdzone spotkanie już istnieje.",
     failedCreateSurvey: "Nie udało się utworzyć ankiety",
     failedCalendar: "Nie udało się dodać wydarzenia",
   },
