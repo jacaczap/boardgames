@@ -1,14 +1,16 @@
-import React, { useEffect, useState, useCallback, useMemo } from "react";
+import React, { useEffect, useState, useCallback, useMemo, useRef } from "react";
 import {
   ScrollView,
   RefreshControl,
   Alert,
+  View,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrls } from "@/lib/storage";
 import { signalVoteCast } from "@/lib/voteSignal";
 import type {
@@ -41,9 +43,14 @@ interface VoterInfo {
   gameVoters: Map<string, Profile[]>;
 }
 
+function formatDate(dateStr: string, locale: string): string {
+  const d = new Date(dateStr + "T00:00:00");
+  return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
+}
 
 export default function SurveyScreen() {
   const { t } = useTranslation();
+  const locale = getDateLocale();
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
 
@@ -66,6 +73,8 @@ export default function SurveyScreen() {
   const [selectedGames, setSelectedGames] = useState<Set<string>>(new Set());
   const [notParticipating, setNotParticipating] = useState(false);
   const [meetingApprovedByOther, setMeetingApprovedByOther] = useState(false);
+  const [showSummary, setShowSummary] = useState(false);
+  const isEditingRef = useRef(false);
 
   const avatarPaths = useMemo(
     () => profiles.map((p) => p.avatar_url).filter((u): u is string => !!u),
@@ -112,6 +121,38 @@ export default function SurveyScreen() {
 
     return { dateVoters, gameVoters };
   }, [profiles, allVotes, allVoteDates, allVoteGames]);
+
+  const dateVoteCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const vd of allVoteDates) {
+      counts.set(vd.date_option_id, (counts.get(vd.date_option_id) ?? 0) + 1);
+    }
+    return counts;
+  }, [allVoteDates]);
+
+  const topDates = useMemo(() => {
+    return dateOptions
+      .map((opt) => ({ ...opt, voteCount: dateVoteCounts.get(opt.id) ?? 0 }))
+      .filter((opt) => opt.voteCount > 0)
+      .sort((a, b) => b.voteCount - a.voteCount || a.date.localeCompare(b.date))
+      .slice(0, 3);
+  }, [dateOptions, dateVoteCounts]);
+
+  const gameVoteCounts = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const vg of allVoteGames) {
+      counts.set(vg.game_id, (counts.get(vg.game_id) ?? 0) + 1);
+    }
+    return counts;
+  }, [allVoteGames]);
+
+  const topGames = useMemo(() => {
+    return games
+      .map((g) => ({ ...g, voteCount: gameVoteCounts.get(g.id) ?? 0 }))
+      .filter((g) => g.voteCount > 0)
+      .sort((a, b) => b.voteCount - a.voteCount || a.name.localeCompare(b.name))
+      .slice(0, 3);
+  }, [games, gameVoteCounts]);
 
   const fetchData = useCallback(async () => {
     if (!id) return;
@@ -186,6 +227,7 @@ export default function SurveyScreen() {
             setSelectedDates(new Set(myVoteDates ?? []));
             setSelectedGames(new Set(myVoteGames ?? []));
           }
+          if (!isEditingRef.current) setShowSummary(true);
         } else {
           setNotParticipating(false);
           setSelectedDates(new Set());
@@ -403,6 +445,7 @@ export default function SurveyScreen() {
       }
 
       signalVoteCast(!existingVote);
+      isEditingRef.current = false;
 
       if (wasApprovedDuringVote) {
         Alert.alert(
@@ -410,7 +453,8 @@ export default function SurveyScreen() {
           t("race.meetingApprovedWhileVoting"),
         );
       }
-      router.back();
+      await fetchData();
+      setShowSummary(true);
     } catch (e: any) {
       Alert.alert(t("common.error"), e?.message ?? t("survey.failedSubmit"));
     } finally {
@@ -431,6 +475,164 @@ export default function SurveyScreen() {
       <Center className="flex-1 bg-stone-50">
         <Text className="text-stone-500">{t("survey.notAvailable")}</Text>
       </Center>
+    );
+  }
+
+  if (showSummary && existingVote) {
+    return (
+      <ScrollView
+        className="flex-1 bg-stone-50"
+        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
+      >
+        <VStack space="lg">
+          <VStack space="xs">
+            <Heading size="xl">{t("survey.surveyNumber", { number: meeting.number })}</Heading>
+            <Text className="text-stone-500">
+              {t("survey.votesSubmitted", { count: allVotes.length })}
+            </Text>
+          </VStack>
+
+          <Card variant="filled" className="bg-green-50 p-4">
+            <HStack space="sm" className="items-center">
+              <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+              <Text className="text-green-700 font-medium">
+                {t("survey.voteRecorded")}
+              </Text>
+            </HStack>
+          </Card>
+
+          {meetingApprovedByOther && (
+            <Card variant="filled" className="bg-orange-100 p-4">
+              <HStack space="sm" className="items-center">
+                <Ionicons name="warning-outline" size={20} color="#ea580c" />
+                <Text className="text-orange-800 flex-1">
+                  {t("race.meetingApprovedBanner")}
+                </Text>
+              </HStack>
+            </Card>
+          )}
+
+          {/* Top Dates */}
+          <VStack space="sm">
+            <Heading size="md">
+              <Ionicons name="calendar-outline" size={16} /> {t("survey.topDates")}
+            </Heading>
+            {topDates.length === 0 ? (
+              <Text className="text-stone-400">{t("survey.noVotesYet")}</Text>
+            ) : (
+              topDates.map((opt) => {
+                const voters = voterInfo.dateVoters.get(opt.id) ?? [];
+                return (
+                  <Card key={opt.id} variant="filled" className="bg-stone-100 p-3">
+                    <HStack space="sm" className="items-center justify-between">
+                      <VStack>
+                        <Text className="font-medium text-stone-800">
+                          {formatDate(opt.date, locale)}
+                        </Text>
+                        <Text size="xs" className="text-stone-500">
+                          {t("survey.voteCount", { count: opt.voteCount })}
+                        </Text>
+                      </VStack>
+                      {voters.length > 0 && (
+                        <HStack space="xs" className="items-center">
+                          <HStack className="flex-row-reverse">
+                            {voters.slice(0, 5).map((p) => (
+                              <Box key={p.id} className="-ml-2">
+                                <UserAvatar profile={p} avatarUrls={avatarUrls} />
+                              </Box>
+                            ))}
+                          </HStack>
+                          {voters.length > 5 && (
+                            <Text size="xs" className="text-stone-400">
+                              +{voters.length - 5}
+                            </Text>
+                          )}
+                        </HStack>
+                      )}
+                    </HStack>
+                  </Card>
+                );
+              })
+            )}
+          </VStack>
+
+          <View className="h-px bg-stone-200" />
+
+          {/* Top Games */}
+          <VStack space="sm">
+            <Heading size="md">
+              <Ionicons name="game-controller-outline" size={16} /> {t("survey.topGames")}
+            </Heading>
+            {topGames.length === 0 ? (
+              <Text className="text-stone-400">{t("survey.noVotesYet")}</Text>
+            ) : (
+              topGames.map((game) => {
+                const voters = voterInfo.gameVoters.get(game.id) ?? [];
+                const imgUrl = game.image_url ? gameImageUrls.get(game.image_url) : undefined;
+                return (
+                  <Card key={game.id} variant="filled" className="bg-stone-100 overflow-hidden">
+                    <HStack space="md" className="items-center p-3">
+                      {imgUrl ? (
+                        <Image
+                          source={{ uri: imgUrl }}
+                          className="w-12 h-12 rounded-lg"
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Center className="w-12 h-12 rounded-lg bg-stone-300">
+                          <Ionicons name="dice-outline" size={20} color="#a8a29e" />
+                        </Center>
+                      )}
+                      <VStack className="flex-1" space="xs">
+                        <Text className="font-semibold text-stone-800">{game.name}</Text>
+                        <Text size="xs" className="text-stone-500">
+                          {t("survey.voteCount", { count: game.voteCount })}
+                        </Text>
+                      </VStack>
+                      {voters.length > 0 && (
+                        <HStack space="xs" className="items-center">
+                          {voters.slice(0, 3).map((p) => (
+                            <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="sm" />
+                          ))}
+                          {voters.length > 3 && (
+                            <Text size="xs" className="text-stone-400">
+                              +{voters.length - 3}
+                            </Text>
+                          )}
+                        </HStack>
+                      )}
+                    </HStack>
+                  </Card>
+                );
+              })
+            )}
+          </VStack>
+
+          {/* Actions */}
+          <VStack space="md" className="mt-4">
+            <Button
+              action="primary"
+              size="lg"
+              onPress={() => {
+                isEditingRef.current = true;
+                setShowSummary(false);
+              }}
+            >
+              <ButtonText className="text-lg">{t("survey.changeVote")}</ButtonText>
+            </Button>
+            <Button
+              variant="outline"
+              action="secondary"
+              onPress={() => router.back()}
+            >
+              <ButtonText>{t("common.back")}</ButtonText>
+            </Button>
+          </VStack>
+        </VStack>
+      </ScrollView>
     );
   }
 
@@ -624,7 +826,7 @@ export default function SurveyScreen() {
               {submitting
                 ? t("survey.submitting")
                 : existingVote
-                  ? t("survey.updateVote")
+                  ? t("survey.changeVote")
                   : t("survey.submitVote")}
             </ButtonText>
           </Button>

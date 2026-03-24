@@ -174,7 +174,7 @@ const en = {
     longPressHint: "Long press a date to see voters",
     inARow: "{{count}}x in a row",
     submitting: "Submitting...",
-    updateVote: "Update Vote",
+    changeVote: "Change Vote",
     submitVote: "Submit Vote",
     playLimitTitle: "3-play limit",
     playLimitMessage: "This game has been played 3+ times in a row. Consider picking a different game.",
@@ -196,6 +196,11 @@ const en = {
     selectGamesMessage: "Pick at least one game or mark 'Not participating'",
     failedCreateVote: "Failed to create vote",
     failedSubmit: "Failed to submit vote",
+    voteRecorded: "Your vote has been recorded!",
+    topDates: "Top Dates",
+    topGames: "Top Games",
+    voteCount: "{{count}} vote(s)",
+    noVotesYet: "No votes yet",
   },
 
   approve: {

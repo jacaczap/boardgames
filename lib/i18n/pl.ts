@@ -174,7 +174,7 @@ const pl = {
     longPressHint: "Przytrzymaj datę, aby zobaczyć głosy",
     inARow: "{{count}}x z rzędu",
     submitting: "Wysyłanie...",
-    updateVote: "Zaktualizuj głos",
+    changeVote: "Zmień głos",
     submitVote: "Wyślij głos",
     playLimitTitle: "Limit 3 gier",
     playLimitMessage: "Ta gra była grana 3+ razy z rzędu. Rozważ wybranie innej gry.",
@@ -196,6 +196,11 @@ const pl = {
     selectGamesMessage: "Wybierz przynajmniej jedną grę lub zaznacz 'Nie uczestniczę'",
     failedCreateVote: "Nie udało się utworzyć głosu",
     failedSubmit: "Nie udało się wysłać głosu",
+    voteRecorded: "Twój głos został zapisany!",
+    topDates: "Najpopularniejsze daty",
+    topGames: "Najpopularniejsze gry",
+    voteCount: "{{count}} głos(ów)",
+    noVotesYet: "Brak głosów",
   },
 
   approve: {
