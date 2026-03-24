@@ -31,12 +31,8 @@ import { Button, ButtonText, ButtonIcon } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Image } from "@/components/ui/image";
 import { Card } from "@/components/ui/card";
-import {
-  Avatar,
-  AvatarImage,
-  AvatarFallbackText,
-  AvatarGroup,
-} from "@/components/ui/avatar";
+import { AvatarGroup } from "@/components/ui/avatar";
+import UserAvatar from "@/components/UserAvatar";
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -688,28 +684,18 @@ export default function HomeScreen() {
                 {t("home.attendees")}
               </Text>
               <AvatarGroup>
-                {attendees.map((p) => {
-                  const signedAvatar = p.avatar_url
-                    ? avatarUrls.get(p.avatar_url)
-                    : undefined;
-                  return (
-                    <VStack key={p.id} space="xs" className="items-center">
-                      <Avatar size="md">
-                        {signedAvatar ? (
-                          <AvatarImage source={{ uri: signedAvatar }} />
-                        ) : (
-                          <AvatarFallbackText>
-                            {(p.name?.[0] ?? "").toUpperCase()}
-                            {(p.surname?.[0] ?? "").toUpperCase()}
-                          </AvatarFallbackText>
-                        )}
-                      </Avatar>
-                      <Text size="xs" className="text-stone-500">
-                        {p.name}
-                      </Text>
-                    </VStack>
-                  );
-                })}
+                {attendees.map((p) => (
+                  <VStack key={p.id} space="xs" className="items-center">
+                    <UserAvatar
+                      profile={p}
+                      avatarUrls={avatarUrls}
+                      size="md"
+                    />
+                    <Text size="xs" className="text-stone-500">
+                      {p.name}
+                    </Text>
+                  </VStack>
+                ))}
               </AvatarGroup>
             </VStack>
           )}
