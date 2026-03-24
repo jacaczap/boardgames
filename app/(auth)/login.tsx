@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Alert, Switch } from "react-native";
+import { Alert, Switch, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { setStayLoggedIn as saveStayLoggedIn } from "@/lib/auth-storage";
@@ -39,52 +39,63 @@ export default function LoginScreen() {
   };
 
   return (
-    <Box className="flex-1 justify-center px-8 bg-stone-50">
-      <Heading size="3xl" className="text-center mb-8">
-        {t("auth.appName")}
-      </Heading>
+    <KeyboardAvoidingView
+      className="flex-1"
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
+    >
+      <ScrollView
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        className="bg-stone-50"
+      >
+        <Box className="flex-1 justify-center px-8">
+          <Heading size="3xl" className="text-center mb-8">
+            {t("auth.appName")}
+          </Heading>
 
-      <VStack space="md">
-        <Input variant="outline" className="rounded-lg">
-          <InputField
-            placeholder={t("auth.email")}
-            value={email}
-            onChangeText={setEmail}
-            autoCapitalize="none"
-            keyboardType="email-address"
-            textContentType="emailAddress"
-          />
-        </Input>
+          <VStack space="md">
+            <Input variant="outline" className="rounded-lg">
+              <InputField
+                placeholder={t("auth.email")}
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                textContentType="emailAddress"
+              />
+            </Input>
 
-        <Input variant="outline" className="rounded-lg">
-          <InputField
-            placeholder={t("auth.password")}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-            textContentType="password"
-          />
-        </Input>
+            <Input variant="outline" className="rounded-lg">
+              <InputField
+                placeholder={t("auth.password")}
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+                textContentType="password"
+              />
+            </Input>
 
-        <HStack className="items-center justify-between mb-2">
-          <Text className="text-stone-600">{t("auth.stayLoggedIn")}</Text>
-          <Switch value={stayLoggedIn} onValueChange={setStayLoggedIn} />
-        </HStack>
+            <HStack className="items-center justify-between mb-2">
+              <Text className="text-stone-600">{t("auth.stayLoggedIn")}</Text>
+              <Switch value={stayLoggedIn} onValueChange={setStayLoggedIn} />
+            </HStack>
 
-        <Button
-          action="primary"
-          size="lg"
-          onPress={handleLogin}
-          isDisabled={loading}
-          className="rounded-lg"
-        >
-          {loading ? (
-            <ButtonSpinner />
-          ) : (
-            <ButtonText>{t("auth.logIn")}</ButtonText>
-          )}
-        </Button>
-      </VStack>
-    </Box>
+            <Button
+              action="primary"
+              size="lg"
+              onPress={handleLogin}
+              isDisabled={loading}
+              className="rounded-lg"
+            >
+              {loading ? (
+                <ButtonSpinner />
+              ) : (
+                <ButtonText>{t("auth.logIn")}</ButtonText>
+              )}
+            </Button>
+          </VStack>
+        </Box>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
