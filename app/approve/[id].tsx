@@ -542,78 +542,82 @@ export default function ApproveScreen() {
             <Text size="sm" className="text-stone-500">
               {t("approve.sortedByVotes")}
             </Text>
-            {sortedGames.map((game) => {
-              const selected = selectedGameId === game.id;
-              const voteCount = gameVoteCountsForDate.get(game.id) ?? 0;
-              const voters = gameVoterProfilesForDate.get(game.id) ?? [];
-              const imgUrl = game.image_url ? gameImageUrls.get(game.image_url) : undefined;
+            <View className="flex-row flex-wrap gap-2">
+              {sortedGames.map((game) => {
+                const selected = selectedGameId === game.id;
+                const voteCount = gameVoteCountsForDate.get(game.id) ?? 0;
+                const voters = gameVoterProfilesForDate.get(game.id) ?? [];
+                const imgUrl = game.image_url ? gameImageUrls.get(game.image_url) : undefined;
 
-              return (
-                <Pressable key={game.id} onPress={() => setSelectedGameId(game.id)}>
-                  <Card
-                    variant="filled"
-                    className={`overflow-hidden border-2 ${
-                      selected
-                        ? "bg-amber-200 border-amber-600"
-                        : "bg-stone-100 border-transparent"
-                    }`}
-                  >
-                    <HStack space="md" className="items-center p-3">
-                      {imgUrl ? (
-                        <Image
-                          source={{ uri: imgUrl }}
-                          className="w-14 h-14 rounded-lg"
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <Center className="w-14 h-14 rounded-lg bg-stone-300">
-                          <Ionicons name="dice-outline" size={22} color="#a8a29e" />
-                        </Center>
-                      )}
-                      <VStack className="flex-1" space="xs">
-                        <HStack space="sm" className="items-center">
+                return (
+                  <Pressable key={game.id} onPress={() => setSelectedGameId(game.id)} style={{ width: "48.5%" }}>
+                    <Card
+                      variant="filled"
+                      className={`overflow-hidden border-2 ${
+                        selected
+                          ? "bg-amber-200 border-amber-600"
+                          : "bg-stone-100 border-transparent"
+                      }`}
+                    >
+                      <VStack space="xs" className="items-center p-3">
+                        <HStack className="w-full items-center" space="xs">
                           <Ionicons
                             name={selected ? "radio-button-on" : "radio-button-off"}
-                            size={22}
+                            size={18}
                             color={selected ? "#b45309" : "#a8a29e"}
                           />
-                          <Text className="font-semibold text-stone-800 flex-1">
-                            {game.name}
-                          </Text>
+                          <View className="flex-1" />
+                          {imgUrl ? (
+                            <Image
+                              source={{ uri: imgUrl }}
+                              className="w-12 h-12 rounded-lg"
+                              resizeMode="cover"
+                            />
+                          ) : (
+                            <Center className="w-12 h-12 rounded-lg bg-stone-300">
+                              <Ionicons name="dice-outline" size={20} color="#a8a29e" />
+                            </Center>
+                          )}
+                          <View className="flex-1" />
                         </HStack>
-                        <HStack space="sm" className="items-center flex-wrap">
+                        <Text className="font-semibold text-stone-800 text-center" numberOfLines={2}>
+                          {game.name}
+                        </Text>
+                        <HStack space="xs" className="items-center flex-wrap justify-center">
                           {game.genre && (
-                            <Badge action="info">
+                            <Badge action="info" size="sm">
                               <BadgeText action="info">{game.genre}</BadgeText>
                             </Badge>
                           )}
                           {(game.min_players != null || game.max_players != null) && (
                             <Text size="xs" className="text-stone-500">
-                              {game.min_players ?? "?"}-{game.max_players ?? "?"} {t("common.players")}
+                              {game.min_players ?? "?"}-{game.max_players ?? "?"}p
                             </Text>
                           )}
-                          <Text size="xs" className="text-stone-500">
-                            {t("approve.voteCount", { count: voteCount })}
-                          </Text>
                         </HStack>
+                        <Text size="xs" className="text-stone-500">
+                          {t("approve.voteCount", { count: voteCount })}
+                        </Text>
+                        {voters.length > 0 && (
+                          <HStack className="flex-row-reverse justify-center">
+                            {voters.slice(0, 4).map((p) => (
+                              <Box key={p.id} className="-ml-2">
+                                <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="xs" />
+                              </Box>
+                            ))}
+                            {voters.length > 4 && (
+                              <Text size="xs" className="text-stone-400 ml-1">
+                                +{voters.length - 4}
+                              </Text>
+                            )}
+                          </HStack>
+                        )}
                       </VStack>
-                      {voters.length > 0 && (
-                        <VStack space="xs" className="items-center shrink-0 ml-2">
-                          {voters.slice(0, 3).map((p) => (
-                            <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} />
-                          ))}
-                          {voters.length > 3 && (
-                            <Text size="xs" className="text-stone-400">
-                              +{voters.length - 3}
-                            </Text>
-                          )}
-                        </VStack>
-                      )}
-                    </HStack>
-                  </Card>
-                </Pressable>
-              );
-            })}
+                    </Card>
+                  </Pressable>
+                );
+              })}
+            </View>
           </VStack>
         )}
 

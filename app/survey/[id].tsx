@@ -577,45 +577,49 @@ export default function SurveyScreen() {
             {topGames.length === 0 ? (
               <Text className="text-stone-400">{t("survey.noVotesYet")}</Text>
             ) : (
-              topGames.map((game) => {
-                const voters = voterInfo.gameVoters.get(game.id) ?? [];
-                const imgUrl = game.image_url ? gameImageUrls.get(game.image_url) : undefined;
-                return (
-                  <Card key={game.id} variant="filled" className="bg-stone-100 overflow-hidden">
-                    <HStack space="md" className="items-center p-3">
-                      {imgUrl ? (
-                        <Image
-                          source={{ uri: imgUrl }}
-                          className="w-12 h-12 rounded-lg"
-                          resizeMode="cover"
-                        />
-                      ) : (
-                        <Center className="w-12 h-12 rounded-lg bg-stone-300">
-                          <Ionicons name="dice-outline" size={20} color="#a8a29e" />
-                        </Center>
-                      )}
-                      <VStack className="flex-1" space="xs">
-                        <Text className="font-semibold text-stone-800">{game.name}</Text>
+              <View className="flex-row flex-wrap gap-2">
+                {topGames.map((game) => {
+                  const voters = voterInfo.gameVoters.get(game.id) ?? [];
+                  const imgUrl = game.image_url ? gameImageUrls.get(game.image_url) : undefined;
+                  return (
+                    <Card key={game.id} variant="filled" className="bg-stone-100 overflow-hidden" style={{ width: "48.5%" }}>
+                      <VStack space="xs" className="items-center p-3">
+                        {imgUrl ? (
+                          <Image
+                            source={{ uri: imgUrl }}
+                            className="w-14 h-14 rounded-lg"
+                            resizeMode="cover"
+                          />
+                        ) : (
+                          <Center className="w-14 h-14 rounded-lg bg-stone-300">
+                            <Ionicons name="dice-outline" size={22} color="#a8a29e" />
+                          </Center>
+                        )}
+                        <Text className="font-semibold text-stone-800 text-center" numberOfLines={2}>
+                          {game.name}
+                        </Text>
                         <Text size="xs" className="text-stone-500">
                           {t("survey.voteCount", { count: game.voteCount })}
                         </Text>
+                        {voters.length > 0 && (
+                          <HStack className="flex-row-reverse justify-center">
+                            {voters.slice(0, 4).map((p) => (
+                              <Box key={p.id} className="-ml-2">
+                                <UserAvatar profile={p} avatarUrls={avatarUrls} size="xs" />
+                              </Box>
+                            ))}
+                            {voters.length > 4 && (
+                              <Text size="xs" className="text-stone-400 ml-1">
+                                +{voters.length - 4}
+                              </Text>
+                            )}
+                          </HStack>
+                        )}
                       </VStack>
-                      {voters.length > 0 && (
-                        <HStack space="xs" className="items-center shrink-0 ml-2">
-                          {voters.slice(0, 3).map((p) => (
-                            <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="sm" />
-                          ))}
-                          {voters.length > 3 && (
-                            <Text size="xs" className="text-stone-400">
-                              +{voters.length - 3}
-                            </Text>
-                          )}
-                        </HStack>
-                      )}
-                    </HStack>
-                  </Card>
-                );
-              })
+                    </Card>
+                  );
+                })}
+              </View>
             )}
           </VStack>
 
