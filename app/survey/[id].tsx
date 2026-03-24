@@ -536,7 +536,7 @@ export default function SurveyScreen() {
                 return (
                   <Card key={opt.id} variant="filled" className="bg-stone-100 p-3">
                     <HStack space="sm" className="items-center justify-between">
-                      <VStack>
+                      <VStack className="flex-1">
                         <Text className="font-medium text-stone-800">
                           {formatDate(opt.date, locale)}
                         </Text>
@@ -545,7 +545,7 @@ export default function SurveyScreen() {
                         </Text>
                       </VStack>
                       {voters.length > 0 && (
-                        <HStack space="xs" className="items-center">
+                        <HStack space="xs" className="items-center shrink-0 ml-2">
                           <HStack className="flex-row-reverse">
                             {voters.slice(0, 5).map((p) => (
                               <Box key={p.id} className="-ml-2">
@@ -601,7 +601,7 @@ export default function SurveyScreen() {
                         </Text>
                       </VStack>
                       {voters.length > 0 && (
-                        <HStack space="xs" className="items-center">
+                        <HStack space="xs" className="items-center shrink-0 ml-2">
                           {voters.slice(0, 3).map((p) => (
                             <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="sm" />
                           ))}
@@ -803,7 +803,7 @@ export default function SurveyScreen() {
                       </HStack>
                     </VStack>
                     {voters.length > 0 && (
-                      <VStack space="xs" className="items-center">
+                      <VStack space="xs" className="items-center shrink-0 ml-2">
                         <Text size="xs" className="text-stone-500">{voters.length}</Text>
                         {voters.slice(0, 3).map((p) => (
                           <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="sm" />

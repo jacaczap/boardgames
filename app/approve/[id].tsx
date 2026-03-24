@@ -510,7 +510,7 @@ export default function ApproveScreen() {
                       </VStack>
                     </HStack>
                     {voters.length > 0 && (
-                      <HStack space="xs" className="items-center">
+                      <HStack space="xs" className="items-center shrink-0 ml-2">
                         <HStack className="flex-row-reverse">
                           {voters.slice(0, 5).map((p) => (
                             <Box key={p.id} className="-ml-2">
@@ -598,7 +598,7 @@ export default function ApproveScreen() {
                         </HStack>
                       </VStack>
                       {voters.length > 0 && (
-                        <VStack space="xs" className="items-center">
+                        <VStack space="xs" className="items-center shrink-0 ml-2">
                           {voters.slice(0, 3).map((p) => (
                             <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} />
                           ))}
