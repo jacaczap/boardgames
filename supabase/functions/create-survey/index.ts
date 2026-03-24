@@ -1,6 +1,4 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { sendPushNotifications } from "../_shared/push.ts";
-import type { PushMessage } from "../_shared/push.ts";
 
 Deno.serve(async (_req) => {
   try {
@@ -27,7 +25,6 @@ Deno.serve(async (_req) => {
       .limit(1);
 
     if (lastCompleted?.length && lastCompleted[0].chosen_date) {
-      // Append time to avoid timezone-dependent parsing of date-only strings
       const chosenDate = new Date(lastCompleted[0].chosen_date + "T00:00:00Z");
       const daysSince =
         (Date.now() - chosenDate.getTime()) / (1000 * 60 * 60 * 24);
@@ -40,19 +37,7 @@ Deno.serve(async (_req) => {
       await supabase.rpc("create_next_survey");
     if (rpcError) throw rpcError;
 
-    const { data: tokens } = await supabase
-      .from("push_tokens")
-      .select("token");
-
-    if (tokens?.length) {
-      const messages: PushMessage[] = tokens.map((t) => ({
-        to: t.token,
-        title: "Nowa ankieta!",
-        body: "Nowa ankieta jest gotowa. Zagłosuj!",
-        data: { type: "survey", meetingId: newMeetingId },
-      }));
-      await sendPushNotifications(messages);
-    }
+    // Push notifications are sent via DB trigger on meetings INSERT (status='voting')
 
     return Response.json({ meetingId: newMeetingId });
   } catch (error) {
