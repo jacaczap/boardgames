@@ -16,7 +16,7 @@ A React Native (Expo) app for a friend group to coordinate board game meetings -
 - **Meeting approval** -- pick date sorted by votes, pick game filtered by date voters, late join, edit/unapprove
 - **Board games CRUD** -- list with search, detail/edit/delete, image upload
 - **Profile** -- avatar upload, name/username edit, password change, notification preferences
-- **Push notifications** -- survey reminders, meeting reminders, new user alerts (via Supabase Edge Functions + Expo Push API)
+- **Push notifications** -- survey reminders, meeting reminders (via Supabase Edge Functions + Expo Push API)
 - **Realtime** -- live updates when meetings or votes change
 
 ## Project Structure
@@ -149,7 +149,6 @@ SQL functions: `create_next_survey()`, `get_consecutive_game_count()`, Polish ho
 | `survey-reminder` | Daily | Remind users who haven't voted (per-user interval) |
 | `meeting-reminder` | Daily | Notify attendees N days before meeting (per-user setting) |
 | `complete-meeting` | Daily | Mark past approved meetings as completed |
-| `new-user-notification` | DB trigger | Notify everyone when a new member joins |
 
 ## Security
 

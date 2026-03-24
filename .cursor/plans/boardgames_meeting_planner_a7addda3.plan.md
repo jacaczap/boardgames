@@ -84,7 +84,7 @@ todos:
     content: "Phase 17a: Fix expo-notifications@55 TS compat -- add shouldShowBanner/shouldShowList to notification handler, replace removed removeNotificationSubscription with subscription.remove(), fix Subscription useRef type, exclude supabase/functions/ from tsconfig (Deno files)"
     status: completed
   - id: edge-func-fixes
-    content: "Phase 17b: Edge Function fixes -- fix timezone-sensitive date comparison in create-survey (append T00:00:00Z), fix new-user-notification always showing 'Someone new' (profile has no name at trigger time, defer or accept as known limitation)"
+    content: "Phase 17b: Edge Function fixes -- fix timezone-sensitive date comparison in create-survey (append T00:00:00Z)"
     status: completed
   - id: complete-meeting-cron
     content: "Phase 17c: Add complete-meeting lifecycle -- new Edge Function that marks approved meetings as 'completed' when chosen_date has passed, pg_cron daily schedule, migration. Fix meeting-reminder to use exact match (daysUntil == notification_prior_meeting) instead of range (<=) so each user is notified exactly once, no log table needed"
@@ -203,7 +203,6 @@ Utility in both SQL and TypeScript to compute Polish holidays for a given year:
 - No session -> redirect to `(auth)/login`
 - Has session -> redirect to `(tabs)/`
 - A Supabase trigger (`on_auth_user_created`) auto-inserts a `profiles` row. On first login, user uploads avatar in Profile, updates `profiles.avatar_url`, registers Expo push token -> `push_tokens` table
-- **On new profile insert**: a database trigger/Edge Function sends push notification to all other users ("X joined the group!")
 - **Login screen**: email + password, "Stay logged in" toggle (default on). When enabled, Supabase client is configured with `persistSession: true` so the session is stored locally and auto-refreshed -- user stays logged in across app restarts. When disabled, session is only kept in memory for the current app session.
 
 **Supabase Auth hardening** (configure in Dashboard > Authentication > Settings):
@@ -294,8 +293,6 @@ Edge Functions triggered by `pg_cron` or database triggers:
 2. `**survey-reminder`** (pg_cron, daily): for active surveys, finds users who haven't voted and whose `survey_reminder_log.sent_at` is >= `notification_reminder_interval` days ago (per-user setting) or has no entry yet; sends push and upserts `survey_reminder_log`.
 3. `**meeting-reminder`** (pg_cron, daily): for approved meetings, sends a one-shot push to attendees exactly `notification_prior_meeting` days before the meeting (per-user setting). Uses exact match (`daysUntil == setting`) so each user is notified once — no log table needed.
 4. `**complete-meeting`** (pg_cron, daily): marks approved meetings whose `chosen_date` has passed as `completed`, closing the lifecycle loop so `create-survey` can auto-create the next survey.
-5. `**new-user-notification`** (DB trigger on `profiles` INSERT): sends push to all existing users notifying them a new member joined.
-
 Push notifications sent via Expo Push API using tokens from `push_tokens` table (read by Edge Functions via `service_role` key).
 
 Additionally, **Supabase Realtime** subscriptions on the `meetings` table to instantly notify the app when a meeting is edited/unapproved (in-app handling).
@@ -304,7 +301,6 @@ Additionally, **Supabase Realtime** subscriptions on the `meetings` table to ins
 
 ```mermaid
 flowchart TD
-    NewUser["Admin creates new user"] -->|"DB trigger"| PushNewUser["Push: X joined the group!"]
     CompletedMeeting["Meeting completed"] -->|"7 days later"| CronCreateSurvey["pg_cron: create-survey"]
     CronCreateSurvey --> NewSurvey["New meeting (status=voting)"]
     NewSurvey --> PushNotif["Push: Survey available"]

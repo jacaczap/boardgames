@@ -1,5 +1,5 @@
 -- =============================================================================
--- Notifications: pg_cron jobs, new-user trigger, push_tokens delete policy
+-- Notifications: pg_cron jobs, push_tokens delete policy
 -- =============================================================================
 --
 -- Prerequisites: store these secrets in Supabase Vault (run in SQL Editor):
@@ -78,24 +78,3 @@ select cron.schedule(
   $$select extensions.invoke_edge_function('meeting-reminder');$$
 );
 
--- ---------------------------------------------------------------------------
--- Trigger: notify all users when a new profile is created
--- ---------------------------------------------------------------------------
-
-create or replace function public.notify_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = ''
-as $$
-begin
-  perform extensions.invoke_edge_function(
-    'new-user-notification',
-    jsonb_build_object('user_id', new.id::text)
-  );
-  return new;
-end;
-$$;
-
-create trigger on_profile_created
-  after insert on public.profiles
-  for each row execute function public.notify_new_user();

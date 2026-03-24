@@ -30,7 +30,7 @@ Planszówki is a private, invite-only app for coordinating board game meetings a
 ## How We Use Your Data
 
 - **Coordinate meetings** -- display votes, approve dates, select games
-- **Send notifications** -- survey reminders, meeting reminders, new member alerts
+- **Send notifications** -- survey reminders, meeting reminders
 - **Display your profile** -- name and avatar visible to other group members
 
 We do **not**:
