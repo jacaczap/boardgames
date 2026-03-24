@@ -5,6 +5,7 @@ import {
   RefreshControl,
   Alert,
   Platform,
+  AppState,
 } from "react-native";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -176,6 +177,13 @@ export default function HomeScreen() {
       fetchData();
     }, [fetchData]),
   );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") fetchData();
+    });
+    return () => sub.remove();
+  }, [fetchData]);
 
   useEffect(() => {
     const channel = supabase

@@ -4,6 +4,7 @@ import {
   RefreshControl,
   Alert,
   View,
+  AppState,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -246,6 +247,13 @@ export default function SurveyScreen() {
       fetchData();
     }, [fetchData]),
   );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") fetchData();
+    });
+    return () => sub.remove();
+  }, [fetchData]);
 
   useEffect(() => {
     if (!id) return;

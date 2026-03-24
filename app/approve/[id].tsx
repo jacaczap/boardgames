@@ -5,6 +5,7 @@ import {
   Alert,
   Linking,
   Platform,
+  AppState,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -263,6 +264,13 @@ export default function ApproveScreen() {
       fetchData();
     }, [fetchData]),
   );
+
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") fetchData();
+    });
+    return () => sub.remove();
+  }, [fetchData]);
 
   useEffect(() => {
     if (!id) return;
