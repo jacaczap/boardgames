@@ -18,13 +18,11 @@ function getInitials(profile: Profile): string {
   const first = profile.name?.[0];
   const last = profile.surname?.[0];
   if (first || last) return `${first ?? ""}${last ?? ""}`.toUpperCase();
-  if (profile.username) return profile.username.slice(0, 2).toUpperCase();
   return "?";
 }
 
 function getDisplayName(profile: Profile): string {
-  const full = [profile.name, profile.surname].filter(Boolean).join(" ");
-  return full || profile.username || "?";
+  return [profile.name, profile.surname].filter(Boolean).join(" ") || "?";
 }
 
 interface UserAvatarProps {
@@ -58,8 +56,6 @@ const UserAvatar: React.FC<UserAvatarProps> = React.memo(
     if (!showNameOnPress) return avatar;
 
     const displayName = getDisplayName(profile);
-    const hasUsername =
-      profile.username && displayName !== profile.username;
 
     return (
       <>
@@ -85,16 +81,9 @@ const UserAvatar: React.FC<UserAvatarProps> = React.memo(
                     </AvatarFallbackText>
                   )}
                 </Avatar>
-                <VStack space="xs" className="items-center">
-                  <Text size="lg" className="font-semibold text-stone-800">
-                    {displayName}
-                  </Text>
-                  {hasUsername && (
-                    <Text size="sm" className="text-stone-500">
-                      @{profile.username}
-                    </Text>
-                  )}
-                </VStack>
+                <Text size="lg" className="font-semibold text-stone-800">
+                  {displayName}
+                </Text>
               </VStack>
             </Pressable>
           </Pressable>

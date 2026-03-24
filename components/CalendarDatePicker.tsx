@@ -94,9 +94,7 @@ const VoterModal: React.FC<VoterModalProps> = React.memo(
                     <HStack key={p.id} space="sm" className="items-center">
                       <UserAvatar profile={p} avatarUrls={avatarUrls} />
                       <Text className="text-stone-700">
-                        {[p.name, p.surname].filter(Boolean).join(" ") ||
-                          p.username ||
-                          "?"}
+                        {[p.name, p.surname].filter(Boolean).join(" ") || "?"}
                       </Text>
                     </HStack>
                   ))}

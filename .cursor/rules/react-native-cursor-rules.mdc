@@ -40,4 +40,5 @@ You are an expert in TypeScript, React Native, Expo, and Mobile App Development.
   - Follow React Native's threading model to ensure smooth UI performance.
   - Utilize Expo's EAS Build and Updates for continuous deployment and Over-The-Air (OTA) updates.
   - Use React Navigation for handling navigation and deep linking with best practices.
+  - Never edit historical migrations. If needed to update or delete something then create a new migration with that change
 

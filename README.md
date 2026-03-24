@@ -15,7 +15,7 @@ A React Native (Expo) app for a friend group to coordinate board game meetings -
 - **Survey voting** -- Doodle-style date picker (weekends + Polish holidays + custom dates), game multi-select with 3-play streak logic, "not participating" option
 - **Meeting approval** -- pick date sorted by votes, pick game filtered by date voters, late join, edit/unapprove
 - **Board games CRUD** -- list with search, detail/edit/delete, image upload
-- **Profile** -- avatar upload, name/username edit, password change, notification preferences
+- **Profile** -- avatar upload, name edit, password change, notification preferences
 - **Push notifications** -- survey reminders, meeting reminders (via Supabase Edge Functions + Expo Push API)
 - **Realtime** -- live updates when meetings or votes change
 

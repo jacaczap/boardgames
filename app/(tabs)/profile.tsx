@@ -44,7 +44,6 @@ export default function ProfileScreen() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
-  const [username, setUsername] = useState("");
   const [notifPriorMeeting, setNotifPriorMeeting] = useState("1");
   const [notifReminderInterval, setNotifReminderInterval] = useState("2");
 
@@ -75,7 +74,6 @@ export default function ProfileScreen() {
       setProfile(p);
       setName(p.name ?? "");
       setSurname(p.surname ?? "");
-      setUsername(p.username ?? "");
       setNotifPriorMeeting(String(p.notification_prior_meeting));
       setNotifReminderInterval(String(p.notification_reminder_interval));
     } catch (e) {
@@ -119,7 +117,6 @@ export default function ProfileScreen() {
         .update({
           name: name.trim() || null,
           surname: surname.trim() || null,
-          username: username.trim() || null,
           notification_prior_meeting: priorMeeting,
           notification_reminder_interval: reminderInterval,
         })
@@ -248,7 +245,6 @@ export default function ProfileScreen() {
   const hasChanges =
     name !== (profile.name ?? "") ||
     surname !== (profile.surname ?? "") ||
-    username !== (profile.username ?? "") ||
     notifPriorMeeting !== String(profile.notification_prior_meeting) ||
     notifReminderInterval !== String(profile.notification_reminder_interval);
 
@@ -289,9 +285,6 @@ export default function ProfileScreen() {
                 </Center>
               </Box>
             </Pressable>
-            {profile.username && (
-              <Text className="text-stone-500 mt-2">@{profile.username}</Text>
-            )}
           </Center>
 
           {/* Language Switcher */}
@@ -349,17 +342,6 @@ export default function ProfileScreen() {
                 </Input>
               </VStack>
 
-              <VStack space="xs">
-                <Text size="sm" className="text-stone-500 font-medium">{t("profile.username")}</Text>
-                <Input>
-                  <InputField
-                    value={username}
-                    onChangeText={setUsername}
-                    placeholder={t("profile.usernamePlaceholder")}
-                    autoCapitalize="none"
-                  />
-                </Input>
-              </VStack>
             </VStack>
           </Card>
 
