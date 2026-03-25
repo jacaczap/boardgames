@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import {
   ScrollView,
   Linking,
@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
-import type { Meeting, BoardGame, Profile } from "@/lib/types";
+import type { Meeting, BoardGame, Profile, Vote, VoteDate, VoteGame } from "@/lib/types";
 import SurveyContent from "@/components/SurveyContent";
 
 import { VStack } from "@/components/ui/vstack";
@@ -30,6 +30,7 @@ import { Button, ButtonText, ButtonIcon } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
 import { Image } from "@/components/ui/image";
 import { Card } from "@/components/ui/card";
+import { Box } from "@/components/ui/box";
 import { AvatarGroup } from "@/components/ui/avatar";
 import UserAvatar from "@/components/UserAvatar";
 
@@ -47,16 +48,25 @@ export default function HomeScreen() {
   const [nextSurveyDate, setNextSurveyDate] = useState<Date | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [chosenDateOptionId, setChosenDateOptionId] = useState<string | null>(null);
+  const [allVoterProfiles, setAllVoterProfiles] = useState<Profile[]>([]);
   const [votingResults, setVotingResults] = useState<{
-    dates: { date: string; count: number; isChosen: boolean }[];
-    games: { name: string; count: number; isChosen: boolean }[];
+    dates: { date: string; count: number; isChosen: boolean; voters: Profile[] }[];
+    games: { name: string; count: number; isChosen: boolean; voters: Profile[] }[];
     totalVotes: number;
   } | null>(null);
 
   const gameImageUrl = useSignedUrl("game-images", game?.image_url);
-  const avatarPaths = attendees
-    .map((p) => p.avatar_url)
-    .filter((u): u is string => !!u);
+  const avatarPaths = useMemo(() => {
+    const seen = new Set<string>();
+    const paths: string[] = [];
+    for (const p of [...attendees, ...allVoterProfiles]) {
+      if (p.avatar_url && !seen.has(p.avatar_url)) {
+        seen.add(p.avatar_url);
+        paths.push(p.avatar_url);
+      }
+    }
+    return paths;
+  }, [attendees, allVoterProfiles]);
   const avatarUrls = useSignedUrls("avatars", avatarPaths);
 
   const fetchData = useCallback(async () => {
@@ -74,6 +84,7 @@ export default function HomeScreen() {
       if (!m) {
         setGame(null);
         setAttendees([]);
+        setAllVoterProfiles([]);
         setVotingResults(null);
 
         const { data: lastCompleted } = await supabase
@@ -143,40 +154,71 @@ export default function HomeScreen() {
           }
         }
 
-        const [dateOptsRes, votesRes, voteDatesRes, voteGamesRes, allGamesRes] =
+        const [dateOptsRes, votesRes, voteDatesRes, voteGamesRes, allGamesRes, profilesRes] =
           await Promise.all([
             supabase.from("date_options").select("id, date").eq("meeting_id", m.id).order("date"),
-            supabase.from("votes").select("id").eq("meeting_id", m.id),
+            supabase.from("votes").select("id, user_id").eq("meeting_id", m.id),
             supabase
               .from("vote_dates")
-              .select("date_option_id, votes!inner(meeting_id)")
+              .select("date_option_id, vote_id, votes!inner(meeting_id)")
               .eq("votes.meeting_id", m.id),
             supabase
               .from("vote_games")
-              .select("game_id, votes!inner(meeting_id)")
+              .select("game_id, vote_id, votes!inner(meeting_id)")
               .eq("votes.meeting_id", m.id),
             supabase.from("board_games").select("id, name"),
+            supabase.from("profiles").select("id, name, surname, avatar_url"),
           ]);
 
+        const voteUserMap = new Map(
+          ((votesRes.data ?? []) as { id: string; user_id: string }[]).map((v) => [v.id, v.user_id]),
+        );
+        const profileMap = new Map(
+          ((profilesRes.data ?? []) as Profile[]).map((p) => [p.id, p]),
+        );
+
+        const voterUserIds = new Set(
+          ((votesRes.data ?? []) as { id: string; user_id: string }[]).map((v) => v.user_id),
+        );
+        setAllVoterProfiles(
+          [...voterUserIds].map((uid) => profileMap.get(uid)).filter((p): p is Profile => !!p),
+        );
+
         const dateCountMap = new Map<string, number>();
-        for (const vd of (voteDatesRes.data ?? []) as { date_option_id: string }[]) {
+        const dateVoterMap = new Map<string, Profile[]>();
+        for (const vd of (voteDatesRes.data ?? []) as { date_option_id: string; vote_id: string }[]) {
           dateCountMap.set(vd.date_option_id, (dateCountMap.get(vd.date_option_id) ?? 0) + 1);
+          const userId = voteUserMap.get(vd.vote_id);
+          const profile = userId ? profileMap.get(userId) : undefined;
+          if (profile) {
+            const arr = dateVoterMap.get(vd.date_option_id) ?? [];
+            arr.push(profile);
+            dateVoterMap.set(vd.date_option_id, arr);
+          }
         }
         const dateOpts = (dateOptsRes.data ?? []) as { id: string; date: string }[];
         const dateTallies = dateOpts
-          .map((o) => ({ date: o.date, count: dateCountMap.get(o.id) ?? 0, isChosen: o.date === m.chosen_date }))
+          .map((o) => ({ date: o.date, count: dateCountMap.get(o.id) ?? 0, isChosen: o.date === m.chosen_date, voters: dateVoterMap.get(o.id) ?? [] }))
           .filter((d) => d.count > 0)
           .sort((a, b) => b.count - a.count);
 
         const gameCountMap = new Map<string, number>();
-        for (const vg of (voteGamesRes.data ?? []) as { game_id: string }[]) {
+        const gameVoterMap = new Map<string, Profile[]>();
+        for (const vg of (voteGamesRes.data ?? []) as { game_id: string; vote_id: string }[]) {
           gameCountMap.set(vg.game_id, (gameCountMap.get(vg.game_id) ?? 0) + 1);
+          const userId = voteUserMap.get(vg.vote_id);
+          const profile = userId ? profileMap.get(userId) : undefined;
+          if (profile) {
+            const arr = gameVoterMap.get(vg.game_id) ?? [];
+            arr.push(profile);
+            gameVoterMap.set(vg.game_id, arr);
+          }
         }
         const gameNameMap = new Map(
           ((allGamesRes.data ?? []) as { id: string; name: string }[]).map((g) => [g.id, g.name]),
         );
         const gameTallies = [...gameCountMap.entries()]
-          .map(([gid, count]) => ({ name: gameNameMap.get(gid) ?? "?", count, isChosen: gid === m.chosen_game_id }))
+          .map(([gid, count]) => ({ name: gameNameMap.get(gid) ?? "?", count, isChosen: gid === m.chosen_game_id, voters: gameVoterMap.get(gid) ?? [] }))
           .sort((a, b) => b.count - a.count);
 
         setVotingResults({ dates: dateTallies, games: gameTallies, totalVotes: votesRes.data?.length ?? 0 });
@@ -185,6 +227,7 @@ export default function HomeScreen() {
       if (m.status === "voting") {
         setGame(null);
         setAttendees([]);
+        setAllVoterProfiles([]);
         setVotingResults(null);
       }
     } catch (e) {
@@ -633,6 +676,15 @@ export default function HomeScreen() {
                           month: "short",
                         })}
                       </Text>
+                      {d.voters.length > 0 && (
+                        <HStack className="flex-row-reverse">
+                          {d.voters.slice(0, 5).map((p) => (
+                            <Box key={p.id} className="-ml-2">
+                              <UserAvatar profile={p} avatarUrls={avatarUrls} size="xs" />
+                            </Box>
+                          ))}
+                        </HStack>
+                      )}
                       <Text size="xs" className="text-stone-400">
                         {d.count}
                       </Text>
@@ -659,6 +711,15 @@ export default function HomeScreen() {
                       >
                         {g.name}
                       </Text>
+                      {g.voters.length > 0 && (
+                        <HStack className="flex-row-reverse">
+                          {g.voters.slice(0, 5).map((p) => (
+                            <Box key={p.id} className="-ml-2">
+                              <UserAvatar profile={p} avatarUrls={avatarUrls} size="xs" />
+                            </Box>
+                          ))}
+                        </HStack>
+                      )}
                       <Text size="xs" className="text-stone-400">
                         {g.count}
                       </Text>
