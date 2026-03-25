@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback, useRef } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
   Linking,
@@ -16,12 +16,11 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
-import { consumeVoteSignal } from "@/lib/voteSignal";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile } from "@/lib/types";
+import SurveyContent from "@/components/SurveyContent";
 
-import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
 import { HStack } from "@/components/ui/hstack";
 import { Center } from "@/components/ui/center";
@@ -40,15 +39,12 @@ export default function HomeScreen() {
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [game, setGame] = useState<BoardGame | null>(null);
   const [attendees, setAttendees] = useState<Profile[]>([]);
-  const [voterCount, setVoterCount] = useState(0);
-  const [totalUsers, setTotalUsers] = useState(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [creatingSurvey, setCreatingSurvey] = useState(false);
   const [addingToCalendar, setAddingToCalendar] = useState(false);
   const [joiningMeeting, setJoiningMeeting] = useState(false);
   const [nextSurveyDate, setNextSurveyDate] = useState<Date | null>(null);
-  const [hasVoted, setHasVoted] = useState(false);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [chosenDateOptionId, setChosenDateOptionId] = useState<string | null>(null);
   const [votingResults, setVotingResults] = useState<{
@@ -78,7 +74,6 @@ export default function HomeScreen() {
       if (!m) {
         setGame(null);
         setAttendees([]);
-        setHasVoted(false);
         setVotingResults(null);
 
         const { data: lastCompleted } = await supabase
@@ -191,23 +186,6 @@ export default function HomeScreen() {
         setGame(null);
         setAttendees([]);
         setVotingResults(null);
-        const [{ count }, { count: userCount }, { count: myVoteCount }] = await Promise.all([
-          supabase
-            .from("votes")
-            .select("*", { count: "exact", head: true })
-            .eq("meeting_id", m.id),
-          supabase
-            .from("profiles")
-            .select("*", { count: "exact", head: true }),
-          supabase
-            .from("votes")
-            .select("*", { count: "exact", head: true })
-            .eq("meeting_id", m.id)
-            .eq("user_id", user?.id ?? ""),
-        ]);
-        setVoterCount(count ?? 0);
-        setTotalUsers(userCount ?? 0);
-        setHasVoted((myVoteCount ?? 0) > 0);
       }
     } catch (e) {
       console.error("Failed to fetch home data:", e);
@@ -216,15 +194,8 @@ export default function HomeScreen() {
     }
   }, []);
 
-  const meetingRef = useRef<Meeting | null>(null);
-  meetingRef.current = meeting;
-
   useFocusEffect(
     useCallback(() => {
-      const increment = consumeVoteSignal();
-      if (increment > 0) {
-        setVoterCount((prev) => prev + increment);
-      }
       fetchData();
     }, [fetchData]),
   );
@@ -243,26 +214,6 @@ export default function HomeScreen() {
         "postgres_changes",
         { event: "*", schema: "public", table: "meetings" },
         () => fetchData(),
-      )
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "votes" },
-        async (payload) => {
-          const m = meetingRef.current;
-          if (!m || m.status !== "voting") return;
-          const meetingId =
-            payload.new && typeof payload.new === "object" && "meeting_id" in payload.new
-              ? (payload.new as { meeting_id: string }).meeting_id
-              : payload.old && typeof payload.old === "object" && "meeting_id" in payload.old
-                ? (payload.old as { meeting_id: string }).meeting_id
-                : null;
-          if (meetingId && meetingId !== m.id) return;
-          const { count } = await supabase
-            .from("votes")
-            .select("*", { count: "exact", head: true })
-            .eq("meeting_id", m.id);
-          setVoterCount(count ?? 0);
-        },
       )
       .subscribe();
 
@@ -520,57 +471,7 @@ export default function HomeScreen() {
   }
 
   if (meeting.status === "voting") {
-    return (
-      <ScrollView
-        className="flex-1 bg-stone-50"
-        contentContainerStyle={{
-          flexGrow: 1,
-          alignItems: "center",
-          justifyContent: "center",
-          paddingHorizontal: 24,
-        }}
-        refreshControl={
-          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-        }
-      >
-        <Card variant="filled" className="bg-amber-100 p-6 w-full max-w-md">
-          <VStack space="md" className="items-center">
-            <Ionicons name="clipboard-outline" size={48} color="#b45309" />
-            <Heading size="xl" className="text-amber-900">
-              {t("home.surveyNumber", { number: meeting.number })}
-            </Heading>
-            <Text className="text-amber-700">{t("home.votingOpen")}</Text>
-          </VStack>
-
-          <HStack space="sm" className="items-center justify-center my-6">
-            <Ionicons name="people-outline" size={20} color="#78716c" />
-            <Text className="text-stone-600">
-              {t("home.votedCount", { count: voterCount, total: totalUsers })}
-            </Text>
-          </HStack>
-
-          <VStack space="md">
-            <Button
-              action="primary"
-              size="lg"
-              onPress={() => router.push(`/survey/${meeting.id}`)}
-            >
-              <ButtonText className="text-lg">{t("home.voteNow")}</ButtonText>
-            </Button>
-            {voterCount > 0 && hasVoted && (
-              <Button
-                variant="outline"
-                action="positive"
-                size="lg"
-                onPress={() => router.push(`/approve/${meeting.id}`)}
-              >
-                <ButtonText className="text-lg">{t("home.approveMeeting")}</ButtonText>
-              </Button>
-            )}
-          </VStack>
-        </Card>
-      </ScrollView>
-    );
+    return <SurveyContent key={meeting.id} meetingId={meeting.id} embedded />;
   }
 
   const locale = getDateLocale();
