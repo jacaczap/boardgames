@@ -1,8 +1,10 @@
 import React from "react";
 import {
   View,
+  Pressable,
   TextInput,
   type ViewProps,
+  type PressableProps,
   type TextInputProps,
   type View as ViewType,
 } from "react-native";
@@ -81,11 +83,13 @@ export const InputField = React.forwardRef<TextInput, InputFieldProps>(
 );
 InputField.displayName = "InputField";
 
-interface InputSlotProps extends ViewProps {}
+interface InputSlotProps extends PressableProps {
+  className?: string;
+}
 
-export const InputSlot = React.forwardRef<ViewType, InputSlotProps>(
+export const InputSlot = React.forwardRef<View, InputSlotProps>(
   ({ className, ...props }, ref) => (
-    <View ref={ref} className={className} {...props} />
+    <Pressable ref={ref} className={className} hitSlop={8} {...props} />
   ),
 );
 InputSlot.displayName = "InputSlot";
