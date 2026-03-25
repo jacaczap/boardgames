@@ -6,7 +6,10 @@ import {
   type TextProps,
 } from "react-native";
 import { Image as ExpoImage, type ImageProps } from "expo-image";
+import { cssInterop } from "nativewind";
 import { tva } from "@gluestack-ui/nativewind-utils/tva";
+
+cssInterop(ExpoImage, { className: "style" });
 
 const avatarStyle = tva({
   base: "rounded-full items-center justify-center overflow-hidden bg-amber-600",
