@@ -46,7 +46,7 @@ const UserAvatar: React.FC<UserAvatarProps> = React.memo(
     const avatar = (
       <Avatar size={size}>
         {uri ? (
-          <AvatarImage source={{ uri }} />
+          <AvatarImage source={{ uri, cacheKey: profile.avatar_url ?? undefined }} />
         ) : (
           <AvatarFallbackText>{getInitials(profile)}</AvatarFallbackText>
         )}
@@ -74,7 +74,7 @@ const UserAvatar: React.FC<UserAvatarProps> = React.memo(
               <VStack space="sm" className="items-center">
                 <Avatar size="xl">
                   {uri ? (
-                    <AvatarImage source={{ uri }} />
+                    <AvatarImage source={{ uri, cacheKey: profile.avatar_url ?? undefined }} />
                   ) : (
                     <AvatarFallbackText>
                       {getInitials(profile)}

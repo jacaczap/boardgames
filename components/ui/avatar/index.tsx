@@ -1,12 +1,11 @@
 import React from "react";
 import {
   View,
-  Image,
   Text,
   type ViewProps,
-  type ImageProps,
   type TextProps,
 } from "react-native";
+import { Image as ExpoImage, type ImageProps } from "expo-image";
 import { tva } from "@gluestack-ui/nativewind-utils/tva";
 
 const avatarStyle = tva({
@@ -60,14 +59,19 @@ export const Avatar = React.forwardRef<View, AvatarProps>(
 );
 Avatar.displayName = "Avatar";
 
-interface AvatarImageProps extends Omit<ImageProps, "source"> {
-  source: ImageProps["source"];
+interface AvatarImageProps extends ImageProps {
   _size?: AvatarSize;
 }
 
-export const AvatarImage = React.forwardRef<Image, AvatarImageProps>(
+export const AvatarImage = React.forwardRef<ExpoImage, AvatarImageProps>(
   ({ className, _size, ...props }, ref) => (
-    <Image ref={ref} className={`w-full h-full ${className ?? ""}`} {...props} />
+    <ExpoImage
+      ref={ref}
+      className={`w-full h-full ${className ?? ""}`}
+      cachePolicy="disk"
+      transition={150}
+      {...props}
+    />
   ),
 );
 AvatarImage.displayName = "AvatarImage";

@@ -222,9 +222,9 @@ export default function GameDetailScreen() {
         <Pressable onPress={handlePickImage} className="mb-4">
           {imageDisplayUrl ? (
             <Image
-              source={{ uri: imageDisplayUrl }}
+              source={{ uri: imageDisplayUrl, cacheKey: imagePath ?? undefined }}
               className="w-full h-48 rounded-xl"
-              resizeMode="cover"
+              contentFit="cover"
             />
           ) : (
             <Center className="w-full h-48 rounded-xl bg-stone-200">
@@ -365,9 +365,9 @@ export default function GameDetailScreen() {
     >
       {imageDisplayUrl ? (
         <Image
-          source={{ uri: imageDisplayUrl }}
+          source={{ uri: imageDisplayUrl, cacheKey: imagePath ?? undefined }}
           className="w-full h-56"
-          resizeMode="cover"
+          contentFit="cover"
         />
       ) : (
         <Center className="w-full h-40 bg-stone-200">

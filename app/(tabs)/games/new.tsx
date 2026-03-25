@@ -113,9 +113,9 @@ export default function NewGameScreen() {
         <Pressable onPress={handlePickImage} className="mb-4">
         {imageDisplayUrl ? (
           <Image
-            source={{ uri: imageDisplayUrl }}
+            source={{ uri: imageDisplayUrl, cacheKey: imagePath ?? undefined }}
             className="w-full h-48 rounded-xl"
-            resizeMode="cover"
+            contentFit="cover"
           />
         ) : (
           <Center className="w-full h-48 rounded-xl bg-stone-200 border-2 border-dashed border-stone-300">

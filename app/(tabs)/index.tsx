@@ -530,9 +530,9 @@ export default function HomeScreen() {
       <Card variant="filled" className="bg-green-50 w-full max-w-md self-center">
         {gameImageUrl && (
           <Image
-            source={{ uri: gameImageUrl }}
+            source={{ uri: gameImageUrl, cacheKey: game?.image_url ?? undefined }}
             className="w-full h-48"
-            resizeMode="cover"
+            contentFit="cover"
           />
         )}
         <VStack space="md" className="p-5">

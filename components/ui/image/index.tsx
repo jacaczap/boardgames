@@ -1,12 +1,15 @@
 import React from "react";
-import {
-  Image as RNImage,
-  type ImageProps as RNImageProps,
-} from "react-native";
+import { Image as ExpoImage, type ImageProps } from "expo-image";
 
-export const Image = React.forwardRef<RNImage, RNImageProps>(
+export const Image = React.forwardRef<ExpoImage, ImageProps>(
   ({ className, ...props }, ref) => (
-    <RNImage ref={ref} className={className} {...props} />
+    <ExpoImage
+      ref={ref}
+      className={className}
+      cachePolicy="disk"
+      transition={150}
+      {...props}
+    />
   ),
 );
 Image.displayName = "Image";

@@ -26,11 +26,13 @@ import { Fab, FabIcon } from "@/components/ui/fab";
 const GameRow = React.memo(function GameRow({
   item,
   imageUri,
+  imagePath,
   onPress,
   playersLabel,
 }: {
   item: BoardGame;
   imageUri: string | undefined;
+  imagePath: string | undefined;
   onPress: () => void;
   playersLabel: string;
 }) {
@@ -42,9 +44,9 @@ const GameRow = React.memo(function GameRow({
       <HStack>
         {imageUri ? (
           <Image
-            source={{ uri: imageUri }}
+            source={{ uri: imageUri, cacheKey: imagePath }}
             className="w-20 h-20 rounded-l-xl"
-            resizeMode="cover"
+            contentFit="cover"
           />
         ) : (
           <Center className="w-20 h-20 bg-stone-200 rounded-l-xl">
@@ -133,6 +135,7 @@ export default function GamesListScreen() {
       <GameRow
         item={item}
         imageUri={item.image_url ? imageUrlsRef.current.get(item.image_url) : undefined}
+        imagePath={item.image_url ?? undefined}
         onPress={() => router.push(`/(tabs)/games/${item.id}`)}
         playersLabel={playersLabel}
       />

@@ -569,9 +569,9 @@ export default function ApproveScreen() {
                           <View className="flex-1" />
                           {imgUrl ? (
                             <Image
-                              source={{ uri: imgUrl }}
+                              source={{ uri: imgUrl, cacheKey: game.image_url ?? undefined }}
                               className="w-12 h-12 rounded-lg"
-                              resizeMode="cover"
+                              contentFit="cover"
                             />
                           ) : (
                             <Center className="w-12 h-12 rounded-lg bg-stone-300">

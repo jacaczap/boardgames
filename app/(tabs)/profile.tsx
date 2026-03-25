@@ -268,7 +268,7 @@ export default function ProfileScreen() {
               <Box className="relative">
                 <Avatar size="xl">
                   {avatarUrl ? (
-                    <AvatarImage source={{ uri: avatarUrl }} />
+                    <AvatarImage source={{ uri: avatarUrl, cacheKey: profile?.avatar_url ?? undefined }} />
                   ) : (
                     <AvatarFallbackText>
                       {(name?.[0] ?? "").toUpperCase()}

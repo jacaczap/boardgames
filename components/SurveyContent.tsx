@@ -601,9 +601,9 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
                       <VStack space="xs" className="items-center p-3">
                         {imgUrl ? (
                           <Image
-                            source={{ uri: imgUrl }}
+                            source={{ uri: imgUrl, cacheKey: game.image_url ?? undefined }}
                             className="w-14 h-14 rounded-lg"
-                            resizeMode="cover"
+                            contentFit="cover"
                           />
                         ) : (
                           <Center className="w-14 h-14 rounded-lg bg-stone-300">
@@ -796,9 +796,9 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
                   <HStack space="md" className="items-center p-3">
                     {imgUrl ? (
                       <Image
-                        source={{ uri: imgUrl }}
+                        source={{ uri: imgUrl, cacheKey: game.image_url ?? undefined }}
                         className="w-16 h-16 rounded-lg"
-                        resizeMode="cover"
+                        contentFit="cover"
                       />
                     ) : (
                       <Center className="w-16 h-16 rounded-lg bg-stone-300">

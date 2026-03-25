@@ -53,7 +53,8 @@
         }
       ],
       "expo-localization",
-      "expo-sharing"
+      "expo-sharing",
+      "expo-image"
     ],
     "extra": {
       "router": {},
