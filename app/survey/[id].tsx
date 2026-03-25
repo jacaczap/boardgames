@@ -5,6 +5,7 @@ import {
   Alert,
   View,
   AppState,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
@@ -655,12 +656,13 @@ export default function SurveyScreen() {
   });
 
   return (
-    <ScrollView
-      className="flex-1 bg-stone-50"
-      contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
-      refreshControl={
-        <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
-      }
+    <KeyboardAvoidingView className="flex-1" behavior="padding">
+      <ScrollView
+        className="flex-1 bg-stone-50"
+        contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
+        refreshControl={
+          <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+        }
       keyboardShouldPersistTaps="handled"
     >
       <VStack space="lg">
@@ -851,7 +853,8 @@ export default function SurveyScreen() {
           </Button>
         </VStack>
       </VStack>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ScrollView, Alert } from "react-native";
+import { ScrollView, Alert, KeyboardAvoidingView } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -104,12 +104,13 @@ export default function NewGameScreen() {
   };
 
   return (
-    <ScrollView
-      className="flex-1 bg-stone-50"
-      contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Pressable onPress={handlePickImage} className="mb-4">
+    <KeyboardAvoidingView className="flex-1" behavior="padding">
+      <ScrollView
+        className="flex-1 bg-stone-50"
+        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Pressable onPress={handlePickImage} className="mb-4">
         {imageDisplayUrl ? (
           <Image
             source={{ uri: imageDisplayUrl }}
@@ -229,6 +230,7 @@ export default function NewGameScreen() {
           <ButtonText>{saving ? t("common.saving") : t("games.addGame")}</ButtonText>
         </Button>
       </VStack>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

@@ -5,6 +5,7 @@ import {
   TouchableOpacity,
   Alert,
   Linking,
+  KeyboardAvoidingView,
 } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
@@ -212,11 +213,12 @@ export default function GameDetailScreen() {
 
   if (editing) {
     return (
-      <ScrollView
-        className="flex-1 bg-stone-50"
-        contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
-        keyboardShouldPersistTaps="handled"
-      >
+      <KeyboardAvoidingView className="flex-1" behavior="padding">
+        <ScrollView
+          className="flex-1 bg-stone-50"
+          contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
+          keyboardShouldPersistTaps="handled"
+        >
         <Pressable onPress={handlePickImage} className="mb-4">
           {imageDisplayUrl ? (
             <Image
@@ -348,7 +350,8 @@ export default function GameDetailScreen() {
             </Button>
           </VStack>
         </VStack>
-      </ScrollView>
+        </ScrollView>
+      </KeyboardAvoidingView>
     );
   }
 
