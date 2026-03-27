@@ -8,6 +8,7 @@ A React Native (Expo) app for a friend group to coordinate board game meetings -
 - **Supabase** -- Auth, Postgres, Storage, Edge Functions, Realtime
 - **gluestack-ui v2** -- UI components
 - **TypeScript** throughout
+- **Vercel** -- Web hosting (auto-deploys from GitHub)
 - **Platforms**: Android, iOS, Web
 
 ## Features
@@ -161,6 +162,14 @@ npx expo start
 ```
 
 Press `a` for Android, `i` for iOS, or `w` for web.
+
+## Web Deployment (Vercel)
+
+The web version is hosted on [Vercel](https://vercel.com) and auto-deploys on every push to the production branch. Pull request branches get preview deployments.
+
+- **Build command**: `npx expo export -p web`
+- **Output directory**: `dist`
+- **Environment variables**: Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` in Vercel project Settings > Environment Variables.
 
 ## Database
 
