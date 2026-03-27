@@ -553,39 +553,37 @@ export default function ApproveScreen() {
                   <Pressable key={game.id} onPress={() => setSelectedGameId(game.id)} style={{ width: "48.5%" }}>
                     <Card
                       variant="filled"
-                      className={`overflow-hidden border-2 ${
+                      className={`overflow-hidden border-2 flex-1 ${
                         selected
                           ? "bg-amber-200 border-amber-600"
                           : "bg-stone-100 border-transparent"
                       }`}
                     >
-                      <VStack space="xs" className="items-center p-3">
-                        <HStack className="w-full items-center" space="xs">
+                      <VStack space="xs" className="items-center p-3 flex-1">
+                        <View className="absolute top-3 left-3 z-10">
                           <Ionicons
                             name={selected ? "radio-button-on" : "radio-button-off"}
                             size={18}
                             color={selected ? "#b45309" : "#a8a29e"}
                           />
-                          <View className="flex-1" />
-                          {imgUrl ? (
-                            <Image
-                              source={{ uri: imgUrl, cacheKey: game.image_url ?? undefined }}
-                              className="w-12 h-12 rounded-lg"
-                              contentFit="cover"
-                            />
-                          ) : (
-                            <Center className="w-12 h-12 rounded-lg bg-stone-300">
-                              <Ionicons name="dice-outline" size={20} color="#a8a29e" />
-                            </Center>
-                          )}
-                          <View className="flex-1" />
-                        </HStack>
+                        </View>
+                        {imgUrl ? (
+                          <Image
+                            source={{ uri: imgUrl, cacheKey: game.image_url ?? undefined }}
+                            className="w-24 h-24 rounded-lg"
+                            contentFit="cover"
+                          />
+                        ) : (
+                          <Center className="w-24 h-24 rounded-lg bg-stone-300">
+                            <Ionicons name="dice-outline" size={36} color="#a8a29e" />
+                          </Center>
+                        )}
                         <Text className="font-semibold text-stone-800 text-center" numberOfLines={2}>
                           {game.name}
                         </Text>
                         <HStack space="xs" className="items-center flex-wrap justify-center">
                           {game.genre && (
-                            <Badge action="info" size="sm">
+                            <Badge action="info">
                               <BadgeText action="info">{game.genre}</BadgeText>
                             </Badge>
                           )}
@@ -599,7 +597,7 @@ export default function ApproveScreen() {
                           {t("approve.voteCount", { count: voteCount })}
                         </Text>
                         {voters.length > 0 && (
-                          <HStack className="flex-row-reverse justify-center items-center">
+                          <HStack className="flex-row-reverse justify-center items-center pl-2">
                             {voters.slice(0, 4).map((p) => (
                               <Box key={p.id} className="-ml-2">
                                 <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="xs" />
