@@ -328,14 +328,7 @@ export default function ApproveScreen() {
     }
   };
 
-  const handleUnapprove = () => {
-    if (!meeting) return;
-    Alert.alert(t("approve.unapproveTitle"), t("approve.unapproveConfirm"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("approve.unapprove"),
-        style: "destructive",
-        onPress: async () => {
+  const doUnapprove = async () => {
           try {
             const { data, error } = await supabase
               .from("meetings")
@@ -346,7 +339,7 @@ export default function ApproveScreen() {
                 approved_by: null,
                 approved_at: null,
               })
-              .eq("id", meeting.id)
+        .eq("id", meeting!.id)
               .eq("status", "approved")
               .select();
             if (error) {
@@ -364,8 +357,17 @@ export default function ApproveScreen() {
           } catch (e: any) {
             Alert.alert(t("common.error"), e?.message ?? t("approve.failedUnapprove"));
           }
-        },
-      },
+  };
+
+  const handleUnapprove = () => {
+    if (!meeting) return;
+    if (Platform.OS === "web") {
+      if (window.confirm(t("approve.unapproveConfirm"))) doUnapprove();
+      return;
+    }
+    Alert.alert(t("approve.unapproveTitle"), t("approve.unapproveConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("approve.unapprove"), style: "destructive", onPress: doUnapprove },
     ]);
   };
 

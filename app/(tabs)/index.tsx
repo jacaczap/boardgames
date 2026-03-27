@@ -273,14 +273,7 @@ export default function HomeScreen() {
 
   const [unapproving, setUnapproving] = useState(false);
 
-  const handleUnapprove = () => {
-    if (!meeting || unapproving) return;
-    Alert.alert(t("home.unapproveTitle"), t("home.unapproveConfirm"), [
-      { text: t("common.cancel"), style: "cancel" },
-      {
-        text: t("home.unapprove"),
-        style: "destructive",
-        onPress: async () => {
+  const doUnapprove = async () => {
           setUnapproving(true);
           try {
             const { data, error } = await supabase
@@ -292,7 +285,7 @@ export default function HomeScreen() {
                 approved_by: null,
                 approved_at: null,
               })
-              .eq("id", meeting.id)
+        .eq("id", meeting!.id)
               .eq("status", "approved")
               .select();
             if (error) {
@@ -310,8 +303,17 @@ export default function HomeScreen() {
           } finally {
             setUnapproving(false);
           }
-        },
-      },
+  };
+
+  const handleUnapprove = () => {
+    if (!meeting || unapproving) return;
+    if (Platform.OS === "web") {
+      if (window.confirm(t("home.unapproveConfirm"))) doUnapprove();
+      return;
+    }
+    Alert.alert(t("home.unapproveTitle"), t("home.unapproveConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      { text: t("home.unapprove"), style: "destructive", onPress: doUnapprove },
     ]);
   };
 
