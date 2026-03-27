@@ -43,13 +43,15 @@ const GameRow = React.memo(function GameRow({
     >
       <HStack>
         {imageUri ? (
-          <Image
-            source={{ uri: imageUri, cacheKey: imagePath }}
-            className="w-60 h-[180] rounded-l-xl"
-            contentFit="cover"
-          />
+          <Box className="w-2/5 rounded-l-xl overflow-hidden" style={{ aspectRatio: 4 / 3 }}>
+            <Image
+              source={{ uri: imageUri, cacheKey: imagePath }}
+              className="w-full h-full"
+              contentFit="cover"
+            />
+          </Box>
         ) : (
-          <Center className="w-60 h-[180] bg-stone-200 rounded-l-xl">
+          <Center className="w-2/5 bg-stone-200 rounded-l-xl" style={{ aspectRatio: 4 / 3 }}>
             <Ionicons name="dice-outline" size={28} color="#d6d3d1" />
           </Center>
         )}
