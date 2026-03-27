@@ -1,7 +1,7 @@
 import { useEffect, useState, useRef, useCallback } from "react";
 import * as ImagePicker from "expo-image-picker";
 import { File as ExpoFile } from "expo-file-system";
-import { Alert } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { supabase } from "./supabase";
 
 const SIGNED_URL_EXPIRY = 3600;
@@ -111,13 +111,13 @@ export async function pickAndUploadImage(
     });
 
     if (error) {
-      Alert.alert("Upload failed", error.message);
+      showAlert("Upload failed", error.message);
       return null;
     }
 
     return fileName;
   } catch (e: any) {
-    Alert.alert("Upload failed", e?.message ?? "Could not process the selected image");
+    showAlert("Upload failed", e?.message ?? "Could not process the selected image");
     return null;
   }
 }

@@ -2,11 +2,12 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import {
   ScrollView,
   RefreshControl,
-  Alert,
   View,
   AppState,
   KeyboardAvoidingView,
+  Platform,
 } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -270,7 +271,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
           if (row?.id === meetingId && row?.status === "approved") {
             setMeetingApprovedByOther(true);
             if (!embedded) {
-              Alert.alert(t("race.meetingApprovedTitle"), t("race.meetingApprovedBanner"));
+              showAlert(t("race.meetingApprovedTitle"), t("race.meetingApprovedBanner"));
             }
           }
         },
@@ -330,7 +331,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
     if (notParticipating) return;
     const count = consecutiveCounts.get(gameId) ?? 0;
     if (count >= 3 && !selectedGames.has(gameId)) {
-      Alert.alert(
+      showAlert(
         t("survey.playLimitTitle"),
         t("survey.playLimitMessage"),
         [
@@ -379,12 +380,12 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         added_by: currentUserId,
       });
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         return;
       }
       await fetchData();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("survey.failedAddDate"));
+      showAlert(t("common.error"), e?.message ?? t("survey.failedAddDate"));
     } finally {
       setAddingDate(false);
     }
@@ -393,11 +394,11 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
   const handleSubmit = async () => {
     if (!currentUserId || !meetingId) return;
     if (!notParticipating && selectedDates.size === 0) {
-      Alert.alert(t("survey.selectDatesTitle"), t("survey.selectDatesMessage"));
+      showAlert(t("survey.selectDatesTitle"), t("survey.selectDatesMessage"));
       return;
     }
     if (!notParticipating && selectedGames.size === 0) {
-      Alert.alert(t("survey.selectGamesTitle"), t("survey.selectGamesMessage"));
+      showAlert(t("survey.selectGamesTitle"), t("survey.selectGamesMessage"));
       return;
     }
 
@@ -416,7 +417,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
           .delete()
           .eq("id", existingVote.id);
         if (delError) {
-          Alert.alert(t("common.error"), delError.message);
+          showAlert(t("common.error"), delError.message);
           return;
         }
       }
@@ -428,7 +429,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         .single();
 
       if (voteError || !newVote) {
-        Alert.alert(t("common.error"), voteError?.message ?? t("survey.failedCreateVote"));
+        showAlert(t("common.error"), voteError?.message ?? t("survey.failedCreateVote"));
         return;
       }
 
@@ -448,11 +449,11 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         ]);
 
         if (dRes.error) {
-          Alert.alert(t("common.error"), dRes.error.message);
+          showAlert(t("common.error"), dRes.error.message);
           return;
         }
         if (gRes.error) {
-          Alert.alert(t("common.error"), gRes.error.message);
+          showAlert(t("common.error"), gRes.error.message);
           return;
         }
       }
@@ -461,7 +462,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
       isEditingRef.current = false;
 
       if (wasApprovedDuringVote) {
-        Alert.alert(
+        showAlert(
           t("race.meetingApprovedTitle"),
           t("race.meetingApprovedWhileVoting"),
         );
@@ -469,7 +470,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
       await fetchData();
       setShowSummary(true);
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("survey.failedSubmit"));
+      showAlert(t("common.error"), e?.message ?? t("survey.failedSubmit"));
     } finally {
       setSubmitting(false);
     }
@@ -497,6 +498,8 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
       </Center>
     );
   }
+
+  const isWeb = Platform.OS === "web";
 
   if (showSummary && existingVote) {
     return (
@@ -552,26 +555,28 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
                   <Card key={opt.id} variant="filled" className="bg-stone-100 p-3">
                     <HStack space="sm" className="items-center justify-between">
                       <VStack className="flex-1">
-                        <Text className="font-medium text-stone-800">
+                        <Text className={isWeb ? "font-medium text-stone-800 text-lg" : "font-medium text-stone-800"}>
                           {formatDate(opt.date, locale)}
                         </Text>
-                        <Text size="xs" className="text-stone-500">
+                        <Text size="sm" className="text-stone-600 font-medium">
                           {t("survey.voteCount", { count: opt.voteCount })}
                         </Text>
                       </VStack>
                       {voters.length > 0 && (
-                        <HStack space="xs" className="items-center shrink-0 ml-2">
-                          <HStack className="flex-row-reverse">
-                            {voters.slice(0, 5).map((p) => (
-                              <Box key={p.id} className="-ml-2">
-                                <UserAvatar profile={p} avatarUrls={avatarUrls} />
-                              </Box>
-                            ))}
-                          </HStack>
-                          {voters.length > 5 && (
-                            <Text size="xs" className="text-stone-400">
-                              +{voters.length - 5}
-                            </Text>
+                        <HStack className="flex-row-reverse items-center shrink-0 ml-2">
+                          {voters.slice(0, isWeb ? 10 : 5).map((p) => (
+                            <Box key={p.id} className="-ml-2">
+                              <UserAvatar profile={p} avatarUrls={avatarUrls} size={isWeb ? "md" : "sm"} />
+                            </Box>
+                          ))}
+                          {voters.length > (isWeb ? 10 : 5) && (
+                            <View
+                              className={`-ml-2 rounded-full bg-stone-300 items-center justify-center border-2 border-stone-100 ${isWeb ? "w-10 h-10" : "w-8 h-8"}`}
+                            >
+                              <Text size="xs" className="text-stone-600 font-bold">
+                                +{voters.length - (isWeb ? 10 : 5)}
+                              </Text>
+                            </View>
                           )}
                         </HStack>
                       )}
@@ -592,41 +597,49 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
             {topGames.length === 0 ? (
               <Text className="text-stone-400">{t("survey.noVotesYet")}</Text>
             ) : (
-              <View className="flex-row flex-wrap gap-2">
+              <View className="flex-row flex-wrap gap-3">
                 {topGames.map((game) => {
                   const voters = voterInfo.gameVoters.get(game.id) ?? [];
                   const imgUrl = game.image_url ? gameImageUrls.get(game.image_url) : undefined;
+                  const maxGameAvatars = isWeb ? 8 : 4;
+                  const avatarSize = isWeb ? "sm" : "xs";
                   return (
-                    <Card key={game.id} variant="filled" className="bg-stone-100 overflow-hidden" style={{ width: "48.5%" }}>
-                      <VStack space="xs" className="items-center p-3">
+                    <Card key={game.id} variant="filled" className="bg-stone-100 overflow-hidden" style={{ width: "48%" }}>
+                      <VStack space="sm" className="items-center p-4">
                         {imgUrl ? (
-                          <Image
-                            source={{ uri: imgUrl, cacheKey: game.image_url ?? undefined }}
-                            className="w-14 h-14 rounded-lg"
-                            contentFit="cover"
-                          />
+                          <View className={isWeb ? "self-stretch rounded-xl overflow-hidden" : "self-stretch rounded-lg overflow-hidden"} style={{ aspectRatio: 16 / 9 }}>
+                            <Image
+                              source={{ uri: imgUrl, cacheKey: game.image_url ?? undefined }}
+                              className="w-full h-full"
+                              contentFit="cover"
+                            />
+                          </View>
                         ) : (
-                          <Center className="w-14 h-14 rounded-lg bg-stone-300">
-                            <Ionicons name="dice-outline" size={22} color="#a8a29e" />
+                          <Center className={isWeb ? "self-stretch rounded-xl bg-stone-300" : "self-stretch rounded-lg bg-stone-300"} style={{ aspectRatio: 16 / 9 }}>
+                            <Ionicons name="dice-outline" size={isWeb ? 56 : 28} color="#a8a29e" />
                           </Center>
                         )}
-                        <Text className="font-semibold text-stone-800 text-center" numberOfLines={2}>
+                        <Text className={isWeb ? "font-semibold text-stone-800 text-center text-lg" : "font-semibold text-stone-800 text-center"} numberOfLines={2}>
                           {game.name}
                         </Text>
-                        <Text size="xs" className="text-stone-500">
+                        <Text size="sm" className="text-stone-600 font-medium">
                           {t("survey.voteCount", { count: game.voteCount })}
                         </Text>
                         {voters.length > 0 && (
-                          <HStack className="flex-row-reverse justify-center">
-                            {voters.slice(0, 4).map((p) => (
+                          <HStack className="flex-row-reverse justify-center items-center">
+                            {voters.slice(0, maxGameAvatars).map((p) => (
                               <Box key={p.id} className="-ml-2">
-                                <UserAvatar profile={p} avatarUrls={avatarUrls} size="xs" />
+                                <UserAvatar profile={p} avatarUrls={avatarUrls} size={avatarSize} />
                               </Box>
                             ))}
-                            {voters.length > 4 && (
-                              <Text size="xs" className="text-stone-400 ml-1">
-                                +{voters.length - 4}
-                              </Text>
+                            {voters.length > maxGameAvatars && (
+                              <View
+                                className={`-ml-2 rounded-full bg-stone-300 items-center justify-center border-2 border-stone-100 ${isWeb ? "w-8 h-8" : "w-6 h-6"}`}
+                              >
+                                <Text size="2xs" className="text-stone-600 font-bold">
+                                  +{voters.length - maxGameAvatars}
+                                </Text>
+                              </View>
                             )}
                           </HStack>
                         )}
@@ -843,9 +856,11 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
                           <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="sm" />
                         ))}
                         {voters.length > 3 && (
-                          <Text size="xs" className="text-stone-400">
-                            +{voters.length - 3}
-                          </Text>
+                          <View className="w-8 h-8 rounded-full bg-stone-300 items-center justify-center">
+                            <Text size="xs" className="text-stone-600 font-bold">
+                              +{voters.length - 3}
+                            </Text>
+                          </View>
                         )}
                       </VStack>
                     )}

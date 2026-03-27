@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
-import { ScrollView, Alert, KeyboardAvoidingView } from "react-native";
+import { ScrollView, KeyboardAvoidingView } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -54,21 +55,21 @@ export default function NewGameScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert(t("common.validation"), t("games.nameRequired"));
+      showAlert(t("common.validation"), t("games.nameRequired"));
       return;
     }
     const parsedMin = minPlayers ? parseInt(minPlayers, 10) : null;
     const parsedMax = maxPlayers ? parseInt(maxPlayers, 10) : null;
     if (minPlayers && (isNaN(parsedMin!) || parsedMin! < 1)) {
-      Alert.alert(t("common.validation"), t("games.minPlayersPositive"));
+      showAlert(t("common.validation"), t("games.minPlayersPositive"));
       return;
     }
     if (maxPlayers && (isNaN(parsedMax!) || parsedMax! < 1)) {
-      Alert.alert(t("common.validation"), t("games.maxPlayersPositive"));
+      showAlert(t("common.validation"), t("games.maxPlayersPositive"));
       return;
     }
     if (parsedMin != null && parsedMax != null && parsedMin > parsedMax) {
-      Alert.alert(t("common.validation"), t("games.minExceedsMax"));
+      showAlert(t("common.validation"), t("games.minExceedsMax"));
       return;
     }
     setSaving(true);
@@ -91,13 +92,13 @@ export default function NewGameScreen() {
       });
 
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         return;
       }
       savedRef.current = true;
       router.back();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("games.failedAdd"));
+      showAlert(t("common.error"), e?.message ?? t("games.failedAdd"));
     } finally {
       setSaving(false);
     }

@@ -2,9 +2,11 @@ import React, { useEffect, useState, useCallback, useMemo, useRef } from "react"
 import {
   ScrollView,
   RefreshControl,
-  Alert,
   AppState,
+  View,
+  Platform,
 } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -36,7 +38,6 @@ import { Card } from "@/components/ui/card";
 import { Pressable } from "@/components/ui/pressable";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import UserAvatar from "@/components/UserAvatar";
-import { View } from "react-native";
 
 function formatDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr + "T00:00:00");
@@ -56,6 +57,7 @@ export default function ApproveScreen() {
   const locale = getDateLocale();
   const { id, edit } = useLocalSearchParams<{ id: string; edit?: string }>();
   const router = useRouter();
+  const isWeb = Platform.OS === "web";
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -312,60 +314,56 @@ export default function ApproveScreen() {
         .select();
 
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         return;
       }
       if (!data || data.length === 0) {
-        Alert.alert(t("race.info"), t("approve.alreadyApproved"));
+        showAlert(t("race.info"), t("approve.alreadyApproved"));
         await fetchData();
         return;
       }
       await fetchData();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("approve.failedApprove"));
+      showAlert(t("common.error"), e?.message ?? t("approve.failedApprove"));
     } finally {
       setSubmitting(false);
     }
   };
 
   const doUnapprove = async () => {
-          try {
-            const { data, error } = await supabase
-              .from("meetings")
-              .update({
-                status: "voting",
-                chosen_date: null,
-                chosen_game_id: null,
-                approved_by: null,
-                approved_at: null,
-              })
+    try {
+      const { data, error } = await supabase
+        .from("meetings")
+        .update({
+          status: "voting",
+          chosen_date: null,
+          chosen_game_id: null,
+          approved_by: null,
+          approved_at: null,
+        })
         .eq("id", meeting!.id)
-              .eq("status", "approved")
-              .select();
-            if (error) {
-              Alert.alert(t("common.error"), error.message);
-              return;
-            }
-            if (!data || data.length === 0) {
-              Alert.alert(t("race.info"), t("approve.alreadyVoting"));
-              await fetchData();
-              return;
-            }
-            setSelectedDateId(null);
-            setSelectedGameId(null);
-            await fetchData();
-          } catch (e: any) {
-            Alert.alert(t("common.error"), e?.message ?? t("approve.failedUnapprove"));
-          }
+        .eq("status", "approved")
+        .select();
+      if (error) {
+        showAlert(t("common.error"), error.message);
+        return;
+      }
+      if (!data || data.length === 0) {
+        showAlert(t("race.info"), t("approve.alreadyVoting"));
+        await fetchData();
+        return;
+      }
+      setSelectedDateId(null);
+      setSelectedGameId(null);
+      await fetchData();
+    } catch (e: any) {
+      showAlert(t("common.error"), e?.message ?? t("approve.failedUnapprove"));
+    }
   };
 
   const handleUnapprove = () => {
     if (!meeting) return;
-    if (Platform.OS === "web") {
-      if (window.confirm(t("approve.unapproveConfirm"))) doUnapprove();
-      return;
-    }
-    Alert.alert(t("approve.unapproveTitle"), t("approve.unapproveConfirm"), [
+    showAlert(t("approve.unapproveTitle"), t("approve.unapproveConfirm"), [
       { text: t("common.cancel"), style: "cancel" },
       { text: t("approve.unapprove"), style: "destructive", onPress: doUnapprove },
     ]);
@@ -391,17 +389,17 @@ export default function ApproveScreen() {
         .select();
 
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         return;
       }
       if (!data || data.length === 0) {
-        Alert.alert(t("race.info"), t("approve.noLongerApproved"));
+        showAlert(t("race.info"), t("approve.noLongerApproved"));
         await fetchData();
         return;
       }
       router.back();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("approve.failedSave"));
+      showAlert(t("common.error"), e?.message ?? t("approve.failedSave"));
     } finally {
       setSubmitting(false);
     }
@@ -512,18 +510,18 @@ export default function ApproveScreen() {
                       </VStack>
                     </HStack>
                     {voters.length > 0 && (
-                      <HStack space="xs" className="items-center shrink-0 ml-2">
-                        <HStack className="flex-row-reverse">
-                          {voters.slice(0, 5).map((p) => (
-                            <Box key={p.id} className="-ml-2">
-                              <UserAvatar profile={p} avatarUrls={avatarUrls} />
-                            </Box>
-                          ))}
-                        </HStack>
+                      <HStack className="flex-row-reverse items-center shrink-0 ml-2">
+                        {voters.slice(0, 5).map((p) => (
+                          <Box key={p.id} className="-ml-2">
+                            <UserAvatar profile={p} avatarUrls={avatarUrls} />
+                          </Box>
+                        ))}
                         {voters.length > 5 && (
-                          <Text size="xs" className="text-stone-400">
-                            +{voters.length - 5}
-                          </Text>
+                          <View className="-ml-2 w-8 h-8 rounded-full bg-stone-300 items-center justify-center border-2 border-stone-100">
+                            <Text size="xs" className="text-stone-600 font-bold">
+                              +{voters.length - 5}
+                            </Text>
+                          </View>
                         )}
                       </HStack>
                     )}
@@ -601,16 +599,18 @@ export default function ApproveScreen() {
                           {t("approve.voteCount", { count: voteCount })}
                         </Text>
                         {voters.length > 0 && (
-                          <HStack className="flex-row-reverse justify-center">
+                          <HStack className="flex-row-reverse justify-center items-center">
                             {voters.slice(0, 4).map((p) => (
                               <Box key={p.id} className="-ml-2">
                                 <UserAvatar key={p.id} profile={p} avatarUrls={avatarUrls} size="xs" />
                               </Box>
                             ))}
                             {voters.length > 4 && (
-                              <Text size="xs" className="text-stone-400 ml-1">
-                                +{voters.length - 4}
-                              </Text>
+                              <View className="-ml-2 w-6 h-6 rounded-full bg-stone-300 items-center justify-center border-2 border-stone-100">
+                                <Text size="2xs" className="text-stone-600 font-bold">
+                                  +{voters.length - 4}
+                                </Text>
+                              </View>
                             )}
                           </HStack>
                         )}

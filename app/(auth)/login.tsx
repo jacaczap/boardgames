@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { Alert, Switch, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { Switch, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { setStayLoggedIn as saveStayLoggedIn } from "@/lib/auth-storage";
@@ -23,7 +24,7 @@ export default function LoginScreen() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert(t("common.error"), t("auth.fillAllFields"));
+      showAlert(t("common.error"), t("auth.fillAllFields"));
       return;
     }
 
@@ -36,7 +37,7 @@ export default function LoginScreen() {
     setLoading(false);
 
     if (error) {
-      Alert.alert(t("auth.loginFailed"), error.message);
+      showAlert(t("auth.loginFailed"), error.message);
     }
   };
 

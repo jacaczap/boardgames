@@ -3,11 +3,11 @@ import {
   ScrollView,
   Linking,
   RefreshControl,
-  Alert,
   Platform,
   AppState,
   View,
 } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { useRouter } from "expo-router";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -37,6 +37,7 @@ import UserAvatar from "@/components/UserAvatar";
 export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const isWeb = Platform.OS === "web";
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [game, setGame] = useState<BoardGame | null>(null);
   const [attendees, setAttendees] = useState<Profile[]>([]);
@@ -274,44 +275,40 @@ export default function HomeScreen() {
   const [unapproving, setUnapproving] = useState(false);
 
   const doUnapprove = async () => {
-          setUnapproving(true);
-          try {
-            const { data, error } = await supabase
-              .from("meetings")
-              .update({
-                status: "voting",
-                chosen_date: null,
-                chosen_game_id: null,
-                approved_by: null,
-                approved_at: null,
-              })
+    setUnapproving(true);
+    try {
+      const { data, error } = await supabase
+        .from("meetings")
+        .update({
+          status: "voting",
+          chosen_date: null,
+          chosen_game_id: null,
+          approved_by: null,
+          approved_at: null,
+        })
         .eq("id", meeting!.id)
-              .eq("status", "approved")
-              .select();
-            if (error) {
-              Alert.alert(t("common.error"), error.message);
-              return;
-            }
-            if (!data || data.length === 0) {
-              Alert.alert(t("race.info"), t("race.alreadyVoting"));
-              fetchData();
-              return;
-            }
-            fetchData();
-          } catch (e: any) {
-            Alert.alert(t("common.error"), e?.message ?? t("home.failedUnapprove"));
-          } finally {
-            setUnapproving(false);
-          }
+        .eq("status", "approved")
+        .select();
+      if (error) {
+        showAlert(t("common.error"), error.message);
+        return;
+      }
+      if (!data || data.length === 0) {
+        showAlert(t("race.info"), t("race.alreadyVoting"));
+        fetchData();
+        return;
+      }
+      fetchData();
+    } catch (e: any) {
+      showAlert(t("common.error"), e?.message ?? t("home.failedUnapprove"));
+    } finally {
+      setUnapproving(false);
+    }
   };
 
   const handleUnapprove = () => {
     if (!meeting || unapproving) return;
-    if (Platform.OS === "web") {
-      if (window.confirm(t("home.unapproveConfirm"))) doUnapprove();
-      return;
-    }
-    Alert.alert(t("home.unapproveTitle"), t("home.unapproveConfirm"), [
+    showAlert(t("home.unapproveTitle"), t("home.unapproveConfirm"), [
       { text: t("common.cancel"), style: "cancel" },
       { text: t("home.unapprove"), style: "destructive", onPress: doUnapprove },
     ]);
@@ -326,19 +323,19 @@ export default function HomeScreen() {
         .select("*", { count: "exact", head: true })
         .in("status", ["voting", "approved"]);
       if (count && count > 0) {
-        Alert.alert(t("race.info"), t("home.surveyAlreadyExists"));
+        showAlert(t("race.info"), t("home.surveyAlreadyExists"));
         fetchData();
         return;
       }
 
       const { error } = await supabase.rpc("create_next_survey");
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         return;
       }
       fetchData();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("home.failedCreateSurvey"));
+      showAlert(t("common.error"), e?.message ?? t("home.failedCreateSurvey"));
     } finally {
       setCreatingSurvey(false);
     }
@@ -356,7 +353,7 @@ export default function HomeScreen() {
         .eq("id", meeting.id)
         .single();
       if (freshMeeting?.status !== "approved") {
-        Alert.alert(t("race.info"), t("home.noLongerApproved"));
+        showAlert(t("race.info"), t("home.noLongerApproved"));
         await fetchData();
         return;
       }
@@ -378,7 +375,7 @@ export default function HomeScreen() {
         .single();
 
       if (voteError || !newVote) {
-        Alert.alert(t("common.error"), voteError?.message ?? t("home.failedJoin"));
+        showAlert(t("common.error"), voteError?.message ?? t("home.failedJoin"));
         return;
       }
 
@@ -389,7 +386,7 @@ export default function HomeScreen() {
 
       await fetchData();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("home.failedJoin"));
+      showAlert(t("common.error"), e?.message ?? t("home.failedJoin"));
     } finally {
       setJoiningMeeting(false);
     }
@@ -444,7 +441,7 @@ export default function HomeScreen() {
         });
       }
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("home.failedCalendar"));
+      showAlert(t("common.error"), e?.message ?? t("home.failedCalendar"));
     } finally {
       setAddingToCalendar(false);
     }
@@ -571,7 +568,7 @@ export default function HomeScreen() {
           )}
 
           <HStack space="md" className="flex-wrap mt-1">
-            {meeting.chosen_date && Platform.OS !== "web" && (
+            {meeting.chosen_date && !isWeb && (
               <Button
                 variant="outline"
                 action="primary"

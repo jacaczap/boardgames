@@ -1,5 +1,6 @@
 import React, { useCallback, useMemo, useState } from "react";
-import { Alert, Modal, Pressable as RNPressable, StyleSheet } from "react-native";
+import { Modal, Pressable as RNPressable, StyleSheet } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { Calendar, DateData } from "react-native-calendars";
 import { useTranslation } from "react-i18next";
 import { Ionicons } from "@expo/vector-icons";
@@ -265,7 +266,7 @@ const CalendarDatePicker: React.FC<CalendarDatePickerProps> = ({
         ) {
           return;
         }
-        Alert.alert(
+        showAlert(
           t("survey.addCustomDateTitle"),
           t("survey.addCustomDateConfirm", {
             date: formatDateDisplay(dateStr, locale),

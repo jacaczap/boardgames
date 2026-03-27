@@ -2,10 +2,10 @@ import React, { useEffect, useState, useCallback } from "react";
 import {
   ScrollView,
   RefreshControl,
-  Alert,
   Platform,
   KeyboardAvoidingView,
 } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -102,11 +102,11 @@ export default function ProfileScreen() {
     const reminderInterval = parseInt(notifReminderInterval, 10);
 
     if (isNaN(priorMeeting) || priorMeeting < 0) {
-      Alert.alert(t("profile.invalidTitle"), t("profile.daysBefore"));
+      showAlert(t("profile.invalidTitle"), t("profile.daysBefore"));
       return;
     }
     if (isNaN(reminderInterval) || reminderInterval < 1) {
-      Alert.alert(t("profile.invalidTitle"), t("profile.reminderInterval"));
+      showAlert(t("profile.invalidTitle"), t("profile.reminderInterval"));
       return;
     }
 
@@ -123,13 +123,13 @@ export default function ProfileScreen() {
         .eq("id", profile.id);
 
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         return;
       }
-      Alert.alert(t("profile.savedTitle"), t("profile.savedMessage"));
+      showAlert(t("profile.savedTitle"), t("profile.savedMessage"));
       await fetchProfile();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("profile.failedSave"));
+      showAlert(t("common.error"), e?.message ?? t("profile.failedSave"));
     } finally {
       setSaving(false);
     }
@@ -149,7 +149,7 @@ export default function ProfileScreen() {
         .eq("id", profile.id);
 
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         await removeStorageFile("avatars", newPath);
         return;
       }
@@ -160,7 +160,7 @@ export default function ProfileScreen() {
 
       await fetchProfile();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("profile.failedSave"));
+      showAlert(t("common.error"), e?.message ?? t("profile.failedSave"));
     } finally {
       setUploadingAvatar(false);
     }
@@ -168,15 +168,15 @@ export default function ProfileScreen() {
 
   const handleChangePassword = async () => {
     if (!newPassword.trim()) {
-      Alert.alert(t("common.error"), t("profile.passwordEmpty"));
+      showAlert(t("common.error"), t("profile.passwordEmpty"));
       return;
     }
     if (newPassword.length < 6) {
-      Alert.alert(t("common.error"), t("profile.passwordTooShort"));
+      showAlert(t("common.error"), t("profile.passwordTooShort"));
       return;
     }
     if (newPassword !== confirmPassword) {
-      Alert.alert(t("common.error"), t("profile.passwordMismatch"));
+      showAlert(t("common.error"), t("profile.passwordMismatch"));
       return;
     }
 
@@ -184,21 +184,21 @@ export default function ProfileScreen() {
     try {
       const { error } = await supabase.auth.updateUser({ password: newPassword });
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         return;
       }
-      Alert.alert(t("profile.successTitle"), t("profile.passwordChanged"));
+      showAlert(t("profile.successTitle"), t("profile.passwordChanged"));
       setNewPassword("");
       setConfirmPassword("");
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("profile.failedPassword"));
+      showAlert(t("common.error"), e?.message ?? t("profile.failedPassword"));
     } finally {
       setChangingPassword(false);
     }
   };
 
   const handleLogout = () => {
-    Alert.alert(t("profile.logOut"), t("profile.logoutConfirm"), [
+    showAlert(t("profile.logOut"), t("profile.logoutConfirm"), [
       { text: t("common.cancel"), style: "cancel" },
       {
         text: t("profile.logOut"),
@@ -214,10 +214,10 @@ export default function ProfileScreen() {
             }
             const { error } = await supabase.auth.signOut();
             if (error) {
-              Alert.alert(t("common.error"), error.message);
+              showAlert(t("common.error"), error.message);
             }
           } catch (e: any) {
-            Alert.alert(t("common.error"), e?.message ?? t("profile.failedLogout"));
+            showAlert(t("common.error"), e?.message ?? t("profile.failedLogout"));
           } finally {
             setLoggingOut(false);
           }

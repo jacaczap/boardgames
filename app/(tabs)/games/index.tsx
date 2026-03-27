@@ -45,41 +45,46 @@ const GameRow = React.memo(function GameRow({
         {imageUri ? (
           <Image
             source={{ uri: imageUri, cacheKey: imagePath }}
-            className="w-20 h-20 rounded-l-xl"
+            className="w-60 h-[180] rounded-l-xl"
             contentFit="cover"
           />
         ) : (
-          <Center className="w-20 h-20 bg-stone-200 rounded-l-xl">
+          <Center className="w-60 h-[180] bg-stone-200 rounded-l-xl">
             <Ionicons name="dice-outline" size={28} color="#d6d3d1" />
           </Center>
         )}
-        <VStack className="flex-1 p-3 justify-center">
-          <Text className="font-semibold text-stone-900">
-            {item.name}
-          </Text>
-          {item.genre && (
-            <Text size="sm" className="text-stone-500 mt-0.5">
-              {item.genre}
+        <VStack className="flex-1 px-4 py-3 justify-between">
+          <VStack>
+            <Text className="font-bold text-stone-900 text-lg" numberOfLines={2}>
+              {item.name}
             </Text>
-          )}
-          <HStack space="md" className="items-center mt-1">
+            {item.genre && (
+              <Text size="md" className="text-stone-500 mt-1">
+                {item.genre}
+              </Text>
+            )}
+          </VStack>
+          <VStack space="sm" className="mt-2">
             {(item.min_players != null || item.max_players != null) && (
-              <HStack space="xs" className="items-center">
-                <Ionicons name="people-outline" size={14} color="#a8a29e" />
-                <Text size="xs" className="text-stone-400">
+              <HStack space="sm" className="items-center">
+                <Ionicons name="people-outline" size={18} color="#78716c" />
+                <Text size="md" className="text-stone-600">
                   {item.min_players ?? "?"}-{item.max_players ?? "?"} {playersLabel}
                 </Text>
               </HStack>
             )}
             {item.owners?.length ? (
-              <Text size="xs" className="text-stone-400" numberOfLines={1}>
-                {item.owners.join(", ")}
-              </Text>
+              <HStack space="sm" className="items-center">
+                <Ionicons name="person-outline" size={18} color="#78716c" />
+                <Text size="md" className="text-stone-600" numberOfLines={1}>
+                  {item.owners.join(", ")}
+                </Text>
+              </HStack>
             ) : null}
-          </HStack>
+          </VStack>
         </VStack>
-        <Center className="pr-3">
-          <Ionicons name="chevron-forward" size={20} color="#d6d3d1" />
+        <Center className="pr-4">
+          <Ionicons name="chevron-forward" size={24} color="#a8a29e" />
         </Center>
       </HStack>
     </Pressable>

@@ -3,10 +3,10 @@ import {
   ScrollView,
   RefreshControl,
   TouchableOpacity,
-  Alert,
   Linking,
   KeyboardAvoidingView,
 } from "react-native";
+import { showAlert } from "@/lib/alert";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -103,21 +103,21 @@ export default function GameDetailScreen() {
 
   const handleSave = async () => {
     if (!name.trim()) {
-      Alert.alert(t("common.validation"), t("games.nameRequired"));
+      showAlert(t("common.validation"), t("games.nameRequired"));
       return;
     }
     const parsedMin = minPlayers ? parseInt(minPlayers, 10) : null;
     const parsedMax = maxPlayers ? parseInt(maxPlayers, 10) : null;
     if (minPlayers && (isNaN(parsedMin!) || parsedMin! < 1)) {
-      Alert.alert(t("common.validation"), t("games.minPlayersPositive"));
+      showAlert(t("common.validation"), t("games.minPlayersPositive"));
       return;
     }
     if (maxPlayers && (isNaN(parsedMax!) || parsedMax! < 1)) {
-      Alert.alert(t("common.validation"), t("games.maxPlayersPositive"));
+      showAlert(t("common.validation"), t("games.maxPlayersPositive"));
       return;
     }
     if (parsedMin != null && parsedMax != null && parsedMin > parsedMax) {
-      Alert.alert(t("common.validation"), t("games.minExceedsMax"));
+      showAlert(t("common.validation"), t("games.minExceedsMax"));
       return;
     }
     setSaving(true);
@@ -143,7 +143,7 @@ export default function GameDetailScreen() {
         .eq("id", id!);
 
       if (error) {
-        Alert.alert(t("common.error"), error.message);
+        showAlert(t("common.error"), error.message);
         return;
       }
       if (game?.image_url && game.image_url !== imagePath) {
@@ -157,14 +157,14 @@ export default function GameDetailScreen() {
       setEditing(false);
       fetchGame();
     } catch (e: any) {
-      Alert.alert(t("common.error"), e?.message ?? t("games.failedSave"));
+      showAlert(t("common.error"), e?.message ?? t("games.failedSave"));
     } finally {
       setSaving(false);
     }
   };
 
   const handleDelete = () => {
-    Alert.alert(
+    showAlert(
       t("games.deleteGame"),
       t("games.deleteConfirm", { name: game?.name }),
       [
@@ -180,12 +180,12 @@ export default function GameDetailScreen() {
               }
               const { error } = await supabase.from("board_games").delete().eq("id", id!);
               if (error) {
-                Alert.alert(t("common.error"), error.message);
+                showAlert(t("common.error"), error.message);
                 return;
               }
               router.back();
             } catch (e: any) {
-              Alert.alert(t("common.error"), e?.message ?? t("games.failedDelete"));
+              showAlert(t("common.error"), e?.message ?? t("games.failedDelete"));
             } finally {
               setDeleting(false);
             }
