@@ -32,6 +32,9 @@ yarn-error.*
 .env
 .env*.local
 
+# Firebase service account keys
+*-firebase-adminsdk-*.json
+
 # typescript
 *.tsbuildinfo
 

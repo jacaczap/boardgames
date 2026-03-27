@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "138527715311",
+    "project_id": "boardgames-1c000",
+    "storage_bucket": "boardgames-1c000.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:138527715311:android:164af42924aa722578501a",
+        "android_client_info": {
+          "package_name": "com.jacaczap.boardgames"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCsDlbhnO1YJC30OpVt5gwhsY0uPYGYUBg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

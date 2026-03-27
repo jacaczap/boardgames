@@ -71,6 +71,7 @@ cp supabase/config.toml.example supabase/config.toml
 Link to your Supabase project and run migrations:
 
 ```bash
+supabase login
 supabase link --project-ref your-project-ref
 supabase db push
 ```
@@ -82,10 +83,10 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 supabase secrets set EXPO_ACCESS_TOKEN=your-expo-access-token
 ```
 
-Deploy Edge Functions:
+Deploy Edge Functions (with `--no-verify-jwt` since the project uses non-JWT API keys):
 
 ```bash
-supabase functions deploy
+supabase functions deploy --no-verify-jwt
 ```
 
 ### 4. Supabase Auth configuration
@@ -96,7 +97,27 @@ In Supabase Dashboard > Authentication > Settings:
 - Disable anonymous sign-in
 - Disable social/OAuth providers
 
-### 5. Configure EAS Build environment
+### 5. Configure Firebase (Android push notifications)
+
+Push notifications on Android require Firebase Cloud Messaging (FCM).
+
+1. Create a project at [console.firebase.google.com](https://console.firebase.google.com/)
+2. Add an Android app with package name `com.jacaczap.boardgames`
+3. Download `google-services.json` and place it in the project root (already referenced in `app.json` via `googleServicesFile`)
+4. In Firebase Console → Project Settings → Service Accounts → click "Generate new private key" and download the JSON
+5. Upload the service account key to Expo:
+   ```bash
+   eas credentials
+   # Select: Android → production → Google Service Account
+   # Select: Manage your Google Service Account Key for Push Notifications (FCM V1)
+   # Select: Set up a Google Service Account Key for Push Notifications (FCM V1)
+   # Point to the downloaded firebase-adminsdk JSON file
+   ```
+6. Rebuild the app (`eas build`) — this is a native change, OTA updates won't work
+
+> **Note:** `google-services.json` is safe to commit (bundled with the app). The Firebase admin SDK key (`*-firebase-adminsdk-*.json`) is gitignored and must not be committed.
+
+### 6. Configure EAS Build environment
 
 For EAS builds (preview/production), set the Supabase env vars so they are available at build time:
 
@@ -107,7 +128,7 @@ eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "your-anon-key" --visibil
 
 Verify with `eas env:list`.
 
-### 6. Build
+### 7. Build
 
 Cloud build (default):
 
@@ -121,13 +142,19 @@ Local build (faster, requires JDK 17 + Android SDK):
 eas build --platform android --profile production --local
 ```
 
+or 
+
+```bash
+ANDROID_HOME="$HOME/Library/Android/sdk" eas build --platform android --profile production --local
+```
+
 Submit to Google Play:
 
 ```bash
 eas submit --platform android
 ```
 
-### 7. Run the app
+### 8. Run the app
 
 ```bash
 npx expo start

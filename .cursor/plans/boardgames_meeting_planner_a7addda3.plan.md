@@ -293,6 +293,7 @@ Edge Functions triggered by `pg_cron` or database triggers:
 2. `**survey-reminder`** (pg_cron, daily): for active surveys, finds users who haven't voted and whose `survey_reminder_log.sent_at` is >= `notification_reminder_interval` days ago (per-user setting) or has no entry yet; sends push and upserts `survey_reminder_log`.
 3. `**meeting-reminder`** (pg_cron, daily): for approved meetings, sends a one-shot push to attendees exactly `notification_prior_meeting` days before the meeting (per-user setting). Uses exact match (`daysUntil == setting`) so each user is notified once — no log table needed.
 4. `**complete-meeting`** (pg_cron, daily): marks approved meetings whose `chosen_date` has passed as `completed`, closing the lifecycle loop so `create-survey` can auto-create the next survey.
+
 Push notifications sent via Expo Push API using tokens from `push_tokens` table (read by Edge Functions via `service_role` key).
 
 Additionally, **Supabase Realtime** subscriptions on the `meetings` table to instantly notify the app when a meeting is edited/unapproved (in-app handling).
