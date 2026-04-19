@@ -46,6 +46,7 @@ export default function HomeScreen() {
   const [creatingSurvey, setCreatingSurvey] = useState(false);
   const [addingToCalendar, setAddingToCalendar] = useState(false);
   const [joiningMeeting, setJoiningMeeting] = useState(false);
+  const [leavingMeeting, setLeavingMeeting] = useState(false);
   const [nextSurveyDate, setNextSurveyDate] = useState<Date | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [chosenDateOptionId, setChosenDateOptionId] = useState<string | null>(null);
@@ -392,6 +393,35 @@ export default function HomeScreen() {
     }
   };
 
+  const handleLeave = async () => {
+    if (!meeting || !currentUserId || leavingMeeting) return;
+    setLeavingMeeting(true);
+    try {
+      const { data: existingVotes } = await supabase
+        .from("votes")
+        .select("id")
+        .eq("meeting_id", meeting.id)
+        .eq("user_id", currentUserId);
+
+      if (existingVotes?.length) {
+        const { error } = await supabase
+          .from("votes")
+          .delete()
+          .eq("id", existingVotes[0].id);
+        if (error) {
+          showAlert(t("common.error"), error.message);
+          return;
+        }
+      }
+
+      await fetchData();
+    } catch (e: any) {
+      showAlert(t("common.error"), e?.message ?? t("home.failedLeave"));
+    } finally {
+      setLeavingMeeting(false);
+    }
+  };
+
   const handleAddToCalendar = async () => {
     if (!meeting?.chosen_date || addingToCalendar) return;
     setAddingToCalendar(true);
@@ -730,7 +760,7 @@ export default function HomeScreen() {
           )}
 
           <VStack space="md" className="mt-2">
-            {!isAttending && (
+            {!isAttending ? (
               <Button
                 action="primary"
                 isDisabled={joiningMeeting}
@@ -738,6 +768,17 @@ export default function HomeScreen() {
               >
                 <ButtonText>
                   {joiningMeeting ? t("home.joining") : t("home.iWillAttend")}
+                </ButtonText>
+              </Button>
+            ) : (
+              <Button
+                variant="outline"
+                action="negative"
+                isDisabled={leavingMeeting}
+                onPress={handleLeave}
+              >
+                <ButtonText>
+                  {leavingMeeting ? t("home.leaving") : t("home.iCannotAttend")}
                 </ButtonText>
               </Button>
             )}
