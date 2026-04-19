@@ -1,14 +1,11 @@
 import React, { useState } from "react";
-import { Switch, ScrollView, KeyboardAvoidingView, Platform } from "react-native";
+import { ScrollView, KeyboardAvoidingView } from "react-native";
 import { showAlert } from "@/lib/alert";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
-import { setStayLoggedIn as saveStayLoggedIn } from "@/lib/auth-storage";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
-import { HStack } from "@/components/ui/hstack";
-import { Text } from "@/components/ui/text";
 import { Heading } from "@/components/ui/heading";
 import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { Input, InputField, InputSlot, InputIcon } from "@/components/ui/input";
@@ -20,7 +17,6 @@ export default function LoginScreen() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [stayLoggedIn, setStayLoggedIn] = useState(true);
 
   const handleLogin = async () => {
     if (!email || !password) {
@@ -29,7 +25,6 @@ export default function LoginScreen() {
     }
 
     setLoading(true);
-    await saveStayLoggedIn(stayLoggedIn);
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -84,11 +79,6 @@ export default function LoginScreen() {
                 <InputIcon as={Ionicons} name={showPassword ? "eye-off" : "eye"} />
               </InputSlot>
             </Input>
-
-            <HStack className="items-center justify-between mb-2">
-              <Text className="text-stone-600">{t("auth.stayLoggedIn")}</Text>
-              <Switch value={stayLoggedIn} onValueChange={setStayLoggedIn} />
-            </HStack>
 
             <Button
               action="primary"

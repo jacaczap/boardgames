@@ -9,7 +9,6 @@ import * as Notifications from "expo-notifications";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
-import { getStayLoggedIn } from "@/lib/auth-storage";
 import {
   registerForPushNotifications,
   savePushToken,
@@ -28,10 +27,6 @@ export default function RootLayout() {
 
   useEffect(() => {
     const init = async () => {
-      const stayLoggedIn = await getStayLoggedIn();
-      if (!stayLoggedIn) {
-        await supabase.auth.signOut();
-      }
       const {
         data: { session },
       } = await supabase.auth.getSession();

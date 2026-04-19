@@ -26,7 +26,6 @@ const pl = {
     appName: "BoardGames",
     email: "E-mail",
     password: "Hasło",
-    stayLoggedIn: "Pozostań zalogowany",
     logIn: "Zaloguj się",
     fillAllFields: "Wypełnij wszystkie pola",
     loginFailed: "Logowanie nie powiodło się",
