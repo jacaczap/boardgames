@@ -16,7 +16,7 @@ Deno.serve(async (req) => {
 
     const { data: tokens } = await supabase
       .from("push_tokens")
-      .select("token");
+      .select("user_id, token");
 
     if (!tokens?.length) {
       return Response.json({ message: "No tokens" });
@@ -29,6 +29,14 @@ Deno.serve(async (req) => {
       data: { type: "survey", meetingId },
     }));
     await sendPushNotifications(messages);
+
+    // Treat the "new survey" notification as the first reminder so the
+    // survey-reminder cron does not send another reminder on the same day.
+    const now = new Date().toISOString();
+    const uniqueUserIds = Array.from(new Set(tokens.map((t) => t.user_id)));
+    await supabase
+      .from("survey_reminder_log")
+      .upsert(uniqueUserIds.map((user_id) => ({ user_id, sent_at: now })));
 
     return Response.json({ notified: tokens.length });
   } catch (error) {
