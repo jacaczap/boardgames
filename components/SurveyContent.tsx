@@ -40,6 +40,7 @@ import { Card } from "@/components/ui/card";
 import { Pressable } from "@/components/ui/pressable";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import UserAvatar from "@/components/UserAvatar";
+import VoterListModal from "@/components/VoterListModal";
 
 interface VoterInfo {
   dateVoters: Map<string, Profile[]>;
@@ -81,7 +82,18 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
   const [notParticipating, setNotParticipating] = useState(false);
   const [meetingApprovedByOther, setMeetingApprovedByOther] = useState(false);
   const [showSummary, setShowSummary] = useState(false);
+  const [showVoterList, setShowVoterList] = useState(false);
   const isEditingRef = useRef(false);
+
+  const votedProfiles = useMemo(() => {
+    const voterIds = new Set(allVotes.map((v) => v.user_id));
+    return profiles.filter((p) => voterIds.has(p.id));
+  }, [allVotes, profiles]);
+
+  const notVotedProfiles = useMemo(() => {
+    const voterIds = new Set(allVotes.map((v) => v.user_id));
+    return profiles.filter((p) => !voterIds.has(p.id));
+  }, [allVotes, profiles]);
 
   const avatarPaths = useMemo(
     () => profiles.map((p) => p.avatar_url).filter((u): u is string => !!u),
@@ -513,12 +525,14 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         <VStack space="lg">
           <VStack space="xs">
             <Heading size="xl">{t("survey.surveyNumber", { number: meeting.number })}</Heading>
-            <HStack space="sm" className="items-center">
-              <Ionicons name="people-outline" size={16} color="#78716c" />
-              <Text className="text-stone-500">
-                {t("home.votedCount", { count: allVotes.length, total: profiles.length })}
-              </Text>
-            </HStack>
+            <Pressable onPress={() => setShowVoterList(true)} hitSlop={6}>
+              <HStack space="sm" className="items-center">
+                <Ionicons name="people-outline" size={16} color="#78716c" />
+                <Text className="text-stone-500 underline">
+                  {t("home.votedCount", { count: allVotes.length, total: profiles.length })}
+                </Text>
+              </HStack>
+            </Pressable>
           </VStack>
 
           <Card variant="filled" className="bg-green-50 p-4">
@@ -683,6 +697,13 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
             )}
           </VStack>
         </VStack>
+        <VoterListModal
+          visible={showVoterList}
+          onClose={() => setShowVoterList(false)}
+          voted={votedProfiles}
+          notVoted={notVotedProfiles}
+          avatarUrls={avatarUrls}
+        />
       </ScrollView>
     );
   }
@@ -707,12 +728,14 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         {/* Header */}
         <VStack space="xs">
           <Heading size="xl">{t("survey.surveyNumber", { number: meeting.number })}</Heading>
-          <HStack space="sm" className="items-center">
-            <Ionicons name="people-outline" size={16} color="#78716c" />
-            <Text className="text-stone-500">
-              {t("home.votedCount", { count: allVotes.length, total: profiles.length })}
-            </Text>
-          </HStack>
+          <Pressable onPress={() => setShowVoterList(true)} hitSlop={6}>
+            <HStack space="sm" className="items-center">
+              <Ionicons name="people-outline" size={16} color="#78716c" />
+              <Text className="text-stone-500 underline">
+                {t("home.votedCount", { count: allVotes.length, total: profiles.length })}
+              </Text>
+            </HStack>
+          </Pressable>
           {existingVote && (
             <Badge action="success" className="self-start">
               <BadgeText>{t("survey.alreadyVoted")}</BadgeText>
@@ -899,6 +922,13 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         </VStack>
       </VStack>
       </ScrollView>
+      <VoterListModal
+        visible={showVoterList}
+        onClose={() => setShowVoterList(false)}
+        voted={votedProfiles}
+        notVoted={notVotedProfiles}
+        avatarUrls={avatarUrls}
+      />
     </KeyboardAvoidingView>
   );
 };
