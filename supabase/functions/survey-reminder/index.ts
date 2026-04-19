@@ -92,7 +92,9 @@ Deno.serve(async (_req) => {
         .upsert({ user_id: user.id, sent_at: now.toISOString() });
     }
 
-    return Response.json({ reminded: usersToRemind.length });
+    const result = { reminded: usersToRemind.length };
+    console.log("survey-reminder", result);
+    return Response.json(result);
   } catch (error) {
     return Response.json({ error: (error as Error).message }, { status: 500 });
   }

@@ -40,7 +40,9 @@ Deno.serve(async (req) => {
     }));
     await sendPushNotifications(messages);
 
-    return Response.json({ notified: tokens.length });
+    const result = { notified: tokens.length };
+    console.log("notify-meeting-unapproved", result);
+    return Response.json(result);
   } catch (error) {
     return Response.json({ error: (error as Error).message }, { status: 500 });
   }

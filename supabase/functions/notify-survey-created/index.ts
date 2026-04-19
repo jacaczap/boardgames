@@ -38,7 +38,9 @@ Deno.serve(async (req) => {
       .from("survey_reminder_log")
       .upsert(uniqueUserIds.map((user_id) => ({ user_id, sent_at: now })));
 
-    return Response.json({ notified: tokens.length });
+    const result = { notified: tokens.length };
+    console.log("notify-survey-created", result);
+    return Response.json(result);
   } catch (error) {
     return Response.json({ error: (error as Error).message }, { status: 500 });
   }

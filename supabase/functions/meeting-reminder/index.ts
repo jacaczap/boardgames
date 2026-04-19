@@ -98,7 +98,9 @@ Deno.serve(async (_req) => {
       }
     }
 
-    return Response.json({ notified: totalNotified });
+    const result = { notified: totalNotified };
+    console.log("meeting-reminder", result);
+    return Response.json(result);
   } catch (error) {
     return Response.json({ error: (error as Error).message }, { status: 500 });
   }
