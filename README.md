@@ -84,10 +84,10 @@ supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 supabase secrets set EXPO_ACCESS_TOKEN=your-expo-access-token
 ```
 
-Deploy Edge Functions (with `--no-verify-jwt` since the project uses non-JWT API keys):
+Deploy Edge Functions:
 
 ```bash
-supabase functions deploy --no-verify-jwt
+supabase functions deploy
 ```
 
 ### 4. Supabase Auth configuration
@@ -107,13 +107,13 @@ Push notifications on Android require Firebase Cloud Messaging (FCM).
 3. Download `google-services.json` and place it in the project root (already referenced in `app.json` via `googleServicesFile`)
 4. In Firebase Console → Project Settings → Service Accounts → click "Generate new private key" and download the JSON
 5. Upload the service account key to Expo:
-   ```bash
+  ```bash
    eas credentials
    # Select: Android → production → Google Service Account
    # Select: Manage your Google Service Account Key for Push Notifications (FCM V1)
    # Select: Set up a Google Service Account Key for Push Notifications (FCM V1)
    # Point to the downloaded firebase-adminsdk JSON file
-   ```
+  ```
 6. Rebuild the app (`eas build`) — this is a native change, OTA updates won't work
 
 > **Note:** `google-services.json` is safe to commit (bundled with the app). The Firebase admin SDK key (`*-firebase-adminsdk-*.json`) is gitignored and must not be committed.
@@ -179,12 +179,14 @@ SQL functions: `create_next_survey()`, `get_consecutive_game_count()`, Polish ho
 
 ## Edge Functions (pg_cron)
 
-| Function | Schedule | Purpose |
-|---|---|---|
-| `create-survey` | Daily | Auto-create survey 7+ days after last completed meeting |
-| `survey-reminder` | Daily | Remind users who haven't voted (per-user interval) |
-| `meeting-reminder` | Daily | Notify attendees N days before meeting (per-user setting) |
-| `complete-meeting` | Daily | Mark past approved meetings as completed |
+
+| Function           | Schedule | Purpose                                                   |
+| ------------------ | -------- | --------------------------------------------------------- |
+| `create-survey`    | Daily    | Auto-create survey 7+ days after last completed meeting   |
+| `survey-reminder`  | Daily    | Remind users who haven't voted (per-user interval)        |
+| `meeting-reminder` | Daily    | Notify attendees N days before meeting (per-user setting) |
+| `complete-meeting` | Daily    | Mark past approved meetings as completed                  |
+
 
 ## Security
 

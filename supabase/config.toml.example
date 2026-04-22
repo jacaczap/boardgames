@@ -13,3 +13,12 @@ port = 54323
 [auth]
 site_url = "http://localhost:8081"
 enable_signup = false
+
+[functions.survey-reminder]
+verify_jwt = false
+
+[functions.meeting-reminder]
+verify_jwt = false
+
+[functions.create-survey]
+verify_jwt = false
