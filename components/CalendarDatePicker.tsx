@@ -1,5 +1,11 @@
-import React, { useCallback, useMemo, useState } from "react";
-import { Modal, Pressable as RNPressable, StyleSheet } from "react-native";
+import React, { useCallback, useMemo, useRef, useState } from "react";
+import {
+  Modal,
+  PanResponder,
+  Pressable as RNPressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import { showAlert } from "@/lib/alert";
 import { Calendar, DateData } from "react-native-calendars";
 import { useTranslation } from "react-i18next";
@@ -42,6 +48,20 @@ function todayStr(): string {
   const day = String(d.getDate()).padStart(2, "0");
   return `${y}-${m}-${day}`;
 }
+
+function shiftMonth(dateStr: string, delta: number): string {
+  const d = new Date(dateStr + "T00:00:00");
+  d.setDate(1);
+  d.setMonth(d.getMonth() + delta);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  return `${y}-${m}-01`;
+}
+
+const SWIPE_MIN_DX = 60;
+const SWIPE_MIN_VELOCITY = 0.4;
+const SWIPE_MAX_DY = 40;
+const SWIPE_CLAIM_DX = 20;
 
 interface CalendarDatePickerProps {
   dateOptions: DateOption[];
@@ -178,6 +198,32 @@ const CalendarDatePicker: React.FC<CalendarDatePickerProps> = ({
     if (!dateRange) return today;
     return dateRange.min > today ? dateRange.min : today;
   }, [dateRange, today]);
+
+  const [displayMonth, setDisplayMonth] = useState<string>(initialMonth);
+
+  const panResponder = useRef(
+    PanResponder.create({
+      onStartShouldSetPanResponder: () => false,
+      onStartShouldSetPanResponderCapture: () => false,
+      onMoveShouldSetPanResponder: (_, g) =>
+        Math.abs(g.dx) > SWIPE_CLAIM_DX &&
+        Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      onMoveShouldSetPanResponderCapture: (_, g) =>
+        Math.abs(g.dx) > SWIPE_CLAIM_DX &&
+        Math.abs(g.dx) > Math.abs(g.dy) * 2,
+      onPanResponderTerminationRequest: () => true,
+      onPanResponderRelease: (_, g) => {
+        const absDx = Math.abs(g.dx);
+        const absDy = Math.abs(g.dy);
+        const hasDistance = absDx > SWIPE_MIN_DX;
+        const hasVelocity = Math.abs(g.vx) > SWIPE_MIN_VELOCITY;
+        const isHorizontal = absDy < SWIPE_MAX_DY;
+        if (hasDistance && isHorizontal && (hasVelocity || absDx > 120)) {
+          setDisplayMonth((prev) => shiftMonth(prev, g.dx < 0 ? 1 : -1));
+        }
+      },
+    })
+  ).current;
 
   const markedDates = useMemo(() => {
     const marks: Record<
@@ -354,25 +400,28 @@ const CalendarDatePicker: React.FC<CalendarDatePickerProps> = ({
   return (
     <VStack space="sm">
       <Legend />
-      <Calendar
-        current={initialMonth}
-        markingType="custom"
-        markedDates={markedDates}
-        dayComponent={renderDayComponent}
-        firstDay={1}
-        enableSwipeMonths
-        theme={{
-          backgroundColor: "#fafaf9",
-          calendarBackground: "#fafaf9",
-          monthTextColor: "#44403c",
-          textMonthFontWeight: "bold",
-          textMonthFontSize: 16,
-          arrowColor: "#78716c",
-          textSectionTitleColor: "#78716c",
-          textDayHeaderFontSize: 12,
-          textDayHeaderFontWeight: "600",
-        }}
-      />
+      <View {...panResponder.panHandlers}>
+        <Calendar
+          initialDate={displayMonth}
+          markingType="custom"
+          markedDates={markedDates}
+          dayComponent={renderDayComponent}
+          firstDay={1}
+          enableSwipeMonths={false}
+          onMonthChange={(d) => setDisplayMonth(d.dateString)}
+          theme={{
+            backgroundColor: "#fafaf9",
+            calendarBackground: "#fafaf9",
+            monthTextColor: "#44403c",
+            textMonthFontWeight: "bold",
+            textMonthFontSize: 16,
+            arrowColor: "#78716c",
+            textSectionTitleColor: "#78716c",
+            textDayHeaderFontSize: 12,
+            textDayHeaderFontWeight: "600",
+          }}
+        />
+      </View>
       <Text size="xs" className="text-stone-400 text-center mt-1 italic">
         {t("survey.longPressHint")}
       </Text>
