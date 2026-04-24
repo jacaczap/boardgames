@@ -185,6 +185,8 @@ const pl = {
     submitVote: "Wyślij głos",
     playLimitTitle: "Limit 3 gier",
     playLimitMessage: "Ta gra była grana 3+ razy z rzędu. Rozważ wybranie innej gry.",
+    streakBreakTitle: "Seria w toku",
+    streakBreakMessage: "\"{{name}}\" była grana {{count}}x z rzędu. Rozważ oddanie głosu ponownie, aby osiągnąć serię 3 gier.",
     selectAnyway: "Wybierz mimo to",
     invalidFormat: "Nieprawidłowy format",
     useFormat: "Użyj formatu RRRR-MM-DD",

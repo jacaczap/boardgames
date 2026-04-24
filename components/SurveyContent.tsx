@@ -342,7 +342,9 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
   const toggleGame = (gameId: string) => {
     if (notParticipating) return;
     const count = consecutiveCounts.get(gameId) ?? 0;
-    if (count >= 3 && !selectedGames.has(gameId)) {
+    const isSelecting = !selectedGames.has(gameId);
+
+    if (count >= 3 && isSelecting) {
       showAlert(
         t("survey.playLimitTitle"),
         t("survey.playLimitMessage"),
@@ -361,6 +363,41 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         ],
       );
       return;
+    }
+
+    if (isSelecting) {
+      let streakGameId: string | null = null;
+      let streakCount = 0;
+      consecutiveCounts.forEach((c, gId) => {
+        if (c > 0 && c < 3 && c > streakCount) {
+          streakGameId = gId;
+          streakCount = c;
+        }
+      });
+      if (streakGameId && streakGameId !== gameId) {
+        const streakGame = games.find((g) => g.id === streakGameId);
+        showAlert(
+          t("survey.streakBreakTitle"),
+          t("survey.streakBreakMessage", {
+            name: streakGame?.name ?? "",
+            count: streakCount,
+          }),
+          [
+            { text: t("common.cancel"), style: "cancel" },
+            {
+              text: t("survey.selectAnyway"),
+              onPress: () => {
+                setSelectedGames((prev) => {
+                  const next = new Set(prev);
+                  next.add(gameId);
+                  return next;
+                });
+              },
+            },
+          ],
+        );
+        return;
+      }
     }
 
     setSelectedGames((prev) => {

@@ -185,6 +185,8 @@ const en = {
     submitVote: "Submit Vote",
     playLimitTitle: "3-play limit",
     playLimitMessage: "This game has been played 3+ times in a row. Consider picking a different game.",
+    streakBreakTitle: "Streak in progress",
+    streakBreakMessage: "\"{{name}}\" has been played {{count}}x in a row. Consider voting for it again to reach the 3-play streak.",
     selectAnyway: "Select anyway",
     invalidFormat: "Invalid format",
     useFormat: "Use YYYY-MM-DD format",
