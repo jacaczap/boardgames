@@ -1,7 +1,13 @@
 import "../global.css";
 import "@/lib/i18n";
 import React, { useEffect, useState, useRef } from "react";
-import { Platform, Pressable, StyleSheet, View } from "react-native";
+import {
+  Linking,
+  Platform,
+  Pressable,
+  StyleSheet,
+  View,
+} from "react-native";
 import { Stack, useRouter, useSegments } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { Session } from "@supabase/supabase-js";
@@ -9,9 +15,11 @@ import * as Notifications from "expo-notifications";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { showAlert } from "@/lib/alert";
 import {
   registerForPushNotifications,
   savePushToken,
+  logPushTokenEvent,
 } from "@/lib/notifications";
 
 import { Center } from "@/components/ui/center";
@@ -45,15 +53,72 @@ export default function RootLayout() {
   }, []);
 
   useEffect(() => {
-    if (!session?.user || Platform.OS === "web") return;
+    if (Platform.OS === "web") return;
+    const userId = session?.user?.id;
+    if (!userId) return;
 
     (async () => {
-      const token = await registerForPushNotifications();
-      if (token) {
-        await savePushToken(session.user.id, token);
+      const result = await registerForPushNotifications();
+
+      if (result.status === "success") {
+        const saved = await savePushToken(userId, result.token);
+        if (saved.ok) {
+          await logPushTokenEvent(userId, "success");
+        } else {
+          await logPushTokenEvent(userId, "save_failed", saved.error);
+          showAlert(
+            t("push.titleFailed"),
+            t("push.saveFailed", { error: saved.error }),
+          );
+        }
+        return;
+      }
+
+      if (result.status === "skipped_web") return;
+
+      if (result.status === "not_a_device") {
+        await logPushTokenEvent(userId, "not_a_device");
+        return;
+      }
+
+      if (result.status === "permission_denied") {
+        await logPushTokenEvent(
+          userId,
+          "permission_denied",
+          `existing=${result.existingStatus} final=${result.finalStatus} canAskAgain=${result.canAskAgain}`,
+        );
+        showAlert(
+          t("push.titleDisabled"),
+          t("push.permissionDeniedOpenSettings"),
+          [
+            { text: t("common.cancel"), style: "cancel" },
+            {
+              text: t("push.openSettings"),
+              onPress: () => {
+                Linking.openSettings().catch(() => {});
+              },
+            },
+          ],
+        );
+        return;
+      }
+
+      if (result.status === "missing_project_id") {
+        await logPushTokenEvent(userId, "missing_project_id");
+        showAlert(t("push.titleFailed"), t("push.missingProjectId"));
+        return;
+      }
+
+      if (result.status === "token_fetch_failed") {
+        await logPushTokenEvent(userId, "token_fetch_failed", result.error);
+        showAlert(
+          t("push.titleFailed"),
+          t("push.tokenFetchFailed", { error: result.error }),
+        );
+        return;
       }
     })();
-  }, [session?.user?.id]);
+  }, [session?.user?.id, t]);
 
   useEffect(() => {
     responseListener.current =

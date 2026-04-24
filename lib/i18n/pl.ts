@@ -245,6 +245,19 @@ const pl = {
     meetingApprovedBanner: "To spotkanie zostało zatwierdzone przez kogoś innego. Nadal możesz wysłać swój głos.",
     alreadyVoting: "To spotkanie zostało już cofnięte do głosowania.",
   },
+
+  push: {
+    titleDisabled: "Powiadomienia wyłączone",
+    titleFailed: "Błąd konfiguracji powiadomień",
+    openSettings: "Otwórz ustawienia",
+    permissionDeniedOpenSettings:
+      "Nie będziesz otrzymywać przypomnień o spotkaniach i ankietach. Otwórz ustawienia systemu, aby włączyć powiadomienia dla tej aplikacji.",
+    saveFailed: "Nie udało się zapisać tokenu powiadomień: {{error}}",
+    missingProjectId:
+      "Aplikacja jest źle skonfigurowana do powiadomień push. Skontaktuj się z administratorem.",
+    tokenFetchFailed:
+      "Nie udało się pobrać tokenu z Expo: {{error}}. Sprawdź połączenie z internetem i spróbuj ponownie.",
+  },
 } as const;
 
 export default pl;

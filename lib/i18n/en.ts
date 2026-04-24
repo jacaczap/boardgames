@@ -245,6 +245,19 @@ const en = {
     meetingApprovedBanner: "This meeting has been approved by someone else. You can still submit your vote.",
     alreadyVoting: "This meeting has already been reverted to voting.",
   },
+
+  push: {
+    titleDisabled: "Notifications disabled",
+    titleFailed: "Notifications setup failed",
+    openSettings: "Open Settings",
+    permissionDeniedOpenSettings:
+      "You won't receive meeting or survey reminders. Open system settings to allow notifications for this app.",
+    saveFailed: "Couldn't save your notification token: {{error}}",
+    missingProjectId:
+      "The app is misconfigured for push notifications. Please contact the admin.",
+    tokenFetchFailed:
+      "Couldn't get a push token from Expo: {{error}}. Check your internet connection and try again.",
+  },
 } as const;
 
 export default en;
