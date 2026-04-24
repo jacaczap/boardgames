@@ -84,6 +84,11 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
   const [showSummary, setShowSummary] = useState(false);
   const [showVoterList, setShowVoterList] = useState(false);
   const isEditingRef = useRef(false);
+  const hasHydratedSelectionsRef = useRef(false);
+  const showSummaryRef = useRef(showSummary);
+  useEffect(() => {
+    showSummaryRef.current = showSummary;
+  }, [showSummary]);
 
   const votedProfiles = useMemo(() => {
     const voterIds = new Set(allVotes.map((v) => v.user_id));
@@ -173,7 +178,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
       .slice(0, 3);
   }, [games, gameVoteCounts]);
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (forceHydrateSelections = false) => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       setCurrentUserId(user?.id ?? null);
@@ -228,29 +233,36 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
 
       if (user?.id) {
         const myVote = votes.find((v) => v.user_id === user.id);
+        const shouldHydrateSelections =
+          forceHydrateSelections ||
+          !hasHydratedSelectionsRef.current ||
+          showSummaryRef.current;
         if (myVote) {
-          const myVoteDates = (voteDatesRes.data as (VoteDate & { votes: unknown })[])
-            ?.filter((vd) => vd.vote_id === myVote.id)
-            .map((vd) => vd.date_option_id);
-          const myVoteGames = (voteGamesRes.data as (VoteGame & { votes: unknown })[])
-            ?.filter((vg) => vg.vote_id === myVote.id)
-            .map((vg) => vg.game_id);
+          if (shouldHydrateSelections) {
+            const myVoteDates = (voteDatesRes.data as (VoteDate & { votes: unknown })[])
+              ?.filter((vd) => vd.vote_id === myVote.id)
+              .map((vd) => vd.date_option_id);
+            const myVoteGames = (voteGamesRes.data as (VoteGame & { votes: unknown })[])
+              ?.filter((vg) => vg.vote_id === myVote.id)
+              .map((vg) => vg.game_id);
 
-          if (!myVoteDates?.length && !myVoteGames?.length) {
-            setNotParticipating(true);
-            setSelectedDates(new Set());
-            setSelectedGames(new Set());
-          } else {
-            setNotParticipating(false);
-            setSelectedDates(new Set(myVoteDates ?? []));
-            setSelectedGames(new Set(myVoteGames ?? []));
+            if (!myVoteDates?.length && !myVoteGames?.length) {
+              setNotParticipating(true);
+              setSelectedDates(new Set());
+              setSelectedGames(new Set());
+            } else {
+              setNotParticipating(false);
+              setSelectedDates(new Set(myVoteDates ?? []));
+              setSelectedGames(new Set(myVoteGames ?? []));
+            }
           }
           if (!isEditingRef.current) setShowSummary(true);
-        } else {
+        } else if (shouldHydrateSelections) {
           setNotParticipating(false);
           setSelectedDates(new Set());
           setSelectedGames(new Set());
         }
+        hasHydratedSelectionsRef.current = true;
       }
     } catch (e) {
       console.error("Failed to fetch survey data:", e);
@@ -325,7 +337,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
 
   const onRefresh = useCallback(async () => {
     setRefreshing(true);
-    await fetchData();
+    await fetchData(true);
     setRefreshing(false);
   }, [fetchData]);
 
@@ -516,7 +528,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
           t("race.meetingApprovedWhileVoting"),
         );
       }
-      await fetchData();
+      await fetchData(true);
       setShowSummary(true);
     } catch (e: any) {
       showAlert(t("common.error"), e?.message ?? t("survey.failedSubmit"));
