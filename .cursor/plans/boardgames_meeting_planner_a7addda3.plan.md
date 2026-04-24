@@ -178,7 +178,7 @@ RLS is **enabled on all tables**. Anonymous/unauthenticated requests have zero a
 ### Key Database Functions (Supabase SQL functions)
 
 - `get_consecutive_game_count(game_id)` -- counts how many recent consecutive completed meetings used this game (for the "3 plays" rule)
-- `create_next_survey()` -- finds latest completed meeting (by `number`), creates a new meeting in "voting" status with auto-generated date_options (weekends + Polish holidays in the valid range, starting from 2nd weekend after the last meeting date)
+- `create_next_survey()` -- finds latest completed meeting (by `number`), creates a new meeting in "voting" status with auto-generated date_options (weekends + Polish holidays in the valid range, starting from 1 day after survey creation)
 
 ### Indexes
 
