@@ -2,6 +2,7 @@ import "../global.css";
 import "@/lib/i18n";
 import React, { useEffect, useState, useRef } from "react";
 import {
+  AppState,
   Linking,
   Platform,
   Pressable,
@@ -52,72 +53,104 @@ export default function RootLayout() {
     return () => subscription.unsubscribe();
   }, []);
 
+  const successRef = useRef(false);
+  const inFlightRef = useRef(false);
+  const alertedReasonsRef = useRef<Set<string>>(new Set());
+
   useEffect(() => {
     if (Platform.OS === "web") return;
     const userId = session?.user?.id;
     if (!userId) return;
 
-    (async () => {
-      const result = await registerForPushNotifications();
+    const alertOnce = (reason: string, fn: () => void) => {
+      if (alertedReasonsRef.current.has(reason)) return;
+      alertedReasonsRef.current.add(reason);
+      fn();
+    };
 
-      if (result.status === "success") {
-        const saved = await savePushToken(userId, result.token);
-        if (saved.ok) {
-          await logPushTokenEvent(userId, "success");
-        } else {
-          await logPushTokenEvent(userId, "save_failed", saved.error);
-          showAlert(
-            t("push.titleFailed"),
-            t("push.saveFailed", { error: saved.error }),
-          );
+    const run = async (trigger: "mount" | "resume") => {
+      if (successRef.current || inFlightRef.current) return;
+      inFlightRef.current = true;
+      try {
+        const result = await registerForPushNotifications();
+
+        if (result.status === "success") {
+          const saved = await savePushToken(userId, result.token);
+          if (saved.ok) {
+            successRef.current = true;
+            await logPushTokenEvent(userId, "success", `trigger=${trigger}`);
+          } else {
+            await logPushTokenEvent(userId, "save_failed", saved.error);
+            alertOnce("save_failed", () =>
+              showAlert(
+                t("push.titleFailed"),
+                t("push.saveFailed", { error: saved.error }),
+              ),
+            );
+          }
+          return;
         }
-        return;
-      }
 
-      if (result.status === "skipped_web") return;
+        if (result.status === "skipped_web") return;
 
-      if (result.status === "not_a_device") {
-        await logPushTokenEvent(userId, "not_a_device");
-        return;
-      }
+        if (result.status === "not_a_device") {
+          await logPushTokenEvent(userId, "not_a_device");
+          return;
+        }
 
-      if (result.status === "permission_denied") {
-        await logPushTokenEvent(
-          userId,
-          "permission_denied",
-          `existing=${result.existingStatus} final=${result.finalStatus} canAskAgain=${result.canAskAgain}`,
-        );
-        showAlert(
-          t("push.titleDisabled"),
-          t("push.permissionDeniedOpenSettings"),
-          [
-            { text: t("common.cancel"), style: "cancel" },
-            {
-              text: t("push.openSettings"),
-              onPress: () => {
-                Linking.openSettings().catch(() => {});
-              },
-            },
-          ],
-        );
-        return;
-      }
+        if (result.status === "permission_denied") {
+          await logPushTokenEvent(
+            userId,
+            "permission_denied",
+            `trigger=${trigger} existing=${result.existingStatus} final=${result.finalStatus} canAskAgain=${result.canAskAgain}`,
+          );
+          alertOnce("permission_denied", () =>
+            showAlert(
+              t("push.titleDisabled"),
+              t("push.permissionDeniedOpenSettings"),
+              [
+                { text: t("common.cancel"), style: "cancel" },
+                {
+                  text: t("push.openSettings"),
+                  onPress: () => {
+                    Linking.openSettings().catch(() => {});
+                  },
+                },
+              ],
+            ),
+          );
+          return;
+        }
 
-      if (result.status === "missing_project_id") {
-        await logPushTokenEvent(userId, "missing_project_id");
-        showAlert(t("push.titleFailed"), t("push.missingProjectId"));
-        return;
-      }
+        if (result.status === "missing_project_id") {
+          await logPushTokenEvent(userId, "missing_project_id");
+          alertOnce("missing_project_id", () =>
+            showAlert(t("push.titleFailed"), t("push.missingProjectId")),
+          );
+          return;
+        }
 
-      if (result.status === "token_fetch_failed") {
-        await logPushTokenEvent(userId, "token_fetch_failed", result.error);
-        showAlert(
-          t("push.titleFailed"),
-          t("push.tokenFetchFailed", { error: result.error }),
-        );
-        return;
+        if (result.status === "token_fetch_failed") {
+          await logPushTokenEvent(userId, "token_fetch_failed", result.error);
+          alertOnce("token_fetch_failed", () =>
+            showAlert(
+              t("push.titleFailed"),
+              t("push.tokenFetchFailed", { error: result.error }),
+            ),
+          );
+          return;
+        }
+      } finally {
+        inFlightRef.current = false;
       }
-    })();
+    };
+
+    run("mount");
+
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state === "active") run("resume");
+    });
+    return () => sub.remove();
   }, [session?.user?.id, t]);
 
   useEffect(() => {
