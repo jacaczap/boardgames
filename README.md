@@ -87,7 +87,7 @@ supabase secrets set EXPO_ACCESS_TOKEN=your-expo-access-token
 Deploy Edge Functions:
 
 ```bash
-supabase functions deploy
+supabase functions deploy --no-verify-jwt
 ```
 
 ### 4. Supabase Auth configuration
