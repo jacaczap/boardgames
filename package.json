@@ -6,7 +6,17 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "supabase:setup:dev": "bash scripts/supabase-setup.sh dev all",
+    "supabase:link:dev": "bash scripts/supabase-setup.sh dev link",
+    "db:push:dev": "bash scripts/supabase-setup.sh dev db",
+    "functions:deploy:dev": "bash scripts/supabase-setup.sh dev functions",
+    "supabase:secrets:dev": "bash scripts/supabase-setup.sh dev secrets",
+    "supabase:setup:prod": "bash scripts/supabase-setup.sh prod all",
+    "supabase:link:prod": "bash scripts/supabase-setup.sh prod link",
+    "db:push:prod": "bash scripts/supabase-setup.sh prod db",
+    "functions:deploy:prod": "bash scripts/supabase-setup.sh prod functions",
+    "supabase:secrets:prod": "bash scripts/supabase-setup.sh prod secrets"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",

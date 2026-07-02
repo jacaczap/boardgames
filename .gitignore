@@ -31,6 +31,9 @@ yarn-error.*
 # env
 .env
 .env*.local
+.env.dev
+.env.prod
+.env.production
 
 # Firebase service account keys
 *-firebase-adminsdk-*.json

@@ -61,34 +61,35 @@ EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 EXPO_PUBLIC_SUPABASE_KEY=your-anon-key
 ```
 
-### 3. Set up Supabase (for local Supabase deployment)
+### 3. Set up Supabase (link, migrations, edge functions)
 
-Copy the config template and fill in your project ID:
-
-```bash
-cp supabase/config.toml.example supabase/config.toml
-```
-
-Link to your Supabase project and run migrations:
+Backend deploys are scripted per environment. Authenticate the CLI once
+(`npx supabase login`), then put each project's config in a gitignored
+`.env.dev` / `.env.prod` (copy from the `*.example` files):
 
 ```bash
-supabase login
-supabase link --project-ref your-project-ref
-supabase db push
+cp .env.dev.example .env.dev     # fill in DEV_PROJECT_REF, DEV_PROJECT_URL, DEV_SECRET_KEY
+npm run supabase:setup:dev       # link + migrations + edge functions, prints Vault SQL
 ```
 
-Set Edge Function secrets:
+Switch environments with the suffix: `npm run supabase:setup:prod` targets PROD.
+Granular steps exist for both: `db:push:{dev,prod}`,
+`functions:deploy:{dev,prod}`, `supabase:secrets:{dev,prod}`,
+`supabase:link:{dev,prod}`. (The script auto-links the right project and reads
+`verify_jwt` from `supabase/config.toml`.)
 
-```bash
-supabase secrets set SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-supabase secrets set EXPO_ACCESS_TOKEN=your-expo-access-token
+pg_cron needs two Vault secrets to invoke the scheduled functions. `setup:*`
+ends by printing them with your values already filled in (or reprint anytime with
+`npm run supabase:secrets:dev` / `:prod`); paste the output **once** into the
+project's SQL editor (Dashboard → SQL editor). It looks like:
+
+```sql
+select vault.create_secret('https://<ref>.supabase.co', 'project_url');
+select vault.create_secret('<sb_secret_…>', 'service_role_key');
 ```
 
-Deploy Edge Functions:
-
-```bash
-supabase functions deploy --no-verify-jwt
-```
+Creating the DEV project and the one-time guided dashboard steps are documented
+in [docs/supabase-dev-setup.md](docs/supabase-dev-setup.md).
 
 ### 4. Supabase Auth configuration
 
