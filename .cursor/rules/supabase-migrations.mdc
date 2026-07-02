@@ -1,0 +1,36 @@
+---
+description: Supabase migration conventions (explicit grants, RLS)
+globs: supabase/migrations/**/*.sql
+alwaysApply: false
+---
+
+# Supabase Migration Rules
+
+Starting Oct 30, 2026, Supabase no longer auto-grants Data API access to new tables in `public`. Every new `create table public.<x>` must include explicit GRANTs and RLS, otherwise `supabase-js` / PostgREST / GraphQL will return `42501`.
+
+## Required pattern for every new public table
+
+```sql
+create table public.your_table (
+  id uuid primary key default gen_random_uuid()
+  -- ...
+);
+
+grant select, insert, update, delete on public.your_table to authenticated;
+grant select, insert, update, delete on public.your_table to service_role;
+-- Only if anonymous (logged-out) read is required:
+-- grant select on public.your_table to anon;
+
+alter table public.your_table enable row level security;
+
+create policy "..." on public.your_table for select to authenticated using (...);
+-- + insert/update/delete policies as needed
+```
+
+## Rules
+
+- Never create a `public` table without RLS enabled.
+- Never create a `public` table without at least `authenticated` + `service_role` grants — even if RLS is on, missing grants block PostgREST entirely.
+- Only grant to `anon` when the table is intentionally readable by logged-out users.
+- For server-only tables (accessed solely from edge functions via service role), still add `service_role` grant and skip `authenticated`/`anon`.
+- Never edit historical migrations — add a new migration for grant/policy changes.

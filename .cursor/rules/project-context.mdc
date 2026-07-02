@@ -1,0 +1,88 @@
+---
+description: Project context — what this app is, its domain concepts, screens, data model, and conventions
+alwaysApply: true
+---
+
+# BoardGames Meeting Planner — Project Context
+
+A small **React Native (Expo)** app for **one closed friend group** to coordinate board game nights: vote on dates + games (Doodle-style), approve a meeting, get push reminders. Display name **"Planszówki"** (Polish), bundle id `com.jacaczap.boardgames`. Runs on **Android (primary), Web, iOS**. No self-registration — admin creates users in Supabase.
+
+## Tech Stack
+
+- **Expo ~55** managed workflow + **expo-router** (file-based nav), React 19, RN 0.83
+- **Supabase** — Auth, Postgres, Storage, Edge Functions (Deno), Realtime
+- **gluestack-ui v2** + **nativewind** (Tailwind via `className`) for UI
+- **TypeScript** strict, path alias `@/*` → repo root
+- **i18n**: `i18next` + `react-i18next`, locales `en` / `pl`, device-detected, persisted in AsyncStorage (`lib/i18n/`)
+- Web hosted on **Vercel**; native built/distributed via **EAS**
+
+## Core Domain Concepts
+
+- **Meeting**: the central entity. Lifecycle status: `voting` → `approved` → `completed`. Has a `number` (sequential). A "survey" is just a meeting in `voting` status.
+- **Survey/voting**: users pick dates (`vote_dates`) and games (`vote_games`) in one `vote` per meeting. A vote with **no dates/games = "not participating"**.
+- **Date options**: auto-generated **weekends + Polish public holidays** in range, plus user-added **custom dates**. Past dates are disabled.
+- **3-play rule**: if a game has been played in 3 recent consecutive completed meetings, a new game must be picked (`get_consecutive_game_count`).
+- **Approval**: any user can approve — pick date (sorted by votes), then game (filtered to that date's voters). Any user can unapprove (→ back to `voting`).
+- **Late join** ("I will attend"): on an approved meeting, a user with no vote for the chosen date adds a vote for that date + chosen game.
+- **Lifecycle automation** (pg_cron, daily): `create-survey` makes a new survey 7+ days after last completed meeting; `complete-meeting` marks past approved meetings completed → loop continues.
+
+## Screens (expo-router)
+
+```
+app/
+  _layout.tsx              Root: auth guard, Stack, push-token registration, notification deep-links
+  (auth)/login.tsx         Email+password login, "stay logged in" toggle. No signup.
+  (tabs)/
+    _layout.tsx            Bottom tabs (Home/Games/Profile)
+    index.tsx              HOME: approved meeting card OR active survey CTA OR empty state
+    games/index.tsx        Board games list + search
+    games/[id].tsx         Game detail / edit / delete
+    games/new.tsx          Add game
+    profile.tsx            Avatar, name/surname, password, notification prefs, language, logout
+  survey/[id].tsx          Survey voting screen
+  approve/[id].tsx         Meeting approval screen
+components/                Shared: SurveyContent, CalendarDatePicker, UserAvatar, VoterListModal
+components/ui/             gluestack-ui primitives (Box, Button, Text, Card, etc.)
+lib/                       supabase, types, storage, notifications, holidays, alert, voteSignal, i18n
+```
+
+## Data Model (Postgres, all RLS-enabled)
+
+- **profiles** (1:1 `auth.users`): `name`, `surname`, `avatar_url`, `notification_prior_meeting`, `notification_reminder_interval`. (No `username` — was dropped.)
+- **push_tokens**: `user_id` PK, `token`. Separate table so only owner reads it; Edge Functions read all via `service_role`.
+- **push_token_events**: diagnostic log written via `log_push_token_event` RPC.
+- **board_games**: `name`, `description`, `genre`, `min_players`, `max_players`, `tutorial_url`, `spotify_playlist_url`, `image_url`, `owners` (text[]).
+- **meetings**: `number`, `status`, `chosen_date`, `chosen_game_id`, `approved_by`, `approved_at`, `voting_start_date`.
+- **date_options**: `meeting_id`, `date`, `is_custom`, `added_by`.
+- **votes** (one per user per meeting) → **vote_dates** (`date_option_id`) + **vote_games** (`game_id`).
+- **survey_reminder_log**: per-user `sent_at` for reminder throttling.
+
+Canonical TS types live in `lib/types.ts`. Key SQL functions: `create_next_survey()`, `get_consecutive_game_count()`, Polish-holidays computation (mirrored in `lib/holidays.ts`).
+
+## Edge Functions (`supabase/functions/`)
+
+Cron (daily): `create-survey`, `survey-reminder`, `meeting-reminder`, `complete-meeting`.
+Trigger-based push: `notify-survey-created`, `notify-meeting-approved`, `notify-meeting-unapproved`.
+Shared push sender: `_shared/push.ts` (Expo Push API, batches of 100). Excluded from app tsconfig (Deno runtime).
+
+## Conventions & Gotchas
+
+- **Realtime**: `meetings` + `votes` tables published; subscribe for live voter counts / approval changes. Use `useFocusEffect` to refetch on screen focus.
+- **Storage**: private buckets `avatars`, `game-images`. Never store raw paths in UI — use `useSignedUrl` / `useSignedUrls` (`lib/storage.ts`, auto-refresh before 1h expiry). Delete old image on replace/delete to avoid orphans.
+- **Alerts**: use `showAlert` from `lib/alert.ts` (cross-platform; web falls back to `window.alert/confirm`), not `Alert.alert` directly.
+- **Strings**: all user-facing text via `t("…")`; add keys to BOTH `lib/i18n/en.ts` and `pl.ts`.
+- **Web**: guard native-only features (`expo-calendar`, push) with `Platform.OS === "web"`. Web is centered max-width 700px.
+- **Theme**: warm wood palette — bg `#fdf8f0`, headers `#4a3228`, tabs `#3d2818`, accent amber `#f59e0b`, light text `#fef3c7`.
+- **Security**: anon key + RLS is the boundary (repo is public-safe). `service_role` only in Edge Functions. `.env` and `supabase/config.toml` gitignored.
+- **Migrations**: never edit historical ones — add a new file. See `supabase-migrations.mdc` for required grants/RLS pattern.
+- **Minimum supported version (force-update gate)**: a remote `min_version` (in Supabase, public read) is checked on startup; outdated native builds are hard-blocked with an "Update required" screen (web is exempt, fails open on error). When a change makes old clients incompatible (breaking DB/RLS/schema/edge-function or removed client behavior), evaluate whether to **bump `min_version`** and the app `version` in `app.json`. (Planned in Phase 0 — see `.cursor/plans/groups_premium_configurable_surveys_933ede3f.plan.md`; may not exist in code yet.)
+- **Git**: never commit/push without explicit user instruction; never to main/master.
+
+> Note: `README.md` and `.cursor/plans/boardgames_meeting_planner_a7addda3.plan.md` give origin design intent but predate some changes (e.g. `username` removal, the trigger-based `notify-*` functions). Trust the code/`lib/types.ts` when they disagree.
+
+## Keeping This File Up To Date
+
+When a change materially alters anything described above, update this rule in the same change. Triggers include: new/removed/renamed screen or route; new/changed DB table, column, or key SQL function; added/removed Edge Function or its trigger/schedule; new shared `lib/` utility or convention; stack/dependency or tooling shift; theme/palette change. Skip purely internal refactors that don't change the domain, data model, screens, or conventions.
+
+Also, for any change that could break older clients, evaluate bumping the minimum supported version (see the force-update gate convention above).
+

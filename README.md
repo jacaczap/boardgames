@@ -173,12 +173,13 @@ The web version is hosted on [Vercel](https://vercel.com) and auto-deploys on ev
 
 ## Database
 
-All tables use Row Level Security. Key tables: `profiles`, `board_games`, `meetings`, `date_options`, `votes`, `vote_dates`, `vote_games`, `push_tokens`, `survey_reminder_log`.
+All tables use Row Level Security. Key tables: `profiles`, `board_games`, `meetings`, `date_options`, `votes`, `vote_dates`, `vote_games`, `push_tokens`, `push_token_events`, `survey_reminder_log`.
 
 SQL functions: `create_next_survey()`, `get_consecutive_game_count()`, Polish holidays computation.
 
-## Edge Functions (pg_cron)
+## Edge Functions
 
+Scheduled (pg_cron):
 
 | Function           | Schedule | Purpose                                                   |
 | ------------------ | -------- | --------------------------------------------------------- |
@@ -186,6 +187,16 @@ SQL functions: `create_next_survey()`, `get_consecutive_game_count()`, Polish ho
 | `survey-reminder`  | Daily    | Remind users who haven't voted (per-user interval)        |
 | `meeting-reminder` | Daily    | Notify attendees N days before meeting (per-user setting) |
 | `complete-meeting` | Daily    | Mark past approved meetings as completed                  |
+
+Trigger-based (fired by DB triggers on `meetings`, push to all users):
+
+| Function                   | Trigger                          | Purpose                          |
+| -------------------------- | -------------------------------- | -------------------------------- |
+| `notify-survey-created`    | New meeting in `voting` status   | "A new survey is available"      |
+| `notify-meeting-approved`  | Meeting transitions to `approved`| "Meeting approved for {date}"    |
+| `notify-meeting-unapproved`| Meeting reverts to `voting`      | "Meeting unapproved"             |
+
+Push notifications sent via the Expo Push API (`functions/_shared/push.ts`) using tokens from `push_tokens`, read by Edge Functions via the `service_role` key.
 
 
 ## Security
