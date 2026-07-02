@@ -10,8 +10,8 @@ builds stop hitting prod. Two parts: a few **guided** dashboard steps, then one
 2. When ready, from the project's **Settings**:
    - **API keys** → copy the **publishable** key (`sb_publishable_…`, for the app)
      and the **secret** key (`sb_secret_…`, for the backend).
-   - **Data API** → note the Project URL `https://<ref>.supabase.co`; `<ref>` is
-     the project ref.
+   - **Data API** → note the Project URL `https://<ref>.supabase.co` (the setup
+     script derives the project ref from it).
 
 > New projects use the new key format and don't auto-expose tables to the Data
 > API — both are already handled (grants migration + `apikey` header in
@@ -20,17 +20,14 @@ builds stop hitting prod. Two parts: a few **guided** dashboard steps, then one
 ## 2. Configure local secrets
 
 ```bash
-cp .env.dev.example .env.dev   # gitignored
+cp .env.example .env.dev   # gitignored
 ```
 
-Fill `.env.dev` with the values from step 1 (`DEV_PROJECT_REF`, `DEV_PROJECT_URL`,
-`DEV_SECRET_KEY`).
-
-> Two different env files — don't mix them up:
-> - **`.env.dev`** — backend/admin config, read **only** by the setup script
->   (bash). Expo never loads it.
-> - **`.env.local`** — the app's runtime env, auto-loaded by **Expo**; holds only
->   `EXPO_PUBLIC_*` (step 5). Putting `EXPO_PUBLIC_*` in `.env.dev` has no effect.
+Fill `.env.dev` with the values from step 1: the backend `DEV_SECRET_KEY` (for
+the setup script) and the app runtime `EXPO_PUBLIC_SUPABASE_URL` + publishable
+`EXPO_PUBLIC_SUPABASE_KEY` (step 5). One file serves both the bash setup script
+and the app (`app.config.ts` loads it for local dev runs); the project ref/url
+the script needs are derived from `EXPO_PUBLIC_SUPABASE_URL`.
 
 ## 3. Apply the backend (IaC)
 
@@ -71,17 +68,18 @@ verification land in Phase 1.)
 
 ## 5. Point the app at DEV
 
-Put the dev project's values in **`.env.local`** (the file Expo auto-loads for
-`lib/supabase.ts` — use the **publishable** key, not the secret one):
+Set the app runtime vars in **`.env.dev`** (use the **publishable** key, not the
+secret one):
 
 ```
 EXPO_PUBLIC_SUPABASE_URL=https://<ref>.supabase.co
 EXPO_PUBLIC_SUPABASE_KEY=<sb_publishable_…>
 ```
 
-> `.env.local` currently points at PROD — swap it to DEV to test, and back when
-> you need PROD. The env-driven `app.config.ts` / per-EAS-profile variables that
-> automate this switch come in later Phase 0 to-dos.
+`app.config.ts` loads `.env.dev` automatically for local runs (`APP_ENV` defaults
+to `development`), so `npx expo start` targets DEV. To run against PROD locally
+use `APP_ENV=production npx expo start` (loads `.env.prod`). EAS builds get these
+vars from EAS environment variables instead (see README).
 
 ## Verify
 

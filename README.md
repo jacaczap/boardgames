@@ -54,21 +54,29 @@ npm install
 
 ### 2. Configure environment
 
-Create a `.env` file in the project root:
+There are two gitignored env files — one per Supabase project — copied from the
+single [.env.example](.env.example) template:
 
+```bash
+cp .env.example .env.dev    # DEV project
+cp .env.example .env.prod   # PROD project (rename the DEV_ prefix to PROD_)
 ```
-EXPO_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-EXPO_PUBLIC_SUPABASE_KEY=your-anon-key
-```
+
+Each file holds two kinds of vars:
+- `DEV_SECRET_KEY`/`PROD_SECRET_KEY` — the **secret** key (`sb_secret_…`) for the
+  setup script (step 3); backend-only, never an `EXPO_PUBLIC_*` var.
+- `EXPO_PUBLIC_SUPABASE_URL`/`KEY` — the app runtime vars; use the **publishable**
+  key (`sb_publishable_…`, safe for the client). `app.config.ts` loads `.env.dev`
+  for local dev runs and `.env.prod` when `APP_ENV=production`. The setup script
+  derives the project ref/url from `EXPO_PUBLIC_SUPABASE_URL`. New Supabase
+  projects only issue the new key format (legacy `anon`/`service_role` are gone).
 
 ### 3. Set up Supabase (link, migrations, edge functions)
 
 Backend deploys are scripted per environment. Authenticate the CLI once
-(`npx supabase login`), then put each project's config in a gitignored
-`.env.dev` / `.env.prod` (copy from the `*.example` files):
+(`npx supabase login`), then run against the env file from step 2:
 
 ```bash
-cp .env.dev.example .env.dev     # fill in DEV_PROJECT_REF, DEV_PROJECT_URL, DEV_SECRET_KEY
 npm run supabase:setup:dev       # link + migrations + edge functions, prints Vault SQL
 ```
 
@@ -105,7 +113,7 @@ Push notifications on Android require Firebase Cloud Messaging (FCM).
 
 1. Create a project at [console.firebase.google.com](https://console.firebase.google.com/)
 2. Add an Android app with package name `com.jacaczap.boardgames`
-3. Download `google-services.json` and place it in the project root (already referenced in `app.json` via `googleServicesFile`)
+3. Download `google-services.json` and place it in the project root (referenced by `app.config.ts` via `googleServicesFile`). For the dev app id (`com.jacaczap.boardgames.dev`) add a second Android app and save its file as `google-services.dev.json` — `app.config.ts` picks it when `APP_ENV=development` (falling back to `google-services.json` if it's missing)
 4. In Firebase Console → Project Settings → Service Accounts → click "Generate new private key" and download the JSON
 5. Upload the service account key to Expo:
   ```bash
@@ -121,11 +129,16 @@ Push notifications on Android require Firebase Cloud Messaging (FCM).
 
 ### 6. Configure EAS Build environment
 
-For EAS builds (preview/production), set the Supabase env vars so they are available at build time:
+Each build profile in `eas.json` sets `APP_ENV` (drives `app.config.ts`: name / app id / google-services) and an EAS `environment` (`development` / `preview` / `production`). Set the Supabase vars per environment so they're injected at build time — DEV for `development`, PROD for `preview` + `production`:
 
 ```bash
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-project.supabase.co" --visibility sensitive --environment preview --environment production
-eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "your-anon-key" --visibility sensitive --environment preview --environment production
+# DEV Supabase → development builds (com.jacaczap.boardgames.dev)
+eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-dev-project.supabase.co" --visibility sensitive --environment development
+eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-dev-publishable-key" --visibility sensitive --environment development
+
+# PROD Supabase → preview + production builds (com.jacaczap.boardgames)
+eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-prod-project.supabase.co" --visibility sensitive --environment preview --environment production
+eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-prod-publishable-key" --visibility sensitive --environment preview --environment production
 ```
 
 Verify with `eas env:list`.

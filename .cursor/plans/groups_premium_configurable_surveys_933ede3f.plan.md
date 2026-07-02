@@ -7,10 +7,10 @@ todos:
     status: completed
   - id: p0-platform-changes
     content: "Phase 0: adopt new publishable/secret API keys; add grants-backfill migration (tables not auto-exposed to Data API); switch invoke_edge_function to apikey header + verify_jwt=false on cron functions"
-    status: pending
+    status: completed
   - id: p0-env-config
     content: "Phase 0: convert app.json -> app.config.ts (env-driven name/id/google-services); add EXPO_PUBLIC env per EAS build profile + local .env -> dev"
-    status: pending
+    status: completed
   - id: p0-eas-profiles
     content: "Phase 0: define EAS profiles (development=local .dev id, staging=internal track/dev DB, production=closed+prod track/prod DB) + eas submit config"
     status: pending

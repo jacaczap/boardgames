@@ -8,11 +8,10 @@
 # docs/supabase-dev-setup.md.
 #
 # Config is read from env vars and from a gitignored `.env.<env>` at the repo
-# root if present (see .env.dev.example / .env.prod.example). Per environment the
-# var prefix is DEV_ or PROD_:
-#   <PREFIX>PROJECT_REF  (required)  project ref
-#   <PREFIX>PROJECT_URL  (Vault SQL) https://<ref>.supabase.co
-#   <PREFIX>SECRET_KEY   (Vault SQL) sb_secret_…
+# root if present (copy from .env.example):
+#   EXPO_PUBLIC_SUPABASE_URL  (required)  https://<ref>.supabase.co — the project
+#                                         ref (for link) is derived from its subdomain
+#   <DEV|PROD>_SECRET_KEY     (Vault SQL) sb_secret_…
 #
 # Usage: scripts/supabase-setup.sh <dev|prod> [all|link|db|functions|secrets]
 # =============================================================================
@@ -33,9 +32,11 @@ ENV_FILE=".env.$ENVIRONMENT"
 if [ -f "$ENV_FILE" ]; then set -a; source "$ENV_FILE"; set +a; fi
 
 PREFIX="$(echo "$ENVIRONMENT" | tr '[:lower:]' '[:upper:]')_"
-ref_var="${PREFIX}PROJECT_REF"; PROJECT_REF="${!ref_var:-}"
-url_var="${PREFIX}PROJECT_URL"; PROJECT_URL="${!url_var:-}"
 key_var="${PREFIX}SECRET_KEY";  SECRET_KEY="${!key_var:-}"
+
+# The project URL is the app runtime var; the project ref is its subdomain.
+PROJECT_URL="${EXPO_PUBLIC_SUPABASE_URL:-}"
+PROJECT_REF="${PROJECT_URL#*://}"; PROJECT_REF="${PROJECT_REF%%.*}"
 
 SUPABASE="npx --no-install supabase"
 
@@ -47,7 +48,7 @@ ensure_config() {
 }
 
 do_link() {
-  : "${PROJECT_REF:?Set $ref_var (project ref) in $ENV_FILE or the environment}"
+  : "${PROJECT_REF:?Set EXPO_PUBLIC_SUPABASE_URL in $ENV_FILE or the environment}"
   ensure_config
   echo "==> [$ENVIRONMENT] Linking to project $PROJECT_REF"
   $SUPABASE link --project-ref "$PROJECT_REF"
@@ -56,7 +57,7 @@ do_link() {
 # Guard against pushing/deploying to the wrong project: link if the CLI's
 # currently-linked ref doesn't match this environment's ref.
 ensure_linked() {
-  : "${PROJECT_REF:?Set $ref_var (project ref) in $ENV_FILE or the environment}"
+  : "${PROJECT_REF:?Set EXPO_PUBLIC_SUPABASE_URL in $ENV_FILE or the environment}"
   local current=""
   [ -f supabase/.temp/project-ref ] && current="$(<supabase/.temp/project-ref)"
   [ "$current" = "$PROJECT_REF" ] || do_link
@@ -75,7 +76,7 @@ do_functions() {
 }
 
 do_secrets() {
-  local url="${PROJECT_URL:-https://<${PREFIX}REF>.supabase.co}"
+  local url="${PROJECT_URL:-<EXPO_PUBLIC_SUPABASE_URL>}"
   local key="${SECRET_KEY:-<${PREFIX}SECRET_KEY>}"
   cat <<MSG
 ==> [$ENVIRONMENT] pg_cron Vault secrets — run ONCE in this project's SQL editor
