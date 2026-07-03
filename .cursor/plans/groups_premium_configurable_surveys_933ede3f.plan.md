@@ -13,13 +13,13 @@ todos:
     status: completed
   - id: p0-eas-profiles
     content: "Phase 0: define EAS profiles (development=local .dev id, staging=internal track/dev DB, production=closed+prod track/prod DB) + eas submit config"
-    status: pending
+    status: completed
   - id: p0-firebase-dev
     content: "Phase 0: add Firebase Android app for com.jacaczap.boardgames.dev; separate google-services for dev push (guided console steps)"
-    status: pending
+    status: completed
   - id: p0-play-tracks
     content: "Phase 0: guided Google Play steps - point internal track at dev build, create closed testing track, migrate current internal testers to closed (prod)"
-    status: pending
+    status: completed
   - id: p0-version-gate
     content: "Phase 0: minimum-version gate on startup - remote min_version in Supabase (public read), compare running app version on launch, hard-block outdated native builds with an update screen + store link; web (always-current) exempt"
     status: pending
@@ -46,6 +46,9 @@ todos:
     status: pending
   - id: p1-migrate
     content: "Phase 1: one-off migration folding existing games/meetings/profiles into a default premium group (20-member limit) with current user as admin"
+    status: pending
+  - id: p1-launch-readiness
+    content: "Phase 1 (when self-signup ships): rewrite stale PRIVACY_POLICY.md for public/self-signup + host it at a public URL; add in-app account+data deletion (GDPR self-service); English-completeness pass on all i18n keys (en/pl) incl. new screens; decide public/English app name + localized store listing; public support/contact channel"
     status: pending
   - id: p2-schema
     content: "Phase 2: survey_dimensions + survey_options + vote_selections tables; make date auto-generation and 3-play rule per-group config"
@@ -174,6 +177,14 @@ Goal: every domain row belongs to a group; users join groups; UI switches betwee
 ### Data migration
 - One-off migration: create the default group as **premium tier with a 20-member limit**, attach all existing `board_games`/`meetings`, add all `profiles` as members, set current user admin.
 
+### Public launch readiness (do alongside self-signup)
+The moment self-signup ships, the app is effectively public — these can't wait for Phase 3's payments legal step:
+- **Privacy Policy:** current [PRIVACY_POLICY.md](PRIVACY_POLICY.md) is stale (says "invite-only, admin-created accounts"). Rewrite for open self-signup, group model, and third-party services; host it at a **public URL** (Play requires a reachable link — a repo `.md` isn't enough). Payment/VAT/refund clauses come later with Phase 3.
+- **Account & data deletion:** in-app "delete my account + data" flow (GDPR self-service) — public users can't rely on emailing an admin. (Phase 3 `p3-legal` covers the payments angle; this is the baseline flow.)
+- **English completeness:** i18n scaffolding exists (`lib/i18n/en.ts` + `pl.ts`) but many strings default to Polish. Do a pass ensuring **every** key (incl. all new Phase 1/2/3 screens) has proper `en` + `pl` values before public release.
+- **App name / branding:** "Planszówki" is Polish-only. Decide a public/English-friendly name and prepare a **localized store listing** (description + screenshots).
+- **Support/contact channel:** a way for non-friend users to reach support (email/form).
+
 ---
 
 ## Phase 2 — Configurable / generic surveys
@@ -210,7 +221,7 @@ Goal: survey stops being "dates + games". Default = **dates only**. Premium grou
 - Upgrade/billing UI + group admin billing screen.
 
 ### Legal & infra (flagged: you have no payments experience)
-- ToS + Privacy Policy, EU/Polish VAT (Stripe Tax or store-handled), GDPR data export/delete, refund policy, payout entity setup.
+- Extend the Phase-1 Privacy Policy with payment clauses; add ToS, EU/Polish VAT (Stripe Tax or store-handled), GDPR data export (deletion baseline already shipped in Phase 1), refund policy, payout entity setup.
 - **Supabase vs alternatives evaluation** (you asked to explore): assess staying on Supabase Pro vs alternatives, given vendor lock-in (RLS, Edge Functions, Realtime, Auth all Supabase-native). Likely recommendation: stay, go Pro at launch.
 
 ---
