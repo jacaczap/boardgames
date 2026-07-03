@@ -5,29 +5,28 @@ type AppEnv = "development" | "staging" | "production";
 
 const APP_ENV = (process.env.APP_ENV as AppEnv) || "development";
 const IS_DEV = APP_ENV === "development";
+// staging = prod app id (IS_DEV false) but DEV database, so only production
+// points at the prod Supabase project.
+const USE_PROD_DB = APP_ENV === "production";
 
 // Local runs read the matching per-environment file (.env.dev / .env.prod).
 // On EAS/Vercel the file is absent and the same vars come from the platform's
 // environment variables — loadEnvFile no-ops and we fall through to process.env.
-loadEnvFile(IS_DEV ? ".env.dev" : ".env.prod");
+loadEnvFile(USE_PROD_DB ? ".env.prod" : ".env.dev");
 
 const variant = IS_DEV
   ? {
       name: "Planszówki (Dev)",
       packageId: "com.jacaczap.boardgames.dev",
-      googleServicesFile: "./google-services.dev.json",
     }
   : {
       name: "Planszówki",
       packageId: "com.jacaczap.boardgames",
-      googleServicesFile: "./google-services.json",
     };
 
-// The dev google-services file is added in a later Phase 0 step (dev Firebase).
-// Until then, fall back to the prod file so config resolution / JS-only runs work.
-const googleServicesFile = existsSync(variant.googleServicesFile)
-  ? variant.googleServicesFile
-  : "./google-services.json";
+// Single project-level file holds both the prod and dev Android clients; the
+// Google Services Gradle plugin selects the entry matching the built package id.
+const googleServicesFile = "./google-services.json";
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,

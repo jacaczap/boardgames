@@ -113,7 +113,7 @@ Push notifications on Android require Firebase Cloud Messaging (FCM).
 
 1. Create a project at [console.firebase.google.com](https://console.firebase.google.com/)
 2. Add an Android app with package name `com.jacaczap.boardgames`
-3. Download `google-services.json` and place it in the project root (referenced by `app.config.ts` via `googleServicesFile`). For the dev app id (`com.jacaczap.boardgames.dev`) add a second Android app and save its file as `google-services.dev.json` — `app.config.ts` picks it when `APP_ENV=development` (falling back to `google-services.json` if it's missing)
+3. Download `google-services.json` and place it in the project root (referenced by `app.config.ts` via `googleServicesFile`). One project-level file covers both the prod and dev app ids; for the dev app id (`com.jacaczap.boardgames.dev`) see [docs/firebase-dev-setup.md](docs/firebase-dev-setup.md)
 4. In Firebase Console → Project Settings → Service Accounts → click "Generate new private key" and download the JSON
 5. Upload the service account key to Expo:
   ```bash
@@ -123,51 +123,59 @@ Push notifications on Android require Firebase Cloud Messaging (FCM).
    # Select: Set up a Google Service Account Key for Push Notifications (FCM V1)
    # Point to the downloaded firebase-adminsdk JSON file
   ```
-6. Rebuild the app (`eas build`) — this is a native change, OTA updates won't work
+6. Rebuild the app (`npm run build:prod`) — this is a native change, OTA updates won't work
 
 > **Note:** `google-services.json` is safe to commit (bundled with the app). The Firebase admin SDK key (`*-firebase-adminsdk-*.json`) is gitignored and must not be committed.
 
 ### 6. Configure EAS Build environment
 
-Each build profile in `eas.json` sets `APP_ENV` (drives `app.config.ts`: name / app id / google-services) and an EAS `environment` (`development` / `preview` / `production`). Set the Supabase vars per environment so they're injected at build time — DEV for `development`, PROD for `preview` + `production`:
+`eas.json` defines three build profiles. Each sets `APP_ENV` (drives `app.config.ts`: name / app id / google-services / which DB the local env file targets) and an EAS `environment` (`development` / `preview` / `production`) that supplies the Supabase vars at build time:
+
+| Profile       | `APP_ENV`     | App id                          | EAS environment | Supabase DB | Distribution / Play track |
+| ------------- | ------------- | ------------------------------- | --------------- | ----------- | ------------------------- |
+| `development` | `development` | `com.jacaczap.boardgames.dev`   | `development`   | DEV         | dev client (local/emulator) |
+| `staging`     | `staging`     | `com.jacaczap.boardgames`       | `preview`       | DEV         | AAB → internal testing    |
+| `production`  | `production`  | `com.jacaczap.boardgames`       | `production`    | PROD        | AAB → closed testing / production |
+
+Set the Supabase vars per environment — DEV for `development` + `preview` (staging), PROD for `production`:
 
 ```bash
-# DEV Supabase → development builds (com.jacaczap.boardgames.dev)
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-dev-project.supabase.co" --visibility sensitive --environment development
-eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-dev-publishable-key" --visibility sensitive --environment development
+# DEV Supabase → development + staging builds
+eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-dev-project.supabase.co" --visibility sensitive --environment development --environment preview
+eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-dev-publishable-key" --visibility sensitive --environment development --environment preview
 
-# PROD Supabase → preview + production builds (com.jacaczap.boardgames)
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-prod-project.supabase.co" --visibility sensitive --environment preview --environment production
-eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-prod-publishable-key" --visibility sensitive --environment preview --environment production
+# PROD Supabase → production builds
+eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-prod-project.supabase.co" --visibility sensitive --environment production
+eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-prod-publishable-key" --visibility sensitive --environment production
 ```
 
 Verify with `eas env:list`.
 
-### 7. Build
+### 7. Build & submit
 
-Cloud build (default):
-
-```bash
-eas build --platform android --profile production
-```
-
-Local build (faster, requires JDK 17 + Android SDK):
+Build locally (faster; requires JDK 17 + Android SDK) — profile picks env, app id, and DB (see table above):
 
 ```bash
-eas build --platform android --profile production --local
+npm run build:staging     # or build:dev / build:prod
 ```
 
-or 
+Each script runs, e.g.:
 
 ```bash
 ANDROID_HOME="$HOME/Library/Android/sdk" eas build --platform android --profile production --local
 ```
 
-Submit to Google Play:
+Upload to Google Play — two options:
+
+- **Manual (default):** take the `.aab` from the build and upload it in the Play Console yourself. No extra setup.
+- **Automated (optional):** `eas submit` uploads to the right track for you (reads the matching submit profile in `eas.json`). One-time setup: create a Play service account (Play Console → Setup → API access → create/link a service account with the "Release manager" role), download its key to `./google-play-service-account.json` (gitignored). Then:
 
 ```bash
-eas submit --platform android
+npm run submit:staging    # → internal testing track (DEV-backed build)
+npm run submit:prod       # → closed testing (alpha) track (PROD-backed build)
 ```
+
+Track layout: **internal testing** serves the `staging` (DEV-backed) build for you, **closed testing** serves the `production` (PROD-backed) build for the current testers. Promotion flow internal → closed → production is done in the Play Console by promoting an existing release (no rebuild needed). Full guided steps (creating closed testing, migrating current testers) in [docs/play-tracks-setup.md](docs/play-tracks-setup.md).
 
 ### 8. Run the app
 
@@ -177,13 +185,22 @@ npx expo start
 
 Press `a` for Android, `i` for iOS, or `w` for web.
 
+Local runs (including web) default to `APP_ENV=development`, so `app.config.ts`
+loads `.env.dev` and the app talks to the **DEV** Supabase project. There is no
+local build that targets PROD by design — PROD web is served only by Vercel.
+
 ## Web Deployment (Vercel)
 
-The web version is hosted on [Vercel](https://vercel.com) and auto-deploys on every push to the production branch. Pull request branches get preview deployments.
+Web is **prod-only**: [Vercel](https://vercel.com) hosts the production web app
+and **auto-deploys on every push to `master`**. There are no DEV/preview Vercel
+environments — for web dev work, run it locally (`npx expo start`, press `w`),
+which is backed by the DEV database (see step 8).
 
 - **Build command**: `npx expo export -p web`
 - **Output directory**: `dist`
-- **Environment variables**: Set `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` in Vercel project Settings > Environment Variables.
+- **Environment variables** (Vercel project Settings > Environment Variables):
+  - `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` — the **PROD** project's URL + publishable key.
+  - `APP_ENV=production` — so the build uses the prod variant (app name `Planszówki` instead of `Planszówki (Dev)`). Without it the build defaults to `development`; the DB is unaffected either way (it always comes from the two vars above), but the name would show the dev label.
 
 ## Database
 

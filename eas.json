@@ -12,22 +12,40 @@
         "APP_ENV": "development"
       }
     },
-    "preview": {
+    "staging": {
       "distribution": "internal",
+      "autoIncrement": true,
       "environment": "preview",
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
-        "APP_ENV": "production"
+        "APP_ENV": "staging"
       }
     },
     "production": {
       "autoIncrement": true,
       "environment": "production",
+      "android": {
+        "buildType": "app-bundle"
+      },
       "env": {
         "APP_ENV": "production"
       }
     }
   },
   "submit": {
-    "production": {}
+    "staging": {
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "internal"
+      }
+    },
+    "production": {
+      "android": {
+        "serviceAccountKeyPath": "./google-play-service-account.json",
+        "track": "alpha"
+      }
+    }
   }
 }
