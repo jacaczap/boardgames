@@ -33,7 +33,7 @@ todos:
     content: "Phase 1: rewrite all domain RLS to membership-scoped; add anti-flooding triggers (3 free groups/user, member_limit, per-group row caps, rate limits)"
     status: pending
   - id: p1-auth
-    content: "Phase 1: open registration/email-verification/password-reset screens; onboarding when user has no groups; invite-link deep-link join flow (register-or-login then join)"
+    content: "Phase 1: open registration/email-verification/password-reset screens; in-app account+data deletion as part of self-registration/account management (GDPR self-service); onboarding when user has no groups; invite-link deep-link join flow (register-or-login then join)"
     status: pending
   - id: p1-context
     content: "Phase 1: lib/groups context provider (currentGroupId persisted), scope all meetings/board_games queries by it"
@@ -48,7 +48,7 @@ todos:
     content: "Phase 1: one-off migration folding existing games/meetings/profiles into a default premium group (20-member limit) with current user as admin"
     status: pending
   - id: p1-launch-readiness
-    content: "Phase 1 (when self-signup ships): rewrite stale PRIVACY_POLICY.md for public/self-signup + host it at a public URL; add in-app account+data deletion (GDPR self-service); English-completeness pass on all i18n keys (en/pl) incl. new screens; decide public/English app name + localized store listing; public support/contact channel"
+    content: "Phase 1 (when self-signup ships): rewrite stale PRIVACY_POLICY.md + docs/privacy/index.html for public/self-signup; in-app UGC report/block + content moderation/takedown (Play UGC policy); English-completeness pass on all i18n keys (en/pl) incl. new screens; REBRAND (app no longer boardgames-only): new generic public/English name, new icon/splash/theme, rewrite Play short+long descriptions (en/pl) + redo all store screenshots; public support/contact channel"
     status: pending
   - id: p2-schema
     content: "Phase 2: survey_dimensions + survey_options + vote_selections tables; make date auto-generation and 3-play rule per-group config"
@@ -163,6 +163,7 @@ Goal: every domain row belongs to a group; users join groups; UI switches betwee
 
 ### Auth & onboarding
 - New screens under `app/(auth)/`: **registration** (open self-signup for anyone installing the app), email-verification notice, forgot/reset password.
+- **Account deletion:** in-app "delete my account + all my data" flow, offered as part of self-registration / account management (not admin-only email requests). GDPR self-service; must remove profile, memberships, votes, and owned uploads.
 - Update guard in [app/_layout.tsx](app/_layout.tsx): logged-in user with **zero memberships** → onboarding (create a group or join via invite link). Fresh installs with no invite land here after registering.
 - **Invite-link flow:** opening a link (deep link / scheme) routes to a join screen; if not authenticated, prompt register-or-login first, then join the group the link points to.
 - New `lib/groups` context provider: holds `currentGroupId` (persisted in AsyncStorage), exposes switcher data. Every `meetings` / `board_games` query filters by it.
@@ -180,9 +181,14 @@ Goal: every domain row belongs to a group; users join groups; UI switches betwee
 ### Public launch readiness (do alongside self-signup)
 The moment self-signup ships, the app is effectively public — these can't wait for Phase 3's payments legal step:
 - **Privacy Policy:** current [PRIVACY_POLICY.md](PRIVACY_POLICY.md) is stale (says "invite-only, admin-created accounts"). Rewrite for open self-signup, group model, and third-party services; host it at a **public URL** (Play requires a reachable link — a repo `.md` isn't enough). Payment/VAT/refund clauses come later with Phase 3.
-- **Account & data deletion:** in-app "delete my account + data" flow (GDPR self-service) — public users can't rely on emailing an admin. (Phase 3 `p3-legal` covers the payments angle; this is the baseline flow.)
+- **Account & data deletion:** in-app "delete my account + data" flow (GDPR self-service), part of self-registration/account management — public users can't rely on emailing an admin. (See Auth & onboarding above; Phase 3 `p3-legal` covers the payments angle.)
+- **UGC report/block + moderation (Play policy):** users upload photos and content visible to others, so Play's user-generated-content policy applies once strangers can join. Add in-app **report/flag** for content, **block user**, and a **moderation/takedown** path (admin can remove content/members). Content is group-private (not public), which lowers risk but doesn't exempt it. A reachable report/contact channel is the baseline. Keep group membership **invite-gated** even after self-signup so Play's "interactions restricted to invited friends" answer stays true (lighter moderation bucket).
+  - **When report/block ships, re-submit the Play Content rating questionnaire:** flip the block-users and report-users answers to **Yes** (they are "No" today because the features don't exist yet).
 - **English completeness:** i18n scaffolding exists (`lib/i18n/en.ts` + `pl.ts`) but many strings default to Polish. Do a pass ensuring **every** key (incl. all new Phase 1/2/3 screens) has proper `en` + `pl` values before public release.
-- **App name / branding:** "Planszówki" is Polish-only. Decide a public/English-friendly name and prepare a **localized store listing** (description + screenshots).
+- **Rebrand — app is no longer boardgames-only:** the app becomes a generic meeting planner, so the whole board-games identity has to go:
+  - **Name:** "Planszówki" (= "board games") no longer fits and is Polish-only. Pick a new generic, public/English-friendly name; update display name in [app.config.ts](app.config.ts) (and dev variant), `app` copy, and i18n strings.
+  - **Branding/theme:** replace the board-game-specific identity — app **icon**, splash, and the wood palette (currently themed around game nights) with a neutral, generic look.
+  - **Store listing (localized en + pl):** rewrite **short + long descriptions** — the current Play descriptions are boardgames-specific and must be regenerated for the generic planner. Redo all **store screenshots** to reflect the new name, branding, and (Phase 2) generic surveys.
 - **Support/contact channel:** a way for non-friend users to reach support (email/form).
 
 ---

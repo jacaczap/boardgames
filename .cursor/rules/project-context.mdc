@@ -5,7 +5,7 @@ alwaysApply: true
 
 # BoardGames Meeting Planner — Project Context
 
-A small **React Native (Expo)** app for **one closed friend group** to coordinate board game nights: vote on dates + games (Doodle-style), approve a meeting, get push reminders. Display name **"Planszówki"** (Polish), bundle id `com.jacaczap.boardgames`. Runs on **Android (primary), Web, iOS**. No self-registration — admin creates users in Supabase.
+A small **React Native (Expo)** app for **one closed friend group** to coordinate board game nights: vote on dates + games, approve a meeting, get push reminders. Display name **"Planszówki"** (Polish), bundle id `com.jacaczap.boardgames`. Runs on **Android (primary), Web, iOS**. No self-registration — admin creates users in Supabase.
 
 ## Tech Stack
 

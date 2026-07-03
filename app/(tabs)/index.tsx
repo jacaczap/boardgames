@@ -34,6 +34,8 @@ import { Box } from "@/components/ui/box";
 import { AvatarGroup } from "@/components/ui/avatar";
 import UserAvatar from "@/components/UserAvatar";
 
+let homeChannelSeq = 0;
+
 export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
@@ -254,7 +256,7 @@ export default function HomeScreen() {
 
   useEffect(() => {
     const channel = supabase
-      .channel("home-realtime")
+      .channel(`home-realtime-${homeChannelSeq++}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meetings" },

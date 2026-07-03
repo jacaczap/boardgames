@@ -255,7 +255,7 @@ boardgames/
 
 **Survey (`survey/[id].tsx`)**
 
-- Doodle-style date picker showing available date_options (multi-select): weekends, holidays, custom_dates 
+- date picker showing available date_options (multi-select): weekends, holidays, custom_dates 
 - Past date_options are disabled (greyed out)
 - "Add custom date" button to add a date in the valid range
 - Game selection: multi-select cards with game images

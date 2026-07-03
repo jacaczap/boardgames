@@ -13,7 +13,7 @@ A React Native (Expo) app for a friend group to coordinate board game meetings -
 
 ## Features
 
-- **Survey voting** -- Doodle-style date picker (weekends + Polish holidays + custom dates), game multi-select with 3-play streak logic, "not participating" option
+- **Survey voting** -- date picker (weekends + Polish holidays + custom dates), game multi-select with 3-play streak logic, "not participating" option
 - **Meeting approval** -- pick date sorted by votes, pick game filtered by date voters, late join, edit/unapprove
 - **Board games CRUD** -- list with search, detail/edit/delete, image upload
 - **Profile** -- avatar upload, name edit, password change, notification preferences
