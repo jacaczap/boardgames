@@ -258,6 +258,13 @@ const pl = {
     tokenFetchFailed:
       "Nie udało się pobrać tokenu z Expo: {{error}}. Sprawdź połączenie z internetem i spróbuj ponownie.",
   },
+
+  update: {
+    title: "Wymagana aktualizacja",
+    message:
+      "Ta wersja aplikacji nie jest już wspierana. Zaktualizuj do najnowszej wersji, aby kontynuować.",
+    updateNow: "Zaktualizuj teraz",
+  },
 } as const;
 
 export default pl;

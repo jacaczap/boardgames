@@ -42,6 +42,8 @@ import { Badge, BadgeText } from "@/components/ui/badge";
 import UserAvatar from "@/components/UserAvatar";
 import VoterListModal from "@/components/VoterListModal";
 
+let surveyChannelSeq = 0;
+
 interface VoterInfo {
   dateVoters: Map<string, Profile[]>;
   gameVoters: Map<string, Profile[]>;
@@ -286,7 +288,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
 
   useEffect(() => {
     const channel = supabase
-      .channel(`survey-${meetingId}`)
+      .channel(`survey-${meetingId}-${surveyChannelSeq++}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meetings" },

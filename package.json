@@ -6,7 +6,22 @@
     "start": "expo start",
     "android": "expo run:android",
     "ios": "expo run:ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "build:dev": "ANDROID_HOME=\"$HOME/Library/Android/sdk\" eas build --platform android --profile development --local",
+    "build:staging": "ANDROID_HOME=\"$HOME/Library/Android/sdk\" eas build --platform android --profile staging --local",
+    "build:prod": "ANDROID_HOME=\"$HOME/Library/Android/sdk\" eas build --platform android --profile production --local",
+    "submit:staging": "eas submit --platform android --profile staging",
+    "submit:prod": "eas submit --platform android --profile production",
+    "supabase:setup:dev": "bash scripts/supabase-setup.sh dev all",
+    "supabase:link:dev": "bash scripts/supabase-setup.sh dev link",
+    "db:push:dev": "bash scripts/supabase-setup.sh dev db",
+    "functions:deploy:dev": "bash scripts/supabase-setup.sh dev functions",
+    "supabase:secrets:dev": "bash scripts/supabase-setup.sh dev secrets",
+    "supabase:setup:prod": "bash scripts/supabase-setup.sh prod all",
+    "supabase:link:prod": "bash scripts/supabase-setup.sh prod link",
+    "db:push:prod": "bash scripts/supabase-setup.sh prod db",
+    "functions:deploy:prod": "bash scripts/supabase-setup.sh prod functions",
+    "supabase:secrets:prod": "bash scripts/supabase-setup.sh prod secrets"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
@@ -20,6 +35,7 @@
     "expo": "~55.0.8",
     "expo-calendar": "~55.0.10",
     "expo-constants": "~55.0.9",
+    "expo-dev-client": "~55.0.36",
     "expo-device": "~55.0.10",
     "expo-file-system": "~55.0.11",
     "expo-font": "~55.0.4",
@@ -40,7 +56,7 @@
     "react": "19.2.0",
     "react-dom": "19.2.0",
     "react-i18next": "^16.6.1",
-    "react-native": "0.83.2",
+    "react-native": "0.83.6",
     "react-native-calendars": "^1.1314.0",
     "react-native-gesture-handler": "~2.30.0",
     "react-native-reanimated": "4.2.1",
@@ -49,13 +65,13 @@
     "react-native-svg": "15.15.3",
     "react-native-url-polyfill": "^3.0.0",
     "react-native-web": "~0.21.2",
-    "react-native-worklets": "0.7.2",
+    "react-native-worklets": "0.7.4",
     "tailwindcss": "3.3.2"
   },
   "devDependencies": {
     "@types/react": "~19.2.2",
     "babel-plugin-module-resolver": "^5.0.3",
-    "supabase": "^2.83.0",
+    "supabase": "^2.108.0",
     "typescript": "~5.9.2"
   },
   "private": true

@@ -15,7 +15,9 @@ import { Session } from "@supabase/supabase-js";
 import * as Notifications from "expo-notifications";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { checkVersionGate } from "@/lib/version";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import UpdateRequiredScreen from "@/components/UpdateRequiredScreen";
 import { showAlert } from "@/lib/alert";
 import {
   registerForPushNotifications,
@@ -30,12 +32,22 @@ export default function RootLayout() {
   const { t } = useTranslation();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [updateStoreUrl, setUpdateStoreUrl] = useState<string | null>(null);
+  const [updateRequired, setUpdateRequired] = useState(false);
   const segments = useSegments();
   const router = useRouter();
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
   useEffect(() => {
     const init = async () => {
+      const gate = await checkVersionGate();
+      if (gate.blocked) {
+        setUpdateStoreUrl(gate.storeUrl);
+        setUpdateRequired(true);
+        setLoading(false);
+        return;
+      }
+
       const {
         data: { session },
       } = await supabase.auth.getSession();
@@ -58,7 +70,7 @@ export default function RootLayout() {
   const alertedReasonsRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
-    if (Platform.OS === "web") return;
+    if (Platform.OS === "web" || updateRequired) return;
     const userId = session?.user?.id;
     if (!userId) return;
 
@@ -151,7 +163,7 @@ export default function RootLayout() {
       if (state === "active") run("resume");
     });
     return () => sub.remove();
-  }, [session?.user?.id, t]);
+  }, [session?.user?.id, t, updateRequired]);
 
   useEffect(() => {
     responseListener.current =
@@ -172,7 +184,7 @@ export default function RootLayout() {
   }, [router]);
 
   useEffect(() => {
-    if (loading) return;
+    if (loading || updateRequired) return;
 
     const inAuthGroup = segments[0] === "(auth)";
 
@@ -181,13 +193,21 @@ export default function RootLayout() {
     } else if (session && inAuthGroup) {
       router.replace("/(tabs)");
     }
-  }, [session, loading, segments]);
+  }, [session, loading, segments, updateRequired]);
 
   if (loading) {
     return (
       <Center className="flex-1">
         <Spinner />
       </Center>
+    );
+  }
+
+  if (updateRequired) {
+    return (
+      <GluestackUIProvider>
+        <UpdateRequiredScreen storeUrl={updateStoreUrl} />
+      </GluestackUIProvider>
     );
   }
 

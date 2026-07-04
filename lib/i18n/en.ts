@@ -258,6 +258,13 @@ const en = {
     tokenFetchFailed:
       "Couldn't get a push token from Expo: {{error}}. Check your internet connection and try again.",
   },
+
+  update: {
+    title: "Update required",
+    message:
+      "This version of the app is no longer supported. Please update to the latest version to continue.",
+    updateNow: "Update now",
+  },
 } as const;
 
 export default en;

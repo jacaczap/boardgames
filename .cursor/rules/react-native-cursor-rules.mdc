@@ -42,3 +42,6 @@ You are an expert in TypeScript, React Native, Expo, and Mobile App Development.
   - Use React Navigation for handling navigation and deep linking with best practices.
   - Never edit historical migrations. If needed to update or delete something then create a new migration with that change
 
+  Development process:
+  - If there are any manual steps required from the user, always mention them in the summary at the end
+

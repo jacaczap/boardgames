@@ -39,6 +39,8 @@ import { Pressable } from "@/components/ui/pressable";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import UserAvatar from "@/components/UserAvatar";
 
+let approveChannelSeq = 0;
+
 function formatDate(dateStr: string, locale: string): string {
   const d = new Date(dateStr + "T00:00:00");
   return d.toLocaleDateString(locale, { weekday: "short", day: "numeric", month: "short" });
@@ -259,7 +261,7 @@ export default function ApproveScreen() {
   useEffect(() => {
     if (!id) return;
     const channel = supabase
-      .channel(`approve-${id}`)
+      .channel(`approve-${id}-${approveChannelSeq++}`)
       .on(
         "postgres_changes",
         { event: "*", schema: "public", table: "meetings" },
