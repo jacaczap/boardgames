@@ -22,7 +22,7 @@ todos:
     status: completed
   - id: p0-version-gate
     content: "Phase 0: minimum-version gate on startup - remote min_version in Supabase (public read), compare running app version on launch, hard-block outdated native builds with an update screen + store link; web (always-current) exempt"
-    status: pending
+    status: completed
   - id: p1-schema
     content: "Phase 1: migration for groups, group_members (role enum), group_invites (per-group, 3-day expiry, multi-use) + is_group_member/is_group_admin/can_approve helpers"
     status: pending

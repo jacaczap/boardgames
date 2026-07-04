@@ -75,7 +75,7 @@ Shared push sender: `_shared/push.ts` (Expo Push API, batches of 100). Excluded 
 - **Theme**: warm wood palette — bg `#fdf8f0`, headers `#4a3228`, tabs `#3d2818`, accent amber `#f59e0b`, light text `#fef3c7`.
 - **Security**: anon key + RLS is the boundary (repo is public-safe). `service_role` only in Edge Functions. `.env` and `supabase/config.toml` gitignored.
 - **Migrations**: never edit historical ones — add a new file. See `supabase-migrations.mdc` for required grants/RLS pattern.
-- **Minimum supported version (force-update gate)**: a remote `min_version` (in Supabase, public read) is checked on startup; outdated native builds are hard-blocked with an "Update required" screen (web is exempt, fails open on error). When a change makes old clients incompatible (breaking DB/RLS/schema/edge-function or removed client behavior), evaluate whether to **bump `min_version`** and the app `version` in `app.json`. (Planned in Phase 0 — see `.cursor/plans/groups_premium_configurable_surveys_933ede3f.plan.md`; may not exist in code yet.)
+- **Minimum supported version (force-update gate)**: implemented — remote `min_version` in the `app_config` table (Supabase, public read), checked on startup by `lib/version.ts`; outdated native builds are hard-blocked with an "Update required" screen (`components/UpdateRequiredScreen.tsx`, wired in `app/_layout.tsx`). Web is exempt; fails open on error. **Breaking-change rule**: for every change, check whether it breaks backward compatibility between backend and app (DB/RLS/schema/edge-function change, or removed client behavior). If it does: bump the app `version` in `app.config.ts` on the release that fixes it, and once that build is live raise `app_config.min_version` (via dashboard or a new migration) to lock out older clients. The two versions must move together (a shipped build's `version` must be ≥ the `min_version` you set). See `docs/version-gate.md`.
 - **Git**: never commit/push without explicit user instruction; never to main/master.
 
 > Note: `README.md` and `.cursor/plans/boardgames_meeting_planner_a7addda3.plan.md` give origin design intent but predate some changes (e.g. `username` removal, the trigger-based `notify-*` functions). Trust the code/`lib/types.ts` when they disagree.
@@ -83,6 +83,4 @@ Shared push sender: `_shared/push.ts` (Expo Push API, batches of 100). Excluded 
 ## Keeping This File Up To Date
 
 When a change materially alters anything described above, update this rule in the same change. Triggers include: new/removed/renamed screen or route; new/changed DB table, column, or key SQL function; added/removed Edge Function or its trigger/schedule; new shared `lib/` utility or convention; stack/dependency or tooling shift; theme/palette change. Skip purely internal refactors that don't change the domain, data model, screens, or conventions.
-
-Also, for any change that could break older clients, evaluate bumping the minimum supported version (see the force-update gate convention above).
 
