@@ -8,10 +8,16 @@ const IS_DEV = APP_ENV === "development";
 const USE_PROD_DB = APP_ENV === "production";
 
 // Local runs read the matching per-environment file (.env.dev / .env.prod) and
-// it is authoritative: it overrides any ambient EXPO_PUBLIC_* value so the DB
-// target always matches APP_ENV. On EAS/Vercel the file is absent (gitignored),
-// loadEnvFile no-ops, and the platform's environment variables are used instead.
-loadEnvFile(USE_PROD_DB ? ".env.prod" : ".env.dev");
+// it is authoritative for that run. We must NOT mutate process.env here: on EAS
+// the config is evaluated in-process (sometimes with APP_ENV unset), so writing
+// to process.env would leak a value into every downstream build step. Instead we
+// read the file into a local object and fall back to the platform's environment
+// variables (EAS/Vercel), where the file is absent (gitignored).
+const fileEnv = readEnvFile(USE_PROD_DB ? ".env.prod" : ".env.dev");
+const supabaseUrl =
+  fileEnv.EXPO_PUBLIC_SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL;
+const supabaseKey =
+  fileEnv.EXPO_PUBLIC_SUPABASE_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_KEY;
 
 const variant = IS_DEV
   ? {
@@ -93,13 +99,14 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     eas: {
       projectId: "7e6bb5e3-0ee3-4378-af42-19a9d7cf60a0",
     },
-    supabaseUrl: process.env.EXPO_PUBLIC_SUPABASE_URL,
-    supabaseKey: process.env.EXPO_PUBLIC_SUPABASE_KEY,
+    supabaseUrl,
+    supabaseKey,
   },
 });
 
-function loadEnvFile(path: string): void {
-  if (!existsSync(path)) return;
+function readEnvFile(path: string): Record<string, string> {
+  const result: Record<string, string> = {};
+  if (!existsSync(path)) return result;
   for (const line of readFileSync(path, "utf8").split("\n")) {
     const match = line.match(/^\s*([\w.]+)\s*=\s*(.*)$/);
     if (!match) continue;
@@ -111,6 +118,7 @@ function loadEnvFile(path: string): void {
     ) {
       value = value.slice(1, -1);
     }
-    process.env[key] = value;
+    result[key] = value;
   }
+  return result;
 }
