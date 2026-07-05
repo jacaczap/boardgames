@@ -1,6 +1,6 @@
 import "../global.css";
 import "@/lib/i18n";
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef, useCallback } from "react";
 import {
   AppState,
   Linking,
@@ -38,12 +38,22 @@ export default function RootLayout() {
   const router = useRouter();
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
+  const lastVersionCheckRef = useRef(0);
+
+  const runVersionCheck = useCallback(async () => {
+    lastVersionCheckRef.current = Date.now();
+    const gate = await checkVersionGate();
+    if (gate.blocked) {
+      setUpdateStoreUrl(gate.storeUrl);
+      setUpdateRequired(true);
+    }
+    return gate;
+  }, []);
+
   useEffect(() => {
     const init = async () => {
-      const gate = await checkVersionGate();
+      const gate = await runVersionCheck();
       if (gate.blocked) {
-        setUpdateStoreUrl(gate.storeUrl);
-        setUpdateRequired(true);
         setLoading(false);
         return;
       }
@@ -63,7 +73,21 @@ export default function RootLayout() {
     });
 
     return () => subscription.unsubscribe();
-  }, []);
+  }, [runVersionCheck]);
+
+  // Re-check the version gate when the app returns to the foreground, so a
+  // client that was only backgrounded (not cold-started) still gets locked out
+  // after a min-version bump. Runs silently (no loading state) and throttled to
+  // avoid firing on brief interruptions like the notification shade.
+  useEffect(() => {
+    if (Platform.OS === "web") return;
+    const sub = AppState.addEventListener("change", (state) => {
+      if (state !== "active" || updateRequired) return;
+      if (Date.now() - lastVersionCheckRef.current < 5 * 60 * 1000) return;
+      runVersionCheck();
+    });
+    return () => sub.remove();
+  }, [runVersionCheck, updateRequired]);
 
   const successRef = useRef(false);
   const inFlightRef = useRef(false);
