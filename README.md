@@ -129,22 +129,23 @@ Push notifications on Android require Firebase Cloud Messaging (FCM).
 
 ### 6. Configure EAS Build environment
 
-`eas.json` defines three build profiles. Each sets `APP_ENV` (drives `app.config.ts`: name / app id / google-services / which DB the local env file targets) and an EAS `environment` (`development` / `preview` / `production`) that supplies the Supabase vars at build time:
+`eas.json` defines two build profiles. Each sets `APP_ENV` (drives `app.config.ts`: name / app id / google-services / which DB the local env file targets) and an EAS `environment` (`development` / `production`) that supplies the Supabase vars at build time:
 
 | Profile       | `APP_ENV`     | App id                          | EAS environment | Supabase DB | Distribution / Play track |
 | ------------- | ------------- | ------------------------------- | --------------- | ----------- | ------------------------- |
 | `development` | `development` | `com.jacaczap.boardgames.dev`   | `development`   | DEV         | dev client (local/emulator) |
-| `staging`     | `staging`     | `com.jacaczap.boardgames`       | `preview`       | DEV         | AAB → internal testing    |
-| `production`  | `production`  | `com.jacaczap.boardgames`       | `production`    | PROD        | AAB → closed testing / production |
+| `production`  | `production`  | `com.jacaczap.boardgames`       | `production`    | PROD        | AAB → internal / closed / production tracks |
 
-Set the Supabase vars per environment — DEV for `development` + `preview` (staging), PROD for `production`:
+The `development` profile is a **dev-client** build (needs Metro). To experiment on the DEV database from a standalone app, build the `.dev` variant as a standalone AAB and **side-load** it — it uses the separate `.dev` app id, so it installs **alongside** the prod app and never touches the prod Play tracks. All Play tracks run the same PROD build.
+
+Set the Supabase vars per environment — DEV for `development`, PROD for `production`:
 
 ```bash
-# DEV Supabase → development + staging builds
-eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-dev-project.supabase.co" --visibility sensitive --environment development --environment preview
-eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-dev-publishable-key" --visibility sensitive --environment development --environment preview
+# DEV Supabase → development build
+eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-dev-project.supabase.co" --visibility sensitive --environment development
+eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-dev-publishable-key" --visibility sensitive --environment development
 
-# PROD Supabase → production builds
+# PROD Supabase → production build
 eas env:create --name EXPO_PUBLIC_SUPABASE_URL --value "https://your-prod-project.supabase.co" --visibility sensitive --environment production
 eas env:create --name EXPO_PUBLIC_SUPABASE_KEY --value "sb_publishable_your-prod-publishable-key" --visibility sensitive --environment production
 ```
@@ -156,7 +157,7 @@ Verify with `eas env:list`.
 Build locally (faster; requires JDK 17 + Android SDK) — profile picks env, app id, and DB (see table above):
 
 ```bash
-npm run build:staging     # or build:dev / build:prod
+npm run build:prod        # or build:dev
 ```
 
 Each script runs, e.g.:
@@ -171,11 +172,12 @@ Upload to Google Play — two options:
 - **Automated (optional):** `eas submit` uploads to the right track for you (reads the matching submit profile in `eas.json`). One-time setup: create a Play service account (Play Console → Setup → API access → create/link a service account with the "Release manager" role), download its key to `./google-play-service-account.json` (gitignored). Then:
 
 ```bash
-npm run submit:staging    # → internal testing track (DEV-backed build)
-npm run submit:prod       # → closed testing (alpha) track (PROD-backed build)
+npm run submit:prod       # → internal testing track (PROD-backed build)
 ```
 
-Track layout: **internal testing** serves the `staging` (DEV-backed) build for you, **closed testing** serves the `production` (PROD-backed) build for the current testers. Promotion flow internal → closed → production is done in the Play Console by promoting an existing release (no rebuild needed). Full guided steps (creating closed testing, migrating current testers) in [docs/play-tracks-setup.md](docs/play-tracks-setup.md).
+Track layout: all Play tracks run the same **PROD-backed** `production` build. **Internal testing** is your pre-release smoke ring (you upload here first, quick-check on your phone), then **promote to closed testing** (the friend group) and finally **production** — no rebuild, promote the existing release in the Play Console. The DEV-backed build never goes to Play; you side-load the `.dev` AAB to run against DEV alongside prod. Full guided steps in [docs/play-tracks-setup.md](docs/play-tracks-setup.md).
+
+> **Migrate PROD DB before promoting to closed.** Closed testers hit the PROD database, so any schema migration must be applied to PROD before that build reaches them. Prefer backward-compatible (expand-then-contract) migrations so the already-installed app survives the rollout window; use the `min_version` gate for genuinely breaking changes.
 
 ### 8. Run the app
 

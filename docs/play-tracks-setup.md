@@ -1,27 +1,27 @@
-# Google Play tracks setup (Phase 0)
+# Google Play tracks setup
 
-Splits the single Play app into two purposes so testers stop hitting the same
-backend as the dev build:
+The Play app has **one package** (`com.jacaczap.boardgames`) and **one binary**:
+the **PROD-backed** `production` build. It flows through the tracks as a
+release ring — same artifact, promoted, no rebuild:
 
-- **Internal testing** → `staging` build (app id `com.jacaczap.boardgames`, **DEV** DB). For you only.
-- **Closed testing** (the `alpha` track) → `production` build (same app id, **PROD** DB). For the current testers.
-- **Production** later → same `production` build, promoted from closed.
+- **Internal testing** → your pre-release smoke ring (upload here first, quick-check on your phone).
+- **Closed testing** (the `alpha` track) → the friend group.
+- **Production** → public, promoted from closed.
 
-Both builds share the **same package id**, so they live in the **same Play app**
-on different tracks (only the local dev-client uses the `.dev` id — never
-uploaded). The only difference is which Supabase DB the build talks to.
+The **DEV** build is a **separate app** (`com.jacaczap.boardgames.dev`) that you
+**side-load** (a standalone `.dev` AAB from `npm run build:dev`). It never
+touches Play, so it installs alongside prod and lets you experiment against the
+DEV database without disturbing the prod app.
 
-> **Priority gotcha:** a tester enrolled in multiple tracks gets the build from
-> the **highest-priority** track, and internal outranks closed. So a current
-> tester left on internal would keep getting the **DEV** build even after opting
-> into closed. Removing them from internal (step 2) is mandatory, not optional.
+> **Migrate PROD DB before promoting to closed.** Closed testers run against the
+> PROD database, so a schema migration must land on PROD **before** that build
+> reaches them. Prefer backward-compatible (expand-then-contract) migrations so
+> the already-installed app keeps working during the rollout window; use the
+> `min_version` gate for genuinely breaking changes.
 
-Order matters: get the current testers onto closed/PROD **first**, then repoint
-internal at DEV. Otherwise they'd briefly see DEV data.
-
-Builds are uploaded either manually (`.aab` from `npm run build:*`) or via
-`eas submit` (see README step 7). `submit:staging` → `internal`,
-`submit:prod` → `alpha` (closed).
+Builds are uploaded either manually (`.aab` from `npm run build:prod`) or via
+`eas submit` (see README step 7). `submit:prod` → `internal` track; promote to
+closed/production from there.
 
 ## 0. Prerequisites before any track can publish
 
@@ -71,27 +71,26 @@ Hosted via GitHub Pages from this repo. The page lives at
 Keep `PRIVACY_POLICY.md` and `docs/privacy/index.html` in sync when either
 changes.
 
-## 1. Stand up closed testing on PROD
+## 1. Release flow per version
 
-1. Build/submit the PROD-backed build: `npm run build:prod` then upload, or
-   `npm run submit:prod` (targets the `alpha`/closed track).
-2. Play Console → **Testing → Closed testing** → open the **Alpha** track.
-3. **Testers** tab: add the current testers (reuse the same email list the
-   internal track uses, or a Google Group). Copy the **opt-in URL** and send it
-   to them — closed testing needs a fresh opt-in per tester.
-4. **Releases** tab: publish the uploaded build. Confirm testers get the app and
-   see **PROD** data.
+1. If the version has a schema change, **migrate the PROD DB first** (see the
+   note above).
+2. Build/submit the PROD-backed build: `npm run build:prod` then upload, or
+   `npm run submit:prod` (targets the **internal** track).
+3. Play Console → **Testing → Internal testing → Releases**: publish it.
+   Quick-check on your own phone against **PROD** data.
+4. **Promote to closed** (Alpha), then **to production** — no rebuild (see
+   promotion flow below).
 
-## 2. Repoint internal testing at DEV
+## 2. Closed testing (the friend group)
 
-Only after the testers are confirmed on closed:
+One-time, then reuse each release:
 
-1. Play Console → **Testing → Internal testing → Testers**: **remove** the
-   migrated testers, leave only your own dev account. (Skipping this = they keep
-   the DEV build, per the priority gotcha above.)
-2. Build/submit the DEV-backed build: `npm run build:staging` then upload, or
-   `npm run submit:staging` (targets the `internal` track).
-3. Publish it on the internal track. Confirm your dev account sees **DEV** data.
+1. Play Console → **Testing → Closed testing** → open the **Alpha** track.
+2. **Testers** tab: add the friend group (an email list or a Google Group).
+   Copy the **opt-in URL** and send it — closed testing needs a per-tester opt-in.
+3. Each release: promote the internal release into closed, publish, confirm
+   testers get the app and see **PROD** data.
 
 ## Promotion flow (no rebuild)
 
@@ -99,16 +98,19 @@ Promote an existing release in the Play Console rather than rebuilding:
 
 **internal → closed → production**
 
-Since closed and production both run the PROD build, promoting a closed release
-to Production ships the exact artifact testers already validated. Production
-needs full Google review; internal/closed publish (near-)instantly.
+All three tracks run the same PROD build, so promoting ships the exact artifact
+you already validated. Production needs full Google review; internal/closed
+publish (near-)instantly.
 
 ## Gotchas
 
-- **One package per Play app.** All tracks here use `com.jacaczap.boardgames`;
-  the `.dev` id belongs to no Play app.
-- **Version codes must increase.** `staging` and `production` both
-  `autoIncrement` off the shared EAS remote counter (`appVersionSource: remote`),
-  so codes stay monotonic across tracks — don't hand-set them.
+- **One package per Play app.** All tracks use `com.jacaczap.boardgames`; the
+  `.dev` id is a **separate app** (side-loaded), never uploaded to this listing.
+- **Track priority.** A tester in multiple tracks gets the highest-priority one
+  (internal > closed > production). Harmless here since every track runs the
+  same PROD build — but keep the friend group on **closed only**, not internal.
+- **Version codes must increase.** `production` `autoIncrement`s off the shared
+  EAS remote counter (`appVersionSource: remote`), so codes stay monotonic —
+  don't hand-set them.
 - **Personal dev accounts** may require 12+ testers for 14 days on closed testing
   before Production is unlocked; the closed track above satisfies that.

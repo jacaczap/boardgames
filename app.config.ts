@@ -1,17 +1,16 @@
 import { existsSync, readFileSync } from "fs";
 import { ExpoConfig, ConfigContext } from "expo/config";
 
-type AppEnv = "development" | "staging" | "production";
+type AppEnv = "development" | "production";
 
 const APP_ENV = (process.env.APP_ENV as AppEnv) || "development";
 const IS_DEV = APP_ENV === "development";
-// staging = prod app id (IS_DEV false) but DEV database, so only production
-// points at the prod Supabase project.
 const USE_PROD_DB = APP_ENV === "production";
 
-// Local runs read the matching per-environment file (.env.dev / .env.prod).
-// On EAS/Vercel the file is absent and the same vars come from the platform's
-// environment variables — loadEnvFile no-ops and we fall through to process.env.
+// Local runs read the matching per-environment file (.env.dev / .env.prod) and
+// it is authoritative: it overrides any ambient EXPO_PUBLIC_* value so the DB
+// target always matches APP_ENV. On EAS/Vercel the file is absent (gitignored),
+// loadEnvFile no-ops, and the platform's environment variables are used instead.
 loadEnvFile(USE_PROD_DB ? ".env.prod" : ".env.dev");
 
 const variant = IS_DEV
@@ -112,6 +111,6 @@ function loadEnvFile(path: string): void {
     ) {
       value = value.slice(1, -1);
     }
-    if (process.env[key] === undefined) process.env[key] = value;
+    process.env[key] = value;
   }
 }
