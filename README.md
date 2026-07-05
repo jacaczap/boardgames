@@ -181,15 +181,30 @@ Track layout: all Play tracks run the same **PROD-backed** `production` build. *
 
 ### 8. Run the app
 
+For quick iteration:
+
 ```bash
 npx expo start
 ```
 
-Press `a` for Android, `i` for iOS, or `w` for web.
+Press `a` for Android, `i` for iOS, or `w` for web. Local runs (including web)
+default to `APP_ENV=development`, so `app.config.ts` loads `.env.dev` and the app
+talks to the **DEV** Supabase project. There is no local build that targets PROD
+by design — PROD web is served only by Vercel.
 
-Local runs (including web) default to `APP_ENV=development`, so `app.config.ts`
-loads `.env.dev` and the app talks to the **DEV** Supabase project. There is no
-local build that targets PROD by design — PROD web is served only by Vercel.
+#### Install a DEV build next to prod on your phone
+
+A standalone `.dev` app (app id `com.jacaczap.boardgames.dev`, DEV database)
+installs **alongside** the prod app — separate icon and data, no Metro needed.
+
+1. Connect the phone via USB, enable **USB debugging** (Settings → Developer options), tap **Allow** on the phone.
+2. Confirm it's detected: `adb devices` (should list the device, not "unauthorized").
+3. Build the APK: `npm run build:dev-standalone` (note the `.apk` path it prints).
+4. Install it: `adb install -r /path/to/build.apk`.
+
+"Planszówki (Dev)" then appears next to "Planszówki". `adb` ships with the
+Android SDK (`$HOME/Library/Android/sdk/platform-tools`); alternatively copy the
+APK to the phone and tap it (allow install from unknown sources).
 
 ## Web Deployment (Vercel)
 

@@ -8,6 +8,7 @@
     "ios": "expo run:ios",
     "web": "expo start --web",
     "build:dev": "ANDROID_HOME=\"$HOME/Library/Android/sdk\" eas build --platform android --profile development --local",
+    "build:dev-standalone": "ANDROID_HOME=\"$HOME/Library/Android/sdk\" eas build --platform android --profile dev-standalone --local",
     "build:prod": "ANDROID_HOME=\"$HOME/Library/Android/sdk\" eas build --platform android --profile production --local",
     "submit:prod": "eas submit --platform android --profile production",
     "supabase:setup:dev": "bash scripts/supabase-setup.sh dev all",
