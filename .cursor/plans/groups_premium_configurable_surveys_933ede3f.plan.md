@@ -25,22 +25,22 @@ todos:
     status: completed
   - id: p1-schema
     content: "Phase 1: migration for groups, group_members (role enum), group_invites (per-group, 3-day expiry, multi-use) + is_group_member/is_group_admin/can_approve helpers"
-    status: pending
+    status: completed
   - id: p1-tenant
     content: "Phase 1: add group_id to meetings & board_games, per-group meeting number, update create_next_survey(p_group_id)"
-    status: pending
+    status: completed
   - id: p1-rls
     content: "Phase 1: rewrite all domain RLS to membership-scoped; add anti-flooding triggers (3 free groups/user, member_limit, per-group row caps, rate limits)"
-    status: pending
+    status: completed
   - id: p1-auth
     content: "Phase 1: open registration/email-verification/password-reset screens; in-app account+data deletion as part of self-registration/account management (GDPR self-service); onboarding when user has no groups; invite-link deep-link join flow (register-or-login then join)"
-    status: pending
+    status: completed
   - id: p1-context
     content: "Phase 1: lib/groups context provider (currentGroupId persisted), scope all meetings/board_games queries by it"
-    status: pending
+    status: completed
   - id: p1-ui
-    content: "Phase 1: shared header with group switcher (headerRight) + group management screens (create/settings/members/invite-code/join)"
-    status: pending
+    content: "Phase 1: shared header with group switcher (headerRight) + group management screens (create/settings/members/invite-code/join); gate approve/unapprove UI to approvers/admins (matches the can_approve RLS - regular members no longer see/trigger approval on the meeting + home screens)"
+    status: in_progress
   - id: p1-edge
     content: "Phase 1: rework cron + edge functions (create-survey, complete-meeting, reminders, notify-*) to operate per group"
     status: pending
@@ -49,6 +49,9 @@ todos:
     status: pending
   - id: p1-launch-readiness
     content: "Phase 1 (when self-signup ships): rewrite stale PRIVACY_POLICY.md + docs/privacy/index.html for public/self-signup; in-app UGC report/block + content moderation/takedown (Play UGC policy); English-completeness pass on all i18n keys (en/pl) incl. new screens; REBRAND (app no longer boardgames-only): new generic public/English name, new icon/splash/theme, rewrite Play short+long descriptions (en/pl) + redo all store screenshots; public support/contact channel"
+    status: pending
+  - id: p1-docs
+    content: "Phase 1 wrap-up: update .cursor/rules/project-context.mdc + README to the multi-tenant model (groups/roles/invites, membership-scoped RLS, can_approve-gated approval, rate_limit_log) - deferred across the Phase 1 migrations to a single coordinated pass"
     status: pending
   - id: p2-schema
     content: "Phase 2: survey_dimensions + survey_options + vote_selections tables; make date auto-generation and 3-play rule per-group config"
@@ -190,6 +193,11 @@ The moment self-signup ships, the app is effectively public — these can't wait
   - **Branding/theme:** replace the board-game-specific identity — app **icon**, splash, and the wood palette (currently themed around game nights) with a neutral, generic look.
   - **Store listing (localized en + pl):** rewrite **short + long descriptions** — the current Play descriptions are boardgames-specific and must be regenerated for the generic planner. Redo all **store screenshots** to reflect the new name, branding, and (Phase 2) generic surveys.
 - **Support/contact channel:** a way for non-friend users to reach support (email/form).
+
+### Finalization — one-time manual setup (run last)
+All Phase-1 manual/guided steps are collected in a single one-time guide: [docs/groups-setup.md](docs/groups-setup.md) (Supabase auth config, backend deploy, SMTP; plus privacy-policy rewrite/host, Play content-rating re-submission, rebrand/store listing, and data-migration admin as those items land).
+- **Keep it current:** every Phase-1 change that introduces a manual step must add it to [docs/groups-setup.md](docs/groups-setup.md) in the same change.
+- **Final to-do (release gate):** once all other Phase-1 points are done, execute [docs/groups-setup.md](docs/groups-setup.md) end-to-end (DEV first, then PROD). No release before this.
 
 ---
 

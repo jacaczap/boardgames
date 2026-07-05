@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import GroupSwitcher from "@/components/GroupSwitcher";
 
 export default function TabLayout() {
   const { t } = useTranslation();
@@ -18,6 +19,7 @@ export default function TabLayout() {
         headerStyle: { backgroundColor: "#4a3228" },
         headerTintColor: "#fef3c7",
         headerTitleStyle: { color: "#fef3c7" },
+        headerRight: () => <GroupSwitcher />,
       }}
     >
       <Tabs.Screen

@@ -9,6 +9,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { useGroup } from "@/lib/groupContext";
 import { useSignedUrls } from "@/lib/storage";
 import type { BoardGame } from "@/lib/types";
 
@@ -96,6 +97,7 @@ const GameRow = React.memo(function GameRow({
 export default function GamesListScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { currentGroupId } = useGroup();
   const [games, setGames] = useState<BoardGame[]>([]);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
@@ -110,10 +112,16 @@ export default function GamesListScreen() {
   imageUrlsRef.current = imageUrls;
 
   const fetchGames = useCallback(async () => {
+    if (!currentGroupId) {
+      setGames([]);
+      setLoading(false);
+      return;
+    }
     try {
       const { data } = await supabase
         .from("board_games")
         .select("*")
+        .eq("group_id", currentGroupId)
         .order("name");
       setGames((data as BoardGame[]) ?? []);
     } catch (e) {
@@ -121,7 +129,7 @@ export default function GamesListScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentGroupId]);
 
   useFocusEffect(
     useCallback(() => {

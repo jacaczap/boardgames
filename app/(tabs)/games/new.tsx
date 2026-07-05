@@ -5,6 +5,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { useGroup } from "@/lib/groupContext";
 import { pickAndUploadImage, removeStorageFile, useSignedUrl } from "@/lib/storage";
 
 import { VStack } from "@/components/ui/vstack";
@@ -19,6 +20,7 @@ import { Pressable } from "@/components/ui/pressable";
 export default function NewGameScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { currentGroupId } = useGroup();
   const [saving, setSaving] = useState(false);
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -72,9 +74,14 @@ export default function NewGameScreen() {
       showAlert(t("common.validation"), t("games.minExceedsMax"));
       return;
     }
+    if (!currentGroupId) {
+      showAlert(t("common.error"), t("games.failedAdd"));
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase.from("board_games").insert({
+        group_id: currentGroupId,
         name: name.trim(),
         description: description.trim() || null,
         genre: genre.trim() || null,

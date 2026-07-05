@@ -12,6 +12,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { useGroup } from "@/lib/groupContext";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrls } from "@/lib/storage";
 import { isPolishHoliday } from "@/lib/holidays";
@@ -59,6 +60,7 @@ export default function ApproveScreen() {
   const locale = getDateLocale();
   const { id, edit } = useLocalSearchParams<{ id: string; edit?: string }>();
   const router = useRouter();
+  const { currentGroupId, canApprove } = useGroup();
   const isWeb = Platform.OS === "web";
 
   const [loading, setLoading] = useState(true);
@@ -188,7 +190,7 @@ export default function ApproveScreen() {
         await Promise.all([
           supabase.from("meetings").select("*").eq("id", id).single(),
           supabase.from("date_options").select("*").eq("meeting_id", id).order("date"),
-          supabase.from("board_games").select("*").order("name"),
+          supabase.from("board_games").select("*").eq("group_id", currentGroupId).order("name"),
           supabase.from("profiles").select("*"),
           supabase.from("votes").select("*").eq("meeting_id", id),
           supabase
@@ -237,7 +239,7 @@ export default function ApproveScreen() {
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, currentGroupId]);
 
   useEffect(() => {
     if (!loading && meeting?.status === "approved" && !edit) {
@@ -625,20 +627,32 @@ export default function ApproveScreen() {
 
         {/* Actions */}
         <VStack space="md" className="mt-4">
-          <Button
-            action="primary"
-            size="lg"
-            isDisabled={!selectedDateId || !selectedGameId || submitting}
-            onPress={isEditing ? handleSaveEdit : handleApprove}
-          >
-            <ButtonText className="text-lg">
-              {submitting
-                ? t("common.saving")
-                : isEditing
-                  ? t("common.saveChanges")
-                  : t("approve.approveMeeting")}
-            </ButtonText>
-          </Button>
+          {!canApprove && (
+            <Card variant="filled" className="bg-orange-100 p-4">
+              <HStack space="sm" className="items-center">
+                <Ionicons name="lock-closed-outline" size={20} color="#ea580c" />
+                <Text className="text-orange-800 flex-1">
+                  {t("approve.notApprover")}
+                </Text>
+              </HStack>
+            </Card>
+          )}
+          {canApprove && (
+            <Button
+              action="primary"
+              size="lg"
+              isDisabled={!selectedDateId || !selectedGameId || submitting}
+              onPress={isEditing ? handleSaveEdit : handleApprove}
+            >
+              <ButtonText className="text-lg">
+                {submitting
+                  ? t("common.saving")
+                  : isEditing
+                    ? t("common.saveChanges")
+                    : t("approve.approveMeeting")}
+              </ButtonText>
+            </Button>
+          )}
           {isEditing ? (
             <Button variant="outline" action="secondary" onPress={handleCancelEdit}>
               <ButtonText>{t("common.cancel")}</ButtonText>

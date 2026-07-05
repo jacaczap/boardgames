@@ -30,20 +30,26 @@ A small **React Native (Expo)** app for **one closed friend group** to coordinat
 
 ```
 app/
-  _layout.tsx              Root: auth guard, Stack, push-token registration, notification deep-links
-  (auth)/login.tsx         Email+password login, "stay logged in" toggle. No signup.
+  _layout.tsx              Root: auth guard, onboarding gate, Stack, deep-links (invite + password recovery), push-token registration
+  (auth)/login.tsx         Email+password login; links to register + forgot-password
+  (auth)/register.tsx      Open self-signup (email+password)
+  (auth)/verify-email.tsx  "check your email" notice + resend
+  (auth)/forgot-password.tsx  Request password-reset email
+  (auth)/reset-password.tsx   Set new password from recovery deep-link session
   (tabs)/
     _layout.tsx            Bottom tabs (Home/Games/Profile)
     index.tsx              HOME: approved meeting card OR active survey CTA OR empty state
     games/index.tsx        Board games list + search
     games/[id].tsx         Game detail / edit / delete
     games/new.tsx          Add game
-    profile.tsx            Avatar, name/surname, password, notification prefs, language, logout
+    profile.tsx            Avatar, name/surname, password, notification prefs, language, logout, delete account
+  onboarding.tsx           Shown when user has no groups: create a group or join by code
+  join/[code].tsx          Invite deep-link landing (register-or-login then join)
   survey/[id].tsx          Survey voting screen
   approve/[id].tsx         Meeting approval screen
 components/                Shared: SurveyContent, CalendarDatePicker, UserAvatar, VoterListModal
 components/ui/             gluestack-ui primitives (Box, Button, Text, Card, etc.)
-lib/                       supabase, types, storage, notifications, holidays, alert, voteSignal, i18n
+lib/                       supabase, types, storage, notifications, holidays, alert, voteSignal, groups, account, i18n
 ```
 
 ## Data Model (Postgres, all RLS-enabled)
@@ -63,6 +69,7 @@ Canonical TS types live in `lib/types.ts`. Key SQL functions: `create_next_surve
 
 Cron (daily): `create-survey`, `survey-reminder`, `meeting-reminder`, `complete-meeting`.
 Trigger-based push: `notify-survey-created`, `notify-meeting-approved`, `notify-meeting-unapproved`.
+User-invoked: `delete-account` (GDPR self-service: verifies caller JWT, removes their avatar + deletes the auth user, cascading profile/memberships/votes). `verify_jwt` on (not in `config.toml`).
 Shared push sender: `_shared/push.ts` (Expo Push API, batches of 100). Excluded from app tsconfig (Deno runtime).
 
 ## Conventions & Gotchas

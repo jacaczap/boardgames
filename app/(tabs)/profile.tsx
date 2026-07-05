@@ -12,6 +12,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { setLanguagePreference } from "@/lib/i18n";
 import { clearPushToken } from "@/lib/notifications";
+import { deleteAccount } from "@/lib/account";
 import { useSignedUrl, pickAndUploadImage, removeStorageFile } from "@/lib/storage";
 import type { Profile } from "@/lib/types";
 
@@ -39,6 +40,7 @@ export default function ProfileScreen() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [changingPassword, setChangingPassword] = useState(false);
   const [loggingOut, setLoggingOut] = useState(false);
+  const [deletingAccount, setDeletingAccount] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
 
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -220,6 +222,28 @@ export default function ProfileScreen() {
             showAlert(t("common.error"), e?.message ?? t("profile.failedLogout"));
           } finally {
             setLoggingOut(false);
+          }
+        },
+      },
+    ]);
+  };
+
+  const handleDeleteAccount = () => {
+    showAlert(t("profile.deleteConfirmTitle"), t("profile.deleteConfirmMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("profile.deleteAccount"),
+        style: "destructive",
+        onPress: async () => {
+          setDeletingAccount(true);
+          try {
+            if (Platform.OS !== "web" && profile) {
+              await clearPushToken(profile.id);
+            }
+            await deleteAccount();
+          } catch (e: any) {
+            setDeletingAccount(false);
+            showAlert(t("common.error"), e?.message ?? t("profile.failedDelete"));
           }
         },
       },
@@ -462,6 +486,33 @@ export default function ProfileScreen() {
           >
             <ButtonText>{loggingOut ? t("profile.loggingOut") : t("profile.logOut")}</ButtonText>
           </Button>
+
+          {/* Danger zone */}
+          <Card variant="outline" className="p-4 border-red-200">
+            <VStack space="md">
+              <HStack space="xs" className="items-center">
+                <Ionicons name="warning-outline" size={20} color="#b91c1c" />
+                <Heading size="md" className="text-red-700">
+                  {t("profile.dangerZone")}
+                </Heading>
+              </HStack>
+              <Text size="sm" className="text-stone-500">
+                {t("profile.deleteAccountDesc")}
+              </Text>
+              <Button
+                action="negative"
+                variant="outline"
+                isDisabled={deletingAccount}
+                onPress={handleDeleteAccount}
+              >
+                <ButtonText>
+                  {deletingAccount
+                    ? t("profile.deleting")
+                    : t("profile.deleteAccount")}
+                </ButtonText>
+              </Button>
+            </VStack>
+          </Card>
         </VStack>
       </ScrollView>
     </KeyboardAvoidingView>

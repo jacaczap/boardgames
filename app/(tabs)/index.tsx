@@ -16,6 +16,7 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { useGroup } from "@/lib/groupContext";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile, Vote, VoteDate, VoteGame } from "@/lib/types";
@@ -39,6 +40,7 @@ let homeChannelSeq = 0;
 export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { currentGroupId, canApprove } = useGroup();
   const isWeb = Platform.OS === "web";
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [game, setGame] = useState<BoardGame | null>(null);
@@ -74,10 +76,21 @@ export default function HomeScreen() {
   const avatarUrls = useSignedUrls("avatars", avatarPaths);
 
   const fetchData = useCallback(async () => {
+    if (!currentGroupId) {
+      setMeeting(null);
+      setGame(null);
+      setAttendees([]);
+      setAllVoterProfiles([]);
+      setVotingResults(null);
+      setNextSurveyDate(null);
+      setLoading(false);
+      return;
+    }
     try {
       const { data: meetings } = await supabase
         .from("meetings")
         .select("*")
+        .eq("group_id", currentGroupId)
         .in("status", ["voting", "approved"])
         .order("number", { ascending: false })
         .limit(1);
@@ -94,6 +107,7 @@ export default function HomeScreen() {
         const { data: lastCompleted } = await supabase
           .from("meetings")
           .select("chosen_date")
+          .eq("group_id", currentGroupId)
           .eq("status", "completed")
           .order("number", { ascending: false })
           .limit(1);
@@ -170,7 +184,7 @@ export default function HomeScreen() {
               .from("vote_games")
               .select("game_id, vote_id, votes!inner(meeting_id)")
               .eq("votes.meeting_id", m.id),
-            supabase.from("board_games").select("id, name"),
+            supabase.from("board_games").select("id, name").eq("group_id", currentGroupId),
             supabase.from("profiles").select("id, name, surname, avatar_url"),
           ]);
 
@@ -239,7 +253,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentGroupId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -318,12 +332,13 @@ export default function HomeScreen() {
   };
 
   const handleCreateSurvey = async () => {
-    if (creatingSurvey) return;
+    if (creatingSurvey || !currentGroupId) return;
     setCreatingSurvey(true);
     try {
       const { count } = await supabase
         .from("meetings")
         .select("*", { count: "exact", head: true })
+        .eq("group_id", currentGroupId)
         .in("status", ["voting", "approved"]);
       if (count && count > 0) {
         showAlert(t("race.info"), t("home.surveyAlreadyExists"));
@@ -331,7 +346,9 @@ export default function HomeScreen() {
         return;
       }
 
-      const { error } = await supabase.rpc("create_next_survey");
+      const { error } = await supabase.rpc("create_next_survey", {
+        p_group_id: currentGroupId,
+      });
       if (error) {
         showAlert(t("common.error"), error.message);
         return;
@@ -784,21 +801,25 @@ export default function HomeScreen() {
                 </ButtonText>
               </Button>
             )}
-            <Button
-              variant="outline"
-              action="primary"
-              onPress={() => router.push(`/approve/${meeting.id}?edit=1`)}
-            >
-              <ButtonText>{t("home.editMeeting")}</ButtonText>
-            </Button>
-            <Button
-              variant="outline"
-              action="negative"
-              isDisabled={unapproving}
-              onPress={handleUnapprove}
-            >
-              <ButtonText>{unapproving ? t("home.unapproving") : t("home.unapprove")}</ButtonText>
-            </Button>
+            {canApprove && (
+              <>
+                <Button
+                  variant="outline"
+                  action="primary"
+                  onPress={() => router.push(`/approve/${meeting.id}?edit=1`)}
+                >
+                  <ButtonText>{t("home.editMeeting")}</ButtonText>
+                </Button>
+                <Button
+                  variant="outline"
+                  action="negative"
+                  isDisabled={unapproving}
+                  onPress={handleUnapprove}
+                >
+                  <ButtonText>{unapproving ? t("home.unapproving") : t("home.unapprove")}</ButtonText>
+                </Button>
+              </>
+            )}
           </VStack>
         </VStack>
       </Card>

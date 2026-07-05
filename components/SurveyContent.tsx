@@ -13,6 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { useGroup } from "@/lib/groupContext";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrls } from "@/lib/storage";
 import { signalVoteCast } from "@/lib/voteSignal";
@@ -63,6 +64,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
   const { t } = useTranslation();
   const locale = getDateLocale();
   const router = useRouter();
+  const { currentGroupId, canApprove } = useGroup();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -189,7 +191,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         await Promise.all([
           supabase.from("meetings").select("*").eq("id", meetingId).single(),
           supabase.from("date_options").select("*").eq("meeting_id", meetingId).order("date"),
-          supabase.from("board_games").select("*").order("name"),
+          supabase.from("board_games").select("*").eq("group_id", currentGroupId).order("name"),
           supabase.from("profiles").select("*"),
           supabase.from("votes").select("*").eq("meeting_id", meetingId),
           supabase
@@ -271,7 +273,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
     } finally {
       setLoading(false);
     }
-  }, [meetingId]);
+  }, [meetingId, currentGroupId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -729,14 +731,16 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
               <ButtonText className="text-lg">{t("survey.changeVote")}</ButtonText>
             </Button>
             {embedded ? (
-              <Button
-                variant="outline"
-                action="positive"
-                size="lg"
-                onPress={() => router.push(`/approve/${meetingId}`)}
-              >
-                <ButtonText className="text-lg">{t("home.approveMeeting")}</ButtonText>
-              </Button>
+              canApprove ? (
+                <Button
+                  variant="outline"
+                  action="positive"
+                  size="lg"
+                  onPress={() => router.push(`/approve/${meetingId}`)}
+                >
+                  <ButtonText className="text-lg">{t("home.approveMeeting")}</ButtonText>
+                </Button>
+              ) : null
             ) : (
               <Button
                 variant="outline"
