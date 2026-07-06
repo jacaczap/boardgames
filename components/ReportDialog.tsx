@@ -1,5 +1,11 @@
 import React, { useState } from "react";
-import { Modal, Pressable as RNPressable, StyleSheet } from "react-native";
+import {
+  KeyboardAvoidingView,
+  Modal,
+  Platform,
+  Pressable as RNPressable,
+  StyleSheet,
+} from "react-native";
 import { useTranslation } from "react-i18next";
 import { showAlert } from "@/lib/alert";
 import {
@@ -68,6 +74,10 @@ const ReportDialog: React.FC<ReportDialogProps> = ({
       animationType="fade"
       onRequestClose={handleClose}
     >
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+      >
       <RNPressable style={styles.overlay} onPress={handleClose}>
         <RNPressable style={styles.card} onPress={(e) => e.stopPropagation()}>
           <VStack space="md">
@@ -113,6 +123,7 @@ const ReportDialog: React.FC<ReportDialogProps> = ({
                 variant="outline"
                 action="secondary"
                 className="flex-1"
+                isDisabled={submitting}
                 onPress={handleClose}
               >
                 <ButtonText>{t("common.cancel")}</ButtonText>
@@ -133,11 +144,15 @@ const ReportDialog: React.FC<ReportDialogProps> = ({
           </VStack>
         </RNPressable>
       </RNPressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 };
 
 const styles = StyleSheet.create({
+  flex: {
+    flex: 1,
+  },
   overlay: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.4)",

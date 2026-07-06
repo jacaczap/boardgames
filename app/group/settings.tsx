@@ -44,8 +44,20 @@ export default function GroupSettingsScreen() {
 
   if (!currentGroupId || !currentGroup) {
     return (
-      <Center className="flex-1 bg-stone-50">
-        <Text className="text-stone-500">{t("groups.noGroup")}</Text>
+      <Center className="flex-1 bg-stone-50 p-6">
+        <VStack space="md" className="items-center">
+          <Text className="text-stone-500 text-center">{t("groups.noGroupDesc")}</Text>
+          <Button action="primary" onPress={() => router.replace("/group/create")}>
+            <ButtonText>{t("groups.createNew")}</ButtonText>
+          </Button>
+          <Button
+            action="secondary"
+            variant="outline"
+            onPress={() => router.replace("/group/join")}
+          >
+            <ButtonText>{t("groups.joinAnother")}</ButtonText>
+          </Button>
+        </VStack>
       </Center>
     );
   }
@@ -211,7 +223,7 @@ export default function GroupSettingsScreen() {
               <Button
                 action="negative"
                 variant="outline"
-                isDisabled={busy}
+                isDisabled={busy || !userId}
                 onPress={handleLeave}
               >
                 <ButtonText>{t("groups.leave")}</ButtonText>

@@ -20,6 +20,8 @@ const en = {
     add: "Add",
     players: "players",
     validation: "Validation",
+    retry: "Retry",
+    loadError: "Something went wrong. Pull down to refresh.",
   },
 
   auth: {
@@ -44,6 +46,8 @@ const en = {
     checkEmailTitle: "Check your email",
     verifyEmailMessage:
       "We sent a confirmation link to {{email}}. Open it to verify your account, then log in.",
+    verifyEmailGeneric:
+      "We sent you a confirmation link. Open it to verify your account, then log in.",
     resendEmail: "Resend email",
     resendSuccess: "Confirmation email resent.",
     resendFailed: "Couldn't resend the email",
@@ -103,10 +107,14 @@ const en = {
     logIn: "Log in",
     signUp: "Sign up",
     goBack: "Back",
+    notNow: "Not now",
   },
 
   groups: {
     noGroup: "No group",
+    noGroupDesc: "Pick, create or join a group to continue.",
+    accessDenied: "You don't have access to this.",
+    membersEmpty: "No members yet.",
     yourGroups: "Your groups",
     manage: "Manage group",
     createNew: "Create group",
@@ -154,6 +162,7 @@ const en = {
     inviteFailed: "Failed to create invite",
     copiedTitle: "Copied",
     copiedMessage: "Invite link copied to clipboard.",
+    copyUnavailable: "Couldn't copy automatically. Select the link above to copy it.",
   },
 
   home: {

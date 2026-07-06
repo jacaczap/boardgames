@@ -53,7 +53,9 @@ export default function VerifyEmailScreen() {
           </Heading>
 
           <Text className="text-center text-stone-600">
-            {t("auth.verifyEmailMessage", { email: email ?? "" })}
+            {email
+              ? t("auth.verifyEmailMessage", { email })
+              : t("auth.verifyEmailGeneric")}
           </Text>
 
           {email ? (

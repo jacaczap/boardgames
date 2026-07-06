@@ -29,6 +29,7 @@ export default function GroupModerationScreen() {
 
   const [reports, setReports] = useState<ContentReport[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
@@ -39,8 +40,10 @@ export default function GroupModerationScreen() {
     }
     try {
       setReports(await listOpenReports(currentGroupId));
+      setError(false);
     } catch (e) {
       console.error("Failed to fetch reports:", e);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -91,7 +94,27 @@ export default function GroupModerationScreen() {
   if (!isAdmin) {
     return (
       <Center className="flex-1 bg-stone-50 p-6">
-        <Text className="text-stone-500">{t("groups.noGroup")}</Text>
+        <Text className="text-stone-500">{t("groups.accessDenied")}</Text>
+      </Center>
+    );
+  }
+
+  if (error) {
+    return (
+      <Center className="flex-1 bg-stone-50 p-6">
+        <VStack space="md" className="items-center">
+          <Text className="text-stone-500 text-center">{t("common.loadError")}</Text>
+          <Button
+            variant="outline"
+            action="secondary"
+            onPress={() => {
+              setLoading(true);
+              fetchReports();
+            }}
+          >
+            <ButtonText>{t("common.retry")}</ButtonText>
+          </Button>
+        </VStack>
       </Center>
     );
   }

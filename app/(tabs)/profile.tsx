@@ -266,8 +266,23 @@ export default function ProfileScreen() {
 
   if (!profile) {
     return (
-      <Center className="flex-1 bg-stone-50">
-        <Text className="text-stone-500">{t("profile.notFound")}</Text>
+      <Center className="flex-1 bg-stone-50 p-6">
+        <VStack space="md" className="items-center">
+          <Text className="text-stone-500 text-center">{t("profile.notFound")}</Text>
+          <Button
+            variant="outline"
+            action="secondary"
+            onPress={() => {
+              setLoading(true);
+              fetchProfile();
+            }}
+          >
+            <ButtonText>{t("common.retry")}</ButtonText>
+          </Button>
+          <Button action="negative" variant="outline" onPress={handleLogout}>
+            <ButtonText>{t("profile.logOut")}</ButtonText>
+          </Button>
+        </VStack>
       </Center>
     );
   }

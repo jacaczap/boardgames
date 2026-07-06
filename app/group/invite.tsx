@@ -29,7 +29,10 @@ export default function GroupInviteScreen() {
   const [invite, setInvite] = useState<GroupInvite | null>(null);
 
   const load = useCallback(async () => {
-    if (!currentGroupId) return;
+    if (!currentGroupId) {
+      setLoading(false);
+      return;
+    }
     try {
       setInvite(await getActiveInvite(currentGroupId));
     } catch (e) {
@@ -65,6 +68,8 @@ export default function GroupInviteScreen() {
         if (navigator?.clipboard) {
           await navigator.clipboard.writeText(inviteUrl);
           showAlert(t("groups.copiedTitle"), t("groups.copiedMessage"));
+        } else {
+          showAlert(t("groups.copyLink"), t("groups.copyUnavailable"));
         }
         return;
       }
@@ -126,7 +131,7 @@ export default function GroupInviteScreen() {
                   action="secondary"
                   variant="outline"
                   onPress={handleGenerate}
-                  isDisabled={generating}
+                  isDisabled={generating || !currentGroupId}
                 >
                   {generating ? (
                     <ButtonSpinner />
@@ -136,7 +141,11 @@ export default function GroupInviteScreen() {
                 </Button>
               </VStack>
             ) : (
-              <Button action="primary" onPress={handleGenerate} isDisabled={generating}>
+              <Button
+                action="primary"
+                onPress={handleGenerate}
+                isDisabled={generating || !currentGroupId}
+              >
                 {generating ? (
                   <ButtonSpinner />
                 ) : (

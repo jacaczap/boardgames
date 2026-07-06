@@ -482,9 +482,10 @@ export default function HomeScreen() {
           "END:VCALENDAR",
         ].join("\r\n");
 
-        const uri = FileSystem.cacheDirectory + "event.ics";
-        await FileSystem.writeAsStringAsync(uri, ics);
-        await Sharing.shareAsync(uri, {
+        const file = new FileSystem.File(FileSystem.Paths.cache, "event.ics");
+        file.create({ overwrite: true });
+        file.write(ics);
+        await Sharing.shareAsync(file.uri, {
           mimeType: "text/calendar",
           UTI: "com.apple.ical.ics",
         });
@@ -549,7 +550,7 @@ export default function HomeScreen() {
         )}
         <Button
           action="primary"
-          isDisabled={creatingSurvey}
+          isDisabled={creatingSurvey || !currentGroupId}
           onPress={handleCreateSurvey}
           className="px-6"
         >
@@ -782,7 +783,7 @@ export default function HomeScreen() {
             {!isAttending ? (
               <Button
                 action="primary"
-                isDisabled={joiningMeeting}
+                isDisabled={joiningMeeting || !chosenDateOptionId}
                 onPress={handleLateJoin}
               >
                 <ButtonText>

@@ -47,7 +47,11 @@ export default function JoinScreen() {
   }, []);
 
   const load = useCallback(async () => {
-    if (!code) return;
+    if (!code) {
+      setPreview(null);
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     try {
       const {
@@ -65,6 +69,16 @@ export default function JoinScreen() {
   useEffect(() => {
     load();
   }, [load]);
+
+  // Any exit from this screen must drop the pending code, otherwise the root
+  // layout keeps yanking a group-less user back here (onboarding <-> join loop).
+  const dismiss = async () => {
+    await clearPendingInviteCode();
+    // Force the root layout to re-read the (now empty) pending code so it stops
+    // redirecting a group-less user straight back to this screen.
+    signalMembershipChanged();
+    router.replace(hasSession ? "/(tabs)" : "/(auth)/login");
+  };
 
   const handleJoin = async () => {
     if (!code) return;
@@ -166,13 +180,11 @@ export default function JoinScreen() {
           </VStack>
         )}
 
-        {invalid || expired ? (
-          <Pressable onPress={() => router.replace("/(tabs)")}>
-            <Text className="text-center text-amber-700 font-medium">
-              {t("join.goBack")}
-            </Text>
-          </Pressable>
-        ) : null}
+        <Pressable onPress={dismiss} disabled={joining}>
+          <Text className="text-center text-amber-700 font-medium">
+            {invalid || expired ? t("join.goBack") : t("join.notNow")}
+          </Text>
+        </Pressable>
       </VStack>
     </ScrollView>
   );

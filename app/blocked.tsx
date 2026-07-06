@@ -28,14 +28,17 @@ export default function BlockedUsersScreen() {
   const { unblock } = useBlocks();
   const [blocked, setBlocked] = useState<BlockedProfile[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [busy, setBusy] = useState<string | null>(null);
 
   const fetchBlocked = useCallback(async () => {
     try {
       setBlocked(await listBlockedProfiles());
+      setError(false);
     } catch (e) {
       console.error("Failed to fetch blocked users:", e);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -75,6 +78,26 @@ export default function BlockedUsersScreen() {
     return (
       <Center className="flex-1 bg-stone-50">
         <Spinner />
+      </Center>
+    );
+  }
+
+  if (error) {
+    return (
+      <Center className="flex-1 bg-stone-50 p-6">
+        <VStack space="md" className="items-center">
+          <Text className="text-stone-500 text-center">{t("common.loadError")}</Text>
+          <Button
+            variant="outline"
+            action="secondary"
+            onPress={() => {
+              setLoading(true);
+              fetchBlocked();
+            }}
+          >
+            <ButtonText>{t("common.retry")}</ButtonText>
+          </Button>
+        </VStack>
       </Center>
     );
   }

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Modal, Pressable, StyleSheet, View } from "react-native";
+import { Modal, Pressable, ScrollView, StyleSheet, View } from "react-native";
 import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -51,6 +51,11 @@ export default function GroupSwitcher() {
       <Modal visible={open} transparent animationType="fade" onRequestClose={close}>
         <Pressable style={styles.overlay} onPress={close}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+            <ScrollView
+              style={styles.sheetScroll}
+              contentContainerStyle={{ paddingVertical: 2 }}
+              showsVerticalScrollIndicator={false}
+            >
             <VStack space="xs">
               <Text size="xs" className="text-stone-400 uppercase tracking-wide px-3 pt-1">
                 {t("groups.yourGroups")}
@@ -118,6 +123,7 @@ export default function GroupSwitcher() {
                 </HStack>
               </Pressable>
             </VStack>
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
@@ -139,11 +145,15 @@ const styles = StyleSheet.create({
     padding: 8,
     width: "80%",
     maxWidth: 320,
+    maxHeight: "80%",
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.18,
     shadowRadius: 14,
     elevation: 10,
+  },
+  sheetScroll: {
+    flexGrow: 0,
   },
   divider: {
     height: 1,

@@ -6,6 +6,8 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 
 import { Box } from "@/components/ui/box";
+import { Center } from "@/components/ui/center";
+import { Spinner } from "@/components/ui/spinner";
 import { VStack } from "@/components/ui/vstack";
 import { Heading } from "@/components/ui/heading";
 import { Text } from "@/components/ui/text";
@@ -76,7 +78,11 @@ export default function ResetPasswordScreen() {
             {t("auth.resetTitle")}
           </Heading>
 
-          {checking ? null : !hasSession ? (
+          {checking ? (
+            <Center className="py-8">
+              <Spinner />
+            </Center>
+          ) : !hasSession ? (
             <VStack space="lg">
               <Text className="text-center text-stone-600">
                 {t("auth.resetSessionMissing")}

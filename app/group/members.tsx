@@ -22,6 +22,7 @@ import { Center } from "@/components/ui/center";
 import { Text } from "@/components/ui/text";
 import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
+import { Button, ButtonText } from "@/components/ui/button";
 import { Pressable } from "@/components/ui/pressable";
 import UserAvatar from "@/components/UserAvatar";
 import ReportDialog from "@/components/ReportDialog";
@@ -37,6 +38,7 @@ export default function GroupMembersScreen() {
 
   const [members, setMembers] = useState<GroupMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [busyUser, setBusyUser] = useState<string | null>(null);
@@ -47,11 +49,17 @@ export default function GroupMembersScreen() {
   }, []);
 
   const fetchMembers = useCallback(async () => {
-    if (!currentGroupId) return;
+    if (!currentGroupId) {
+      setError(true);
+      setLoading(false);
+      return;
+    }
     try {
       setMembers(await listMembers(currentGroupId));
+      setError(false);
     } catch (e) {
       console.error("Failed to fetch members:", e);
+      setError(true);
     } finally {
       setLoading(false);
     }
@@ -145,6 +153,26 @@ export default function GroupMembersScreen() {
     );
   }
 
+  if (error) {
+    return (
+      <Center className="flex-1 bg-stone-50 p-6">
+        <VStack space="md" className="items-center">
+          <Text className="text-stone-500 text-center">{t("common.loadError")}</Text>
+          <Button
+            variant="outline"
+            action="secondary"
+            onPress={() => {
+              setLoading(true);
+              fetchMembers();
+            }}
+          >
+            <ButtonText>{t("common.retry")}</ButtonText>
+          </Button>
+        </VStack>
+      </Center>
+    );
+  }
+
   return (
     <>
     {currentGroupId && reportUserId && (
@@ -162,6 +190,11 @@ export default function GroupMembersScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
     >
       <VStack space="md">
+        {members.length === 0 && (
+          <Center className="py-10">
+            <Text className="text-stone-400">{t("groups.membersEmpty")}</Text>
+          </Center>
+        )}
         {members.map((member) => {
           const isSelf = member.userId === userId;
           const profile = {

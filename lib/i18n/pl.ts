@@ -20,6 +20,8 @@ const pl = {
     add: "Dodaj",
     players: "graczy",
     validation: "Walidacja",
+    retry: "Ponów",
+    loadError: "Coś poszło nie tak. Pociągnij w dół, aby odświeżyć.",
   },
 
   auth: {
@@ -44,6 +46,8 @@ const pl = {
     checkEmailTitle: "Sprawdź swoją skrzynkę",
     verifyEmailMessage:
       "Wysłaliśmy link potwierdzający na {{email}}. Otwórz go, aby zweryfikować konto, a następnie zaloguj się.",
+    verifyEmailGeneric:
+      "Wysłaliśmy link potwierdzający. Otwórz go, aby zweryfikować konto, a następnie zaloguj się.",
     resendEmail: "Wyślij ponownie",
     resendSuccess: "E-mail potwierdzający wysłany ponownie.",
     resendFailed: "Nie udało się wysłać e-maila ponownie",
@@ -103,10 +107,14 @@ const pl = {
     logIn: "Zaloguj się",
     signUp: "Zarejestruj się",
     goBack: "Wróć",
+    notNow: "Nie teraz",
   },
 
   groups: {
     noGroup: "Brak grupy",
+    noGroupDesc: "Wybierz, utwórz lub dołącz do grupy, aby kontynuować.",
+    accessDenied: "Nie masz do tego dostępu.",
+    membersEmpty: "Brak członków.",
     yourGroups: "Twoje grupy",
     manage: "Zarządzaj grupą",
     createNew: "Utwórz grupę",
@@ -154,6 +162,7 @@ const pl = {
     inviteFailed: "Nie udało się utworzyć zaproszenia",
     copiedTitle: "Skopiowano",
     copiedMessage: "Link z zaproszeniem skopiowany do schowka.",
+    copyUnavailable: "Nie udało się skopiować automatycznie. Zaznacz link powyżej, aby go skopiować.",
   },
 
   home: {
