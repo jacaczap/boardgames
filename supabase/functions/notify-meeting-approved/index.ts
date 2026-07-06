@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendPushNotifications } from "../_shared/push.ts";
 import type { PushMessage } from "../_shared/push.ts";
+import { getGroupMemberIds, getTokensForUsers } from "../_shared/groups.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -16,12 +17,16 @@ Deno.serve(async (req) => {
 
     const { data: meeting } = await supabase
       .from("meetings")
-      .select("number, chosen_date, chosen_game_id")
+      .select("group_id, number, chosen_date, chosen_game_id")
       .eq("id", meetingId)
       .single();
 
     if (!meeting) {
       return Response.json({ error: "Meeting not found" }, { status: 404 });
+    }
+
+    if (!meeting.group_id) {
+      return Response.json({ message: "Meeting has no group" });
     }
 
     let gameName = "";
@@ -34,16 +39,13 @@ Deno.serve(async (req) => {
       gameName = game?.name ?? "";
     }
 
-    const datePart = meeting.chosen_date
-      ? ` (${meeting.chosen_date})`
-      : "";
+    const datePart = meeting.chosen_date ? ` (${meeting.chosen_date})` : "";
     const gamePart = gameName ? ` — ${gameName}` : "";
 
-    const { data: tokens } = await supabase
-      .from("push_tokens")
-      .select("token");
+    const memberIds = await getGroupMemberIds(supabase, meeting.group_id);
+    const tokens = await getTokensForUsers(supabase, memberIds);
 
-    if (!tokens?.length) {
+    if (!tokens.length) {
       return Response.json({ message: "No tokens" });
     }
 

@@ -42,8 +42,8 @@ once, up front:
 - **Content rating** — fill the questionnaire (yields IARC rating).
 - **Target audience & content** — set age groups (13+; not directed at children).
 - **Store listing** — app name, short + full description, icon, feature graphic,
-  and screenshots. Consider a public/English-friendly name (currently Polish-only
-  "Planszówki").
+  and screenshots. The app is now **VoteNMeet**; copy for both languages is in
+  [store-listing.md](store-listing.md) and screenshots must be redone.
 - Any other flagged declarations (news, government, financial, health) — likely
   all "No" here.
 
@@ -51,10 +51,9 @@ Only after these are green does the closed-testing flow below unblock.
 
 ### Privacy policy hosting (GitHub Pages)
 
-The current [PRIVACY_POLICY.md](../PRIVACY_POLICY.md) content is accurate for
-this closed-testing phase (still invite-only / admin-created), so it just needs
-to be **hosted at a live public URL** — no rewrite required yet. (The rewrite for
-open self-signup happens in Phase 1, per the main plan.)
+[PRIVACY_POLICY.md](../PRIVACY_POLICY.md) has been rewritten for open self-signup,
+groups, and user content (Phase 1). It needs to be **hosted at a live public URL**
+and set in Play Console.
 
 Hosted via GitHub Pages from this repo. The page lives at
 [docs/privacy/index.html](privacy/index.html) (self-contained HTML mirroring the

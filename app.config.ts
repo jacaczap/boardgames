@@ -21,11 +21,11 @@ const supabaseKey =
 
 const variant = IS_DEV
   ? {
-      name: "Planszówki (Dev)",
+      name: "VoteNMeet (Dev)",
       packageId: "com.jacaczap.boardgames.dev",
     }
   : {
-      name: "Planszówki",
+      name: "VoteNMeet",
       packageId: "com.jacaczap.boardgames",
     };
 
@@ -37,7 +37,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: variant.name,
   slug: "boardgames",
-  version: "1.0.0",
+  version: "1.1.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
@@ -78,7 +78,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-image-picker",
       {
         photosPermission:
-          "Allow BoardGames to access your photos for game images.",
+          "Allow VoteNMeet to access your photos for uploads.",
         cameraPermission: false,
         microphonePermission: false,
       },
@@ -87,7 +87,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-calendar",
       {
         calendarPermission:
-          "Allow BoardGames to add meeting events to your calendar.",
+          "Allow VoteNMeet to add meeting events to your calendar.",
       },
     ],
     "expo-localization",

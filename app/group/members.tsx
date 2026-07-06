@@ -24,12 +24,15 @@ import { Card } from "@/components/ui/card";
 import { Spinner } from "@/components/ui/spinner";
 import { Pressable } from "@/components/ui/pressable";
 import UserAvatar from "@/components/UserAvatar";
+import ReportDialog from "@/components/ReportDialog";
+import { useBlocks } from "@/lib/moderation";
 
 const ROLES: GroupRole[] = ["admin", "approver", "member"];
 
 export default function GroupMembersScreen() {
   const { t } = useTranslation();
   const { currentGroupId, currentGroup, refresh } = useGroup();
+  const { isBlocked, block, unblock } = useBlocks();
   const isAdmin = currentGroup?.role === "admin";
 
   const [members, setMembers] = useState<GroupMember[]>([]);
@@ -37,6 +40,7 @@ export default function GroupMembersScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
   const [busyUser, setBusyUser] = useState<string | null>(null);
+  const [reportUserId, setReportUserId] = useState<string | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
@@ -112,6 +116,27 @@ export default function GroupMembersScreen() {
     ]);
   };
 
+  const toggleBlock = (member: GroupMember) => {
+    if (isBlocked(member.userId)) {
+      unblock(member.userId).catch((e: any) =>
+        showAlert(t("common.error"), e?.message ?? t("moderation.unblockFailed")),
+      );
+      return;
+    }
+    const name = [member.name, member.surname].filter(Boolean).join(" ") || "?";
+    showAlert(t("moderation.blockTitle", { name }), t("moderation.blockConfirm"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("moderation.block"),
+        style: "destructive",
+        onPress: () =>
+          block(member.userId).catch((e: any) =>
+            showAlert(t("common.error"), e?.message ?? t("moderation.blockFailed")),
+          ),
+      },
+    ]);
+  };
+
   if (loading) {
     return (
       <Center className="flex-1 bg-stone-50">
@@ -121,6 +146,16 @@ export default function GroupMembersScreen() {
   }
 
   return (
+    <>
+    {currentGroupId && reportUserId && (
+      <ReportDialog
+        visible
+        onClose={() => setReportUserId(null)}
+        groupId={currentGroupId}
+        contentType="profile"
+        contentId={reportUserId}
+      />
+    )}
     <ScrollView
       className="flex-1 bg-stone-50"
       contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
@@ -154,14 +189,31 @@ export default function GroupMembersScreen() {
                       </Text>
                     </VStack>
                   </HStack>
-                  {isAdmin && !isSelf && (
-                    <Pressable
-                      onPress={() => confirmRemove(member)}
-                      disabled={busyUser === member.userId}
-                      hitSlop={8}
-                    >
-                      <Ionicons name="trash-outline" size={20} color="#b91c1c" />
-                    </Pressable>
+                  {!isSelf && (
+                    <HStack space="md" className="items-center">
+                      <Pressable
+                        onPress={() => setReportUserId(member.userId)}
+                        hitSlop={8}
+                      >
+                        <Ionicons name="flag-outline" size={20} color="#a8a29e" />
+                      </Pressable>
+                      <Pressable onPress={() => toggleBlock(member)} hitSlop={8}>
+                        <Ionicons
+                          name={isBlocked(member.userId) ? "ban" : "ban-outline"}
+                          size={20}
+                          color={isBlocked(member.userId) ? "#b45309" : "#a8a29e"}
+                        />
+                      </Pressable>
+                      {isAdmin && (
+                        <Pressable
+                          onPress={() => confirmRemove(member)}
+                          disabled={busyUser === member.userId}
+                          hitSlop={8}
+                        >
+                          <Ionicons name="trash-outline" size={20} color="#b91c1c" />
+                        </Pressable>
+                      )}
+                    </HStack>
                   )}
                 </HStack>
 
@@ -197,5 +249,6 @@ export default function GroupMembersScreen() {
         })}
       </VStack>
     </ScrollView>
+    </>
   );
 }

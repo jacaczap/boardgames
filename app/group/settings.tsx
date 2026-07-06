@@ -181,6 +181,22 @@ export default function GroupSettingsScreen() {
                   </HStack>
                 </Pressable>
               )}
+              {isAdmin && (
+                <Pressable
+                  onPress={() => router.push("/group/moderation")}
+                  className="px-3 py-3 rounded-lg"
+                >
+                  <HStack space="sm" className="items-center justify-between">
+                    <HStack space="sm" className="items-center">
+                      <Ionicons name="flag-outline" size={20} color="#78716c" />
+                      <Text className="text-stone-700">
+                        {t("moderation.moderationTitle")}
+                      </Text>
+                    </HStack>
+                    <Ionicons name="chevron-forward" size={18} color="#a8a29e" />
+                  </HStack>
+                </Pressable>
+              )}
             </VStack>
           </Card>
 

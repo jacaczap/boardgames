@@ -4,7 +4,9 @@ import {
   RefreshControl,
   Platform,
   KeyboardAvoidingView,
+  Linking,
 } from "react-native";
+import { useRouter } from "expo-router";
 import { showAlert } from "@/lib/alert";
 import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
@@ -33,8 +35,12 @@ import {
   AvatarFallbackText,
 } from "@/components/ui/avatar";
 
+const SUPPORT_EMAIL = "jacaczap@gmail.com";
+const PRIVACY_URL = "https://jacaczap.github.io/boardgames/privacy/";
+
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
@@ -486,6 +492,60 @@ export default function ProfileScreen() {
           >
             <ButtonText>{loggingOut ? t("profile.loggingOut") : t("profile.logOut")}</ButtonText>
           </Button>
+
+          {/* Help & support */}
+          <Card variant="outline" className="p-4">
+            <VStack space="md">
+              <HStack space="xs" className="items-center">
+                <Ionicons name="help-circle-outline" size={20} color="#78716c" />
+                <Heading size="md">{t("support.title")}</Heading>
+              </HStack>
+              <Text size="sm" className="text-stone-500">
+                {t("support.desc")}
+              </Text>
+              <Pressable
+                onPress={() =>
+                  Linking.openURL(
+                    `mailto:${SUPPORT_EMAIL}?subject=${encodeURIComponent(
+                      t("auth.appName"),
+                    )}`,
+                  ).catch(() => {})
+                }
+                className="py-2"
+              >
+                <HStack space="sm" className="items-center justify-between">
+                  <HStack space="sm" className="items-center">
+                    <Ionicons name="mail-outline" size={20} color="#78716c" />
+                    <Text className="text-stone-700">{t("support.contact")}</Text>
+                  </HStack>
+                  <Ionicons name="chevron-forward" size={18} color="#a8a29e" />
+                </HStack>
+              </Pressable>
+              <Pressable
+                onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})}
+                className="py-2"
+              >
+                <HStack space="sm" className="items-center justify-between">
+                  <HStack space="sm" className="items-center">
+                    <Ionicons name="shield-checkmark-outline" size={20} color="#78716c" />
+                    <Text className="text-stone-700">{t("support.privacyPolicy")}</Text>
+                  </HStack>
+                  <Ionicons name="chevron-forward" size={18} color="#a8a29e" />
+                </HStack>
+              </Pressable>
+              <Pressable onPress={() => router.push("/blocked")} className="py-2">
+                <HStack space="sm" className="items-center justify-between">
+                  <HStack space="sm" className="items-center">
+                    <Ionicons name="ban-outline" size={20} color="#78716c" />
+                    <Text className="text-stone-700">
+                      {t("moderation.blockedUsersTitle")}
+                    </Text>
+                  </HStack>
+                  <Ionicons name="chevron-forward" size={18} color="#a8a29e" />
+                </HStack>
+              </Pressable>
+            </VStack>
+          </Card>
 
           {/* Danger zone */}
           <Card variant="outline" className="p-4 border-red-200">

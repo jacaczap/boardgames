@@ -1,6 +1,10 @@
-# BoardGames Meeting Planner
+# VoteNMeet
 
-A React Native (Expo) app for a friend group to coordinate board game meetings -- vote on dates and games, approve meetings, and get push notifications.
+A React Native (Expo) app for friend groups to coordinate meetings -- create or
+join a group, vote on dates and options, approve a meeting, and get push
+reminders. It's a generic meeting planner with a first-class **board-games mode**
+(shared game library, meeting history/stats, win streaks) as a permanent special
+feature.
 
 ## Tech Stack
 
@@ -13,10 +17,12 @@ A React Native (Expo) app for a friend group to coordinate board game meetings -
 
 ## Features
 
-- **Survey voting** -- date picker (weekends + Polish holidays + custom dates), game multi-select with 3-play streak logic, "not participating" option
-- **Meeting approval** -- pick date sorted by votes, pick game filtered by date voters, late join, edit/unapprove
-- **Board games CRUD** -- list with search, detail/edit/delete, image upload
-- **Profile** -- avatar upload, name edit, password change, notification preferences
+- **Groups** -- open self-signup, create or join a group via a shareable invite link, roles (admin / approver / member), per-group isolation
+- **Survey voting** -- date picker (weekends + Polish holidays + custom dates), vote on configurable options, "not participating" option
+- **Meeting approval** -- pick date sorted by votes, pick the winning option filtered by date voters, late join, edit/unapprove (gated to approvers/admins)
+- **Board-games mode** -- shared board-game library (list, search, detail/edit/delete, image upload), vote on which games to play, plus meeting history, stats, and win streaks
+- **Moderation** -- report content/members, block users, admin takedown of content/members
+- **Profile** -- avatar upload, name edit, password change, notification preferences, delete account + all data
 - **Push notifications** -- survey reminders, meeting reminders (via Supabase Edge Functions + Expo Push API)
 - **Realtime** -- live updates when meetings or votes change
 
@@ -24,14 +30,17 @@ A React Native (Expo) app for a friend group to coordinate board game meetings -
 
 ```
 app/                    # Expo Router screens
-  (auth)/login.tsx      # Login screen (no self-registration)
+  (auth)/               # Login, register, verify-email, forgot/reset password
+  onboarding.tsx        # Shown when user has no groups (create or join)
+  join/[code].tsx       # Invite deep-link landing (register-or-login then join)
+  group/                # Create, settings, members, invite, moderation
   (tabs)/
     index.tsx           # Home -- meeting card or survey CTA
-    games/              # Board games list, detail, new
+    games/              # Board-game library, detail, new
     profile.tsx         # Profile & notification settings
   survey/[id].tsx       # Survey voting screen
   approve/[id].tsx      # Meeting approval screen
-lib/                    # Shared utilities, types, Supabase client
+lib/                    # Shared utilities, types, Supabase client, groups context
 supabase/
   migrations/           # SQL schema, RLS, functions
   functions/            # Edge Functions (cron jobs, notifications)
@@ -103,9 +112,12 @@ in [docs/supabase-dev-setup.md](docs/supabase-dev-setup.md).
 
 In Supabase Dashboard > Authentication > Settings:
 
-- Disable email sign-ups (users created manually by admin)
+- Enable email sign-ups with **Confirm email** on (open self-signup)
 - Disable anonymous sign-in
 - Disable social/OAuth providers
+
+Full auth setup (redirect URLs for invite/reset deep links, SMTP) is in
+[docs/groups-setup.md](docs/groups-setup.md).
 
 ### 5. Configure Firebase (Android push notifications)
 
@@ -202,7 +214,7 @@ installs **alongside** the prod app — separate icon and data, no Metro needed.
 3. Build the APK: `npm run build:dev-standalone` (note the `.apk` path it prints).
 4. Install it: `adb install -r /path/to/build.apk`.
 
-"Planszówki (Dev)" then appears next to "Planszówki". `adb` ships with the
+"VoteNMeet (Dev)" then appears next to "VoteNMeet". `adb` ships with the
 Android SDK (`$HOME/Library/Android/sdk/platform-tools`); alternatively copy the
 APK to the phone and tap it (allow install from unknown sources).
 
@@ -217,13 +229,23 @@ which is backed by the DEV database (see step 8).
 - **Output directory**: `dist`
 - **Environment variables** (Vercel project Settings > Environment Variables):
   - `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` — the **PROD** project's URL + publishable key.
-  - `APP_ENV=production` — so the build uses the prod variant (app name `Planszówki` instead of `Planszówki (Dev)`). Without it the build defaults to `development`; the DB is unaffected either way (it always comes from the two vars above), but the name would show the dev label.
+  - `APP_ENV=production` — so the build uses the prod variant (app name `VoteNMeet` instead of `VoteNMeet (Dev)`). Without it the build defaults to `development`; the DB is unaffected either way (it always comes from the two vars above), but the name would show the dev label.
 
 ## Database
 
-All tables use Row Level Security. Key tables: `profiles`, `board_games`, `meetings`, `date_options`, `votes`, `vote_dates`, `vote_games`, `push_tokens`, `push_token_events`, `survey_reminder_log`.
+All tables use Row Level Security, scoped to group membership. Key tables:
+`groups`, `group_members`, `group_invites`, `profiles`, `board_games`,
+`meetings`, `date_options`, `votes`, `vote_dates`, `vote_games`,
+`content_reports`, `user_blocks`, `push_tokens`, `push_token_events`,
+`survey_reminder_log`, `rate_limit_log`, `app_config`.
 
-SQL functions: `create_next_survey()`, `get_consecutive_game_count()`, Polish holidays computation.
+Roles (`admin` / `approver` / `member`) and per-group scoping are enforced by RLS;
+abuse limits (member/free-group caps, per-user insert rate limits) run as triggers.
+
+SQL functions: `create_next_survey(group_id)`, `is_group_member()` /
+`is_group_admin()` / `can_approve()`, group onboarding/invite RPCs
+(`create_group`, `join_group_by_code`, `create_group_invite`), Polish holidays
+computation.
 
 ## Edge Functions
 
@@ -236,15 +258,18 @@ Scheduled (pg_cron):
 | `meeting-reminder` | Daily    | Notify attendees N days before meeting (per-user setting) |
 | `complete-meeting` | Daily    | Mark past approved meetings as completed                  |
 
-Trigger-based (fired by DB triggers on `meetings`, push to all users):
+Trigger-based (fired by DB triggers, push to the relevant group's members):
 
-| Function                   | Trigger                          | Purpose                          |
-| -------------------------- | -------------------------------- | -------------------------------- |
-| `notify-survey-created`    | New meeting in `voting` status   | "A new survey is available"      |
-| `notify-meeting-approved`  | Meeting transitions to `approved`| "Meeting approved for {date}"    |
-| `notify-meeting-unapproved`| Meeting reverts to `voting`      | "Meeting unapproved"             |
+| Function                    | Trigger                           | Purpose                          |
+| --------------------------- | --------------------------------- | -------------------------------- |
+| `notify-survey-created`     | New meeting in `voting` status    | "A new survey is available"      |
+| `notify-meeting-approved`   | Meeting transitions to `approved` | "Meeting approved for {date}"    |
+| `notify-meeting-unapproved` | Meeting reverts to `voting`       | "Meeting unapproved"             |
+| `notify-content-reported`   | New row in `content_reports`      | Alerts group admins of a report  |
 
-Push notifications sent via the Expo Push API (`functions/_shared/push.ts`) using tokens from `push_tokens`, read by Edge Functions via the `service_role` key.
+User-invoked: `delete-account` (GDPR self-service account + data deletion).
+
+Push notifications sent via the Expo Push API (`functions/_shared/push.ts`) using tokens from `push_tokens`, read by Edge Functions via the secret (`service_role`) key.
 
 
 ## Security

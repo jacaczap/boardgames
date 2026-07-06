@@ -25,6 +25,7 @@ import {
   setPendingInviteCode,
 } from "@/lib/groups";
 import { GroupProvider } from "@/lib/groupContext";
+import { BlockProvider } from "@/lib/moderation";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
 import UpdateRequiredScreen from "@/components/UpdateRequiredScreen";
 import { showAlert } from "@/lib/alert";
@@ -370,6 +371,7 @@ export default function RootLayout() {
   return (
     <GluestackUIProvider>
       <GroupProvider>
+      <BlockProvider>
       <View style={isWeb ? webStyles.outer : appStyles.root}>
         <View style={isWeb ? webStyles.inner : appStyles.root}>
           <Stack screenOptions={{ headerShown: false }}>
@@ -383,6 +385,8 @@ export default function RootLayout() {
               { name: "group/settings", title: t("groups.settingsTitle") },
               { name: "group/members", title: t("groups.membersTitle") },
               { name: "group/invite", title: t("groups.inviteTitle") },
+              { name: "group/moderation", title: t("moderation.moderationTitle") },
+              { name: "blocked", title: t("moderation.blockedUsersTitle") },
             ].map((s) => (
               <Stack.Screen
                 key={s.name}
@@ -440,6 +444,7 @@ export default function RootLayout() {
           </Stack>
         </View>
       </View>
+      </BlockProvider>
       </GroupProvider>
     </GluestackUIProvider>
   );

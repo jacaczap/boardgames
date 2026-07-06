@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Privacy Policy — Planszówki</title>
+  <title>Privacy Policy — VoteNMeet</title>
   <style>
     :root {
       --bg: #fdf8f0;
@@ -50,26 +50,31 @@
 <body>
   <main>
     <h1>Privacy Policy</h1>
-    <p class="sub"><strong>Planszówki (BoardGames Meeting Planner)</strong></p>
-    <p class="updated"><em>Last updated: July 3, 2026</em></p>
+    <p class="sub"><strong>VoteNMeet</strong></p>
+    <p class="updated"><em>Last updated: July 6, 2026</em></p>
 
     <h2>Overview</h2>
-    <p>Planszówki is a private, invite-only app for coordinating board game
-      meetings among a friend group. This policy describes what data we collect,
-      how we use it, and your rights.</p>
+    <p>VoteNMeet is an app for coordinating group meetings: you create or join a
+      group, vote on dates and options, and get reminders. Anyone can register and
+      create a group; joining an existing group requires an invite link from that
+      group. This policy describes what data we collect, how we use it, and your
+      rights.</p>
 
     <h2>Data We Collect</h2>
 
     <h3>Account Information</h3>
     <ul>
-      <li>Email address and display name (provided during admin-created account setup)</li>
-      <li>Profile avatar (optionally uploaded by you)</li>
+      <li>Email address and password (you set these when you register)</li>
+      <li>Display name (first name / surname) you provide</li>
+      <li>Profile avatar (optional, uploaded by you)</li>
     </ul>
 
-    <h3>App Usage Data</h3>
+    <h3>Group &amp; Usage Data</h3>
     <ul>
-      <li>Meeting votes (date and game preferences)</li>
-      <li>Board game entries you create or edit (including uploaded images)</li>
+      <li>Groups you create or join, and your role in them</li>
+      <li>Meeting votes (your date and option preferences)</li>
+      <li>Content you create inside a group (e.g. game/option entries,
+        descriptions, and images you upload)</li>
     </ul>
 
     <h3>Device Data</h3>
@@ -83,31 +88,56 @@
 
     <h3>Photos Access</h3>
     <p>With your permission, the app accesses your photo library solely for
-      uploading game images or profile avatars. No photos are accessed without
-      your action.</p>
+      uploading images or your avatar. No photos are accessed without your
+      action.</p>
 
     <h2>How We Use Your Data</h2>
     <ul>
-      <li><strong>Coordinate meetings</strong> — display votes, approve dates, select games</li>
-      <li><strong>Send notifications</strong> — survey reminders, meeting reminders</li>
-      <li><strong>Display your profile</strong> — name and avatar visible to other group members</li>
+      <li><strong>Coordinate meetings</strong> — display votes, approve dates, select options</li>
+      <li><strong>Manage groups</strong> — membership, roles, and invites</li>
+      <li><strong>Send notifications</strong> — survey and meeting reminders, and
+        alerts to group admins about reported content</li>
+      <li><strong>Display your profile</strong> — name and avatar visible to other
+        members of your groups</li>
     </ul>
     <p>We do <strong>not</strong>:</p>
     <ul>
-      <li>Sell or share your data with third parties</li>
-      <li>Use your data for advertising or analytics</li>
+      <li>Sell or share your data with third parties for their own purposes</li>
+      <li>Use your data for advertising</li>
       <li>Track your location</li>
     </ul>
 
-    <h2>Data Storage</h2>
-    <p>All data is stored in <a href="https://supabase.com/">Supabase</a> (hosted
-      on AWS), protected by Row Level Security policies. Only authenticated group
-      members can access app data.</p>
+    <h2>Sharing &amp; Visibility</h2>
+    <p>Your name, avatar, votes, and the content you add are visible to other
+      members of the <strong>groups you belong to</strong>. Groups are private:
+      content is not public and is not shared across groups.</p>
 
-    <h2>Data Retention</h2>
-    <p>Your data is retained as long as your account exists. You may request
-      deletion of your account and all associated data by contacting the app
-      administrator.</p>
+    <h2>User Content &amp; Moderation</h2>
+    <p>You are responsible for the content you upload. We do not allow content that
+      is illegal, offensive, harassing, or otherwise inappropriate.</p>
+    <ul>
+      <li><strong>Report:</strong> any member can report a game/option, a member,
+        or a group from within the app. Reports are sent to that group's admins
+        for review.</li>
+      <li><strong>Block:</strong> you can block another user; you will no longer
+        see their name or avatar.</li>
+      <li><strong>Takedown:</strong> group admins can remove reported content and
+        remove members from their group.</li>
+    </ul>
+    <p>To report content or a user outside the app, contact us at the address
+      below.</p>
+
+    <h2>Data Storage</h2>
+    <p>Data is stored in <a href="https://supabase.com/">Supabase</a> (hosted on
+      AWS), protected by Row Level Security so only members of a group can access
+      that group's data. Passwords are handled by Supabase Auth and are not visible
+      to us.</p>
+
+    <h2>Data Retention &amp; Deletion</h2>
+    <p>Your data is retained while your account exists. You can <strong>delete your
+      account and all associated data at any time</strong> from
+      <strong>Profile → Delete account</strong> (removes your profile, group
+      memberships, votes, and uploads). You may also contact us for deletion.</p>
 
     <h2>Third-Party Services</h2>
     <table>
@@ -116,13 +146,15 @@
       </thead>
       <tbody>
         <tr><td>Supabase</td><td>Authentication, database, file storage, server functions</td></tr>
-        <tr><td>Expo Push Notifications</td><td>Delivering push notifications to your device</td></tr>
+        <tr><td>Expo Push Notifications</td><td>Delivering push notifications</td></tr>
+        <tr><td>Google Firebase Cloud Messaging</td><td>Android push notification delivery</td></tr>
       </tbody>
     </table>
     <p>These services have their own privacy policies:</p>
     <ul>
       <li><a href="https://supabase.com/privacy">Supabase Privacy Policy</a></li>
       <li><a href="https://expo.dev/privacy">Expo Privacy Policy</a></li>
+      <li><a href="https://policies.google.com/privacy">Google Privacy Policy</a></li>
     </ul>
 
     <h2>Children's Privacy</h2>
@@ -134,7 +166,7 @@
       use after changes constitutes acceptance.</p>
 
     <h2>Contact</h2>
-    <p>For questions or data deletion requests, contact:
+    <p>For questions, content reports, or data deletion requests, contact:
       <strong>jacaczap@gmail.com</strong></p>
   </main>
 </body>

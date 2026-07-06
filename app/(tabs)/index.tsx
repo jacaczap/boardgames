@@ -473,7 +473,7 @@ export default function HomeScreen() {
         const ics = [
           "BEGIN:VCALENDAR",
           "VERSION:2.0",
-          "PRODID:-//BoardGames//EN",
+          "PRODID:-//VoteNMeet//EN",
           "BEGIN:VEVENT",
           `DTSTART;VALUE=DATE:${dtstart}`,
           `DTEND;VALUE=DATE:${dtend}`,

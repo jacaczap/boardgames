@@ -5,7 +5,9 @@ import {
   StyleSheet,
   View,
 } from "react-native";
+import { useTranslation } from "react-i18next";
 import type { Profile } from "@/lib/types";
+import { useBlocks } from "@/lib/moderation";
 import {
   Avatar,
   AvatarImage,
@@ -35,27 +37,36 @@ interface UserAvatarProps {
 const UserAvatar: React.FC<UserAvatarProps> = React.memo(
   ({ profile, avatarUrls, size = "sm", showNameOnPress = true }) => {
     const [visible, setVisible] = useState(false);
+    const { t } = useTranslation();
+    const { isBlocked } = useBlocks();
 
-    const uri = profile.avatar_url
-      ? avatarUrls.get(profile.avatar_url)
-      : undefined;
+    const blocked = isBlocked(profile.id);
+
+    const uri =
+      !blocked && profile.avatar_url
+        ? avatarUrls.get(profile.avatar_url)
+        : undefined;
 
     const onPress = useCallback(() => setVisible(true), []);
     const onDismiss = useCallback(() => setVisible(false), []);
+
+    const initials = blocked ? "—" : getInitials(profile);
 
     const avatar = (
       <Avatar size={size}>
         {uri ? (
           <AvatarImage source={{ uri, cacheKey: profile.avatar_url ?? undefined }} />
         ) : (
-          <AvatarFallbackText>{getInitials(profile)}</AvatarFallbackText>
+          <AvatarFallbackText>{initials}</AvatarFallbackText>
         )}
       </Avatar>
     );
 
     if (!showNameOnPress) return avatar;
 
-    const displayName = getDisplayName(profile);
+    const displayName = blocked
+      ? t("moderation.blockedUser")
+      : getDisplayName(profile);
 
     return (
       <>
@@ -76,9 +87,7 @@ const UserAvatar: React.FC<UserAvatarProps> = React.memo(
                   {uri ? (
                     <AvatarImage source={{ uri, cacheKey: profile.avatar_url ?? undefined }} />
                   ) : (
-                    <AvatarFallbackText>
-                      {getInitials(profile)}
-                    </AvatarFallbackText>
+                    <AvatarFallbackText>{initials}</AvatarFallbackText>
                   )}
                 </Avatar>
                 <Text size="lg" className="font-semibold text-stone-800">

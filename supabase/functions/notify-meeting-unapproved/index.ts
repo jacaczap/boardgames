@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendPushNotifications } from "../_shared/push.ts";
 import type { PushMessage } from "../_shared/push.ts";
+import { getGroupMemberIds, getTokensForUsers } from "../_shared/groups.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -16,7 +17,7 @@ Deno.serve(async (req) => {
 
     const { data: meeting } = await supabase
       .from("meetings")
-      .select("number")
+      .select("group_id, number")
       .eq("id", meetingId)
       .single();
 
@@ -24,11 +25,14 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Meeting not found" }, { status: 404 });
     }
 
-    const { data: tokens } = await supabase
-      .from("push_tokens")
-      .select("token");
+    if (!meeting.group_id) {
+      return Response.json({ message: "Meeting has no group" });
+    }
 
-    if (!tokens?.length) {
+    const memberIds = await getGroupMemberIds(supabase, meeting.group_id);
+    const tokens = await getTokensForUsers(supabase, memberIds);
+
+    if (!tokens.length) {
       return Response.json({ message: "No tokens" });
     }
 
