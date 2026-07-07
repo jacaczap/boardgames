@@ -36,7 +36,11 @@ export default function GroupSwitcher() {
         hitSlop={8}
       >
         <HStack space="xs" className="items-center">
-          <Ionicons name="people" size={18} color="#fef3c7" />
+          {currentGroup?.icon ? (
+            <Text style={{ fontSize: 18 }}>{currentGroup.icon}</Text>
+          ) : (
+            <Ionicons name="people" size={18} color="#fef3c7" />
+          )}
           <Text
             className="text-amber-100 font-medium"
             numberOfLines={1}
@@ -70,17 +74,25 @@ export default function GroupSwitcher() {
                     className={`rounded-lg px-3 py-3 ${active ? "bg-amber-100" : ""}`}
                   >
                     <HStack space="sm" className="items-center justify-between">
-                      <VStack className="flex-1">
-                        <Text
-                          className={active ? "text-amber-800 font-semibold" : "text-stone-800"}
-                          numberOfLines={1}
-                        >
-                          {g.groupName}
-                        </Text>
-                        <Text size="xs" className="text-stone-400">
-                          {t(`groups.role.${g.role}`)}
-                        </Text>
-                      </VStack>
+                      <HStack space="sm" className="items-center flex-1">
+                        {g.icon ? (
+                          <Text style={{ fontSize: 22 }}>{g.icon}</Text>
+                        ) : (
+                          <Ionicons name="people" size={20} color="#a8a29e" />
+                        )}
+                        <VStack className="flex-1">
+                          <Text
+                            size="lg"
+                            className={active ? "text-amber-800 font-semibold" : "text-stone-800 font-medium"}
+                            numberOfLines={1}
+                          >
+                            {g.groupName}
+                          </Text>
+                          <Text size="xs" className="text-stone-400">
+                            {t(`groups.role.${g.role}`)}
+                          </Text>
+                        </VStack>
+                      </HStack>
                       {active && (
                         <Ionicons name="checkmark-circle" size={20} color="#b45309" />
                       )}

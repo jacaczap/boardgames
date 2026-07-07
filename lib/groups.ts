@@ -1,6 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
+import Constants from "expo-constants";
 import { supabase } from "./supabase";
+
+// Canonical public web origin (prod), e.g. https://votenmeet.vercel.app.
+const WEB_URL = (Constants.expoConfig?.extra?.webUrl as string | undefined) ?? null;
 
 const PENDING_INVITE_KEY = "pending_invite_code";
 
@@ -12,9 +16,19 @@ export interface GroupPreview {
 
 export type GroupRole = "admin" | "approver" | "member";
 
+// Curated set of built-in emojis a group admin can pick as the group icon.
+// Kept as plain text so no image assets are needed. The first entry (empty
+// string) means "no custom icon" and falls back to the default people icon.
+export const GROUP_ICONS = [
+  "🎲", "🃏", "🀄", "♟️", "🎮", "🕹️", "🧩", "🎯",
+  "🎰", "🎳", "🏆", "🥇", "🍕", "🍻", "🎉", "🔥",
+  "⭐", "❤️", "🚀", "🐉", "🦄", "🦊", "🐺", "🌙",
+] as const;
+
 export interface GroupMembership {
   groupId: string;
   groupName: string;
+  icon: string | null;
   role: GroupRole;
   tier: string;
   memberLimit: number;
@@ -55,7 +69,7 @@ export async function getMembershipCount(userId: string): Promise<number> {
 export async function listGroups(userId: string): Promise<GroupMembership[]> {
   const { data, error } = await supabase
     .from("group_members")
-    .select("role, joined_at, groups(id, name, tier, member_limit)")
+    .select("role, joined_at, groups(id, name, icon, tier, member_limit)")
     .eq("user_id", userId)
     .order("joined_at", { ascending: true });
 
@@ -68,6 +82,7 @@ export async function listGroups(userId: string): Promise<GroupMembership[]> {
       return {
         groupId: g.id as string,
         groupName: g.name as string,
+        icon: (g.icon as string | null) ?? null,
         role: row.role as GroupRole,
         tier: g.tier as string,
         memberLimit: g.member_limit as number,
@@ -108,11 +123,14 @@ export async function joinGroupByCode(code: string): Promise<string> {
 
 // --- Group management (admin actions gated by RLS) --------------------------
 
-export async function renameGroup(groupId: string, name: string): Promise<void> {
-  const { error } = await supabase
-    .from("groups")
-    .update({ name: name.trim() })
-    .eq("id", groupId);
+export async function updateGroup(
+  groupId: string,
+  updates: { name?: string; icon?: string | null },
+): Promise<void> {
+  const patch: { name?: string; icon?: string | null } = {};
+  if (updates.name !== undefined) patch.name = updates.name.trim();
+  if (updates.icon !== undefined) patch.icon = updates.icon || null;
+  const { error } = await supabase.from("groups").update(patch).eq("id", groupId);
   if (error) throw error;
 }
 
@@ -212,8 +230,11 @@ export async function createInvite(groupId: string): Promise<GroupInvite> {
   return { code: row.code as string, expiresAt: row.expires_at as string };
 }
 
-// Shareable invite URL for a group invite code (deep link + web).
+// Shareable invite URL for a group invite code. Prefer the canonical https web
+// URL so the link works for web users and, on Android, opens the app via a
+// verified App Link. Falls back to the custom scheme in dev (no web origin set).
 export function buildInviteUrl(code: string): string {
+  if (WEB_URL) return `${WEB_URL.replace(/\/$/, "")}/join/${code}`;
   return Linking.createURL(`join/${code}`);
 }
 

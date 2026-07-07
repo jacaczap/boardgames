@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { setLanguagePreference } from "@/lib/i18n";
 import { clearPushToken } from "@/lib/notifications";
-import { deleteAccount } from "@/lib/account";
+import { deleteAccount, AdminOfGroupError } from "@/lib/account";
 import { useSignedUrl, pickAndUploadImage, removeStorageFile } from "@/lib/storage";
 import type { Profile } from "@/lib/types";
 
@@ -234,7 +234,21 @@ export default function ProfileScreen() {
     ]);
   };
 
-  const handleDeleteAccount = () => {
+  const handleDeleteAccount = async () => {
+    if (profile) {
+      const { count } = await supabase
+        .from("group_members")
+        .select("group_id", { count: "exact", head: true })
+        .eq("user_id", profile.id)
+        .eq("role", "admin");
+      if (count && count > 0) {
+        showAlert(
+          t("profile.cannotDeleteAdminTitle"),
+          t("profile.cannotDeleteAdminMessage"),
+        );
+        return;
+      }
+    }
     showAlert(t("profile.deleteConfirmTitle"), t("profile.deleteConfirmMessage"), [
       { text: t("common.cancel"), style: "cancel" },
       {
@@ -249,6 +263,13 @@ export default function ProfileScreen() {
             await deleteAccount();
           } catch (e: any) {
             setDeletingAccount(false);
+            if (e instanceof AdminOfGroupError) {
+              showAlert(
+                t("profile.cannotDeleteAdminTitle"),
+                t("profile.cannotDeleteAdminMessage"),
+              );
+              return;
+            }
             showAlert(t("common.error"), e?.message ?? t("profile.failedDelete"));
           }
         },

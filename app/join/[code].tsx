@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ScrollView } from "react-native";
+import { ScrollView, Platform } from "react-native";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { showAlert } from "@/lib/alert";
 import { useTranslation } from "react-i18next";
@@ -12,6 +12,7 @@ import {
   signalMembershipChanged,
   type GroupPreview,
 } from "@/lib/groups";
+import { useGroup } from "@/lib/groupContext";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
@@ -28,11 +29,27 @@ export default function JoinScreen() {
   const { t } = useTranslation();
   const router = useRouter();
   const { code } = useLocalSearchParams<{ code: string }>();
+  const { groups, setCurrentGroup } = useGroup();
 
   const [loading, setLoading] = useState(true);
   const [preview, setPreview] = useState<GroupPreview | null>(null);
   const [hasSession, setHasSession] = useState(false);
   const [joining, setJoining] = useState(false);
+
+  // On the web app opened in an Android browser, offer (don't force) opening the
+  // native app. Verified App Links already handle links tapped from outside a
+  // browser; this covers same-domain navigation where they don't fire.
+  const isAndroidWeb =
+    Platform.OS === "web" &&
+    typeof navigator !== "undefined" &&
+    /Android/i.test(navigator.userAgent);
+  const [showAppPrompt, setShowAppPrompt] = useState(isAndroidWeb);
+
+  const openInApp = () => {
+    if (typeof window !== "undefined") {
+      window.location.href = `boardgames://join/${code}`;
+    }
+  };
 
   // Remember the code so the register/login detour can return here.
   useEffect(() => {
@@ -80,6 +97,16 @@ export default function JoinScreen() {
     router.replace(hasSession ? "/(tabs)" : "/(auth)/login");
   };
 
+  const alreadyMember =
+    !!preview && groups.some((g) => g.groupId === preview.groupId);
+
+  const goToGroup = async () => {
+    if (preview) setCurrentGroup(preview.groupId);
+    await clearPendingInviteCode();
+    signalMembershipChanged();
+    router.replace("/(tabs)");
+  };
+
   const handleJoin = async () => {
     if (!code) return;
     setJoining(true);
@@ -104,6 +131,46 @@ export default function JoinScreen() {
       <Center className="flex-1 bg-stone-50">
         <Spinner />
       </Center>
+    );
+  }
+
+  if (showAppPrompt && preview && !preview.expired) {
+    return (
+      <ScrollView
+        className="flex-1 bg-stone-50"
+        contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 24 }}
+      >
+        <VStack space="xl">
+          <Center>
+            <Ionicons name="phone-portrait-outline" size={64} color="#b45309" />
+          </Center>
+          <Heading size="2xl" className="text-center">
+            {t("join.openInAppTitle")}
+          </Heading>
+          <Text className="text-center text-stone-600">
+            {t("join.openInAppMessage")}
+          </Text>
+          <VStack space="lg">
+            <Button
+              action="primary"
+              size="lg"
+              onPress={openInApp}
+              className="rounded-lg"
+            >
+              <ButtonText>{t("join.openInApp")}</ButtonText>
+            </Button>
+            <Button
+              action="primary"
+              variant="outline"
+              size="lg"
+              onPress={() => setShowAppPrompt(false)}
+              className="rounded-lg"
+            >
+              <ButtonText>{t("join.continueInBrowser")}</ButtonText>
+            </Button>
+          </VStack>
+        </VStack>
+      </ScrollView>
     );
   }
 
@@ -136,6 +203,20 @@ export default function JoinScreen() {
           <Text className="text-center text-stone-600">
             {t("join.expiredMessage")}
           </Text>
+        ) : hasSession && alreadyMember ? (
+          <VStack space="lg">
+            <Text className="text-center text-stone-600">
+              {t("join.alreadyMember", { name: preview!.groupName })}
+            </Text>
+            <Button
+              action="primary"
+              size="lg"
+              onPress={goToGroup}
+              className="rounded-lg"
+            >
+              <ButtonText>{t("join.goToGroup")}</ButtonText>
+            </Button>
+          </VStack>
         ) : hasSession ? (
           <VStack space="lg">
             <Text className="text-center text-stone-600">

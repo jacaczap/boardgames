@@ -99,6 +99,8 @@ const en = {
       "This invite link has expired. Ask your friend for a new one.",
     joinPrompt: "You've been invited to join \"{{name}}\".",
     signInPrompt: "Log in or sign up to join \"{{name}}\".",
+    alreadyMember: "You're already a member of \"{{name}}\".",
+    goToGroup: "Go to group",
     joinButton: "Join",
     joining: "Joining...",
     joinFailed: "Failed to join group",
@@ -108,6 +110,11 @@ const en = {
     signUp: "Sign up",
     goBack: "Back",
     notNow: "Not now",
+    openInAppTitle: "Open in app?",
+    openInAppMessage:
+      "You have the VoteNMeet app installed. Open this invite there, or keep going in your browser.",
+    openInApp: "Open in app",
+    continueInBrowser: "Continue in browser",
   },
 
   groups: {
@@ -135,12 +142,16 @@ const en = {
     membersTitle: "Members",
     inviteTitle: "Invite link",
     nameLabel: "Group name",
-    renameSaved: "Group name updated.",
+    iconLabel: "Group icon",
+    renameSaved: "Group updated.",
     renameFailed: "Failed to rename group",
     leave: "Leave group",
     leaveTitle: "Leave group?",
     leaveConfirm: "You will lose access to this group's meetings and games.",
     leaveFailed: "Failed to leave group",
+    cannotLeaveAdminTitle: "Cannot leave group",
+    cannotLeaveAdminMessage:
+      "You are an admin of this group. Promote another user to admin or delete the group first.",
     deleteGroup: "Delete group",
     deleteTitle: "Delete group?",
     deleteConfirm:
@@ -258,6 +269,9 @@ const en = {
       "This permanently deletes your account, profile, group memberships and votes. This cannot be undone.",
     deleting: "Deleting...",
     failedDelete: "Failed to delete account",
+    cannotDeleteAdminTitle: "Cannot delete account",
+    cannotDeleteAdminMessage:
+      "You are an admin of at least one group. Promote another user to admin or delete the group first.",
   },
 
   games: {

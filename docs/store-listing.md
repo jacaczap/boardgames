@@ -1,14 +1,6 @@
 # Play Store listing — VoteNMeet
 
-Copy for the Google Play listing, in both **English** and **Polish**. Paste into
-Play Console → **Grow → Store presence → Main store listing** (per language).
-
-- **App name:** VoteNMeet
-- **Short description:** max 80 characters.
-- **Full description:** max 4000 characters.
-
-Keep this in sync with the app name in [app.config.ts](../app.config.ts) and the
-in-app copy.
+Paste into Play Console → **Grow → Store presence → Main store listing** (per language). App name: **VoteNMeet**. Short desc max 80 chars; full desc max 4000. Keep in sync with [app.config.ts](../app.config.ts) + in-app copy.
 
 ---
 
@@ -90,14 +82,12 @@ in-app copy.
 
 ---
 
-## Screenshots (must be redone for the rebrand)
+## Screenshots
 
-The previous screenshots show the old "Planszówki" board-games branding. **Redo
-all Play screenshots** (phone + any tablet sets, per language) to reflect:
+Redo all screenshots (phone + tablet, en + pl), showing:
 
-- the new **VoteNMeet** name and icon,
-- the new home / survey / group screens,
-- at least one shot of **board-game mode** (game library + history/stats),
-- English **and** Polish sets.
+- new VoteNMeet name + icon,
+- home / survey / group screens,
+- one board-game mode shot (library + history/stats).
 
-Capture on device/emulator, then upload under each language's store listing.
+Capture on device/emulator, upload under each language's listing.

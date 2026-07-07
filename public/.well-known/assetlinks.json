@@ -1,0 +1,11 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.jacaczap.boardgames",
+      "sha256_cert_fingerprints":
+        ["15:8B:AD:B0:95:C4:7E:86:FF:00:40:C2:3E:D8:D4:C5:2B:23:3E:E7:D6:78:F6:05:35:AA:C9:0F:15:C8:57:B6"]
+    }
+  }
+]

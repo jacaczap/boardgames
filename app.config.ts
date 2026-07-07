@@ -29,6 +29,14 @@ const variant = IS_DEV
       packageId: "com.jacaczap.boardgames",
     };
 
+// Canonical public web origin. Used to build shareable invite links that work
+// everywhere (web + Android App Links) instead of the custom scheme. Only set
+// for prod so dev falls back to the local origin / custom scheme.
+const webUrl =
+  process.env.EXPO_PUBLIC_WEB_URL ??
+  (USE_PROD_DB ? "https://votenmeet.vercel.app" : undefined);
+const webHost = webUrl ? webUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : undefined;
+
 // Single project-level file holds both the prod and dev Android clients; the
 // Google Services Gradle plugin selects the entry matching the built package id.
 const googleServicesFile = "./google-services.json";
@@ -65,6 +73,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "android.permission.READ_CALENDAR",
       "android.permission.WRITE_CALENDAR",
     ],
+    // Verified App Link: tapping an https invite link on a device with the app
+    // installed opens the app directly. Requires assetlinks.json hosted at the
+    // web domain (see docs/groups-setup.md). Only prod declares a webHost.
+    ...(webHost && {
+      intentFilters: [
+        {
+          action: "VIEW",
+          autoVerify: true,
+          data: [{ scheme: "https", host: webHost, pathPrefix: "/join" }],
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ],
+    }),
   },
   web: {
     favicon: "./assets/favicon.png",
@@ -101,6 +122,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     supabaseUrl,
     supabaseKey,
+    webUrl,
   },
 });
 

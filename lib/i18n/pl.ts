@@ -99,6 +99,8 @@ const pl = {
       "Ten link z zaproszeniem wygasł. Poproś znajomego o nowy.",
     joinPrompt: "Zaproszono Cię do grupy \"{{name}}\".",
     signInPrompt: "Zaloguj się lub zarejestruj, aby dołączyć do \"{{name}}\".",
+    alreadyMember: "Jesteś już członkiem grupy \"{{name}}\".",
+    goToGroup: "Przejdź do grupy",
     joinButton: "Dołącz",
     joining: "Dołączanie...",
     joinFailed: "Nie udało się dołączyć do grupy",
@@ -108,6 +110,11 @@ const pl = {
     signUp: "Zarejestruj się",
     goBack: "Wróć",
     notNow: "Nie teraz",
+    openInAppTitle: "Otworzyć w aplikacji?",
+    openInAppMessage:
+      "Masz zainstalowaną aplikację VoteNMeet. Otwórz to zaproszenie w aplikacji lub zostań w przeglądarce.",
+    openInApp: "Otwórz w aplikacji",
+    continueInBrowser: "Zostań w przeglądarce",
   },
 
   groups: {
@@ -135,12 +142,16 @@ const pl = {
     membersTitle: "Członkowie",
     inviteTitle: "Link z zaproszeniem",
     nameLabel: "Nazwa grupy",
-    renameSaved: "Nazwa grupy zaktualizowana.",
+    iconLabel: "Ikona grupy",
+    renameSaved: "Grupa zaktualizowana.",
     renameFailed: "Nie udało się zmienić nazwy grupy",
     leave: "Opuść grupę",
     leaveTitle: "Opuścić grupę?",
     leaveConfirm: "Stracisz dostęp do spotkań i gier tej grupy.",
     leaveFailed: "Nie udało się opuścić grupy",
+    cannotLeaveAdminTitle: "Nie można opuścić grupy",
+    cannotLeaveAdminMessage:
+      "Jesteś administratorem tej grupy. Najpierw awansuj innego użytkownika na administratora lub usuń grupę.",
     deleteGroup: "Usuń grupę",
     deleteTitle: "Usunąć grupę?",
     deleteConfirm:
@@ -258,6 +269,9 @@ const pl = {
       "To trwale usunie Twoje konto, profil, członkostwa w grupach i głosy. Tej operacji nie można cofnąć.",
     deleting: "Usuwanie...",
     failedDelete: "Nie udało się usunąć konta",
+    cannotDeleteAdminTitle: "Nie można usunąć konta",
+    cannotDeleteAdminMessage:
+      "Jesteś administratorem co najmniej jednej grupy. Najpierw awansuj innego użytkownika na administratora lub usuń grupę.",
   },
 
   games: {

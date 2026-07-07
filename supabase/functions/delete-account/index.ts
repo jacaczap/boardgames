@@ -6,6 +6,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Deleting the auth user cascades to profiles -> group_members / votes /
 // push_tokens. Group-owned rows (board_games / meetings) are not personal data
 // and stay with their group.
+// Blocked while the user is an admin of any group, so groups are never left
+// leaderless — they must promote another admin or delete the group first.
 Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -27,6 +29,21 @@ Deno.serve(async (req) => {
 
     if (userError || !user) {
       return Response.json({ error: "Invalid session" }, { status: 401 });
+    }
+
+    // Refuse if the user still admins any group (would leave it leaderless).
+    const { count: adminCount, error: adminError } = await admin
+      .from("group_members")
+      .select("group_id", { count: "exact", head: true })
+      .eq("user_id", user.id)
+      .eq("role", "admin");
+
+    if (adminError) {
+      return Response.json({ error: adminError.message }, { status: 500 });
+    }
+
+    if (adminCount && adminCount > 0) {
+      return Response.json({ error: "admin_of_group" }, { status: 409 });
     }
 
     // Remove the user's owned upload (avatar) before deleting the profile row.

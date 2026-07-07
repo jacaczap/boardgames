@@ -7,10 +7,11 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { useGroup } from "@/lib/groupContext";
 import {
-  renameGroup,
+  updateGroup,
   deleteGroup,
   leaveGroup,
   signalMembershipChanged,
+  GROUP_ICONS,
 } from "@/lib/groups";
 
 import { VStack } from "@/components/ui/vstack";
@@ -30,17 +31,32 @@ export default function GroupSettingsScreen() {
   const isAdmin = currentGroup?.role === "admin";
 
   const [name, setName] = useState(currentGroup?.groupName ?? "");
+  const [icon, setIcon] = useState<string | null>(currentGroup?.icon ?? null);
   const [saving, setSaving] = useState(false);
   const [busy, setBusy] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+  const [memberCount, setMemberCount] = useState<number | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUserId(data.user?.id ?? null));
   }, []);
 
   useEffect(() => {
+    if (!currentGroupId) return;
+    supabase
+      .from("group_members")
+      .select("user_id", { count: "exact", head: true })
+      .eq("group_id", currentGroupId)
+      .then(({ count }) => setMemberCount(count ?? null));
+  }, [currentGroupId]);
+
+  useEffect(() => {
     setName(currentGroup?.groupName ?? "");
   }, [currentGroup?.groupName]);
+
+  useEffect(() => {
+    setIcon(currentGroup?.icon ?? null);
+  }, [currentGroup?.icon]);
 
   if (!currentGroupId || !currentGroup) {
     return (
@@ -62,7 +78,7 @@ export default function GroupSettingsScreen() {
     );
   }
 
-  const handleRename = async () => {
+  const handleSave = async () => {
     const trimmed = name.trim();
     if (!trimmed) {
       showAlert(t("common.error"), t("onboarding.nameRequired"));
@@ -70,7 +86,7 @@ export default function GroupSettingsScreen() {
     }
     setSaving(true);
     try {
-      await renameGroup(currentGroupId, trimmed);
+      await updateGroup(currentGroupId, { name: trimmed, icon });
       signalMembershipChanged();
       await refresh();
       showAlert(t("profile.savedTitle"), t("groups.renameSaved"));
@@ -97,6 +113,13 @@ export default function GroupSettingsScreen() {
   };
 
   const handleLeave = () => {
+    if (isAdmin) {
+      showAlert(
+        t("groups.cannotLeaveAdminTitle"),
+        t("groups.cannotLeaveAdminMessage"),
+      );
+      return;
+    }
     showAlert(t("groups.leaveTitle"), t("groups.leaveConfirm"), [
       { text: t("common.cancel"), style: "cancel" },
       { text: t("groups.leave"), style: "destructive", onPress: doLeave },
@@ -124,7 +147,9 @@ export default function GroupSettingsScreen() {
     ]);
   };
 
-  const hasNameChange = name.trim() !== currentGroup.groupName;
+  const hasChanges =
+    name.trim() !== currentGroup.groupName ||
+    (icon ?? null) !== (currentGroup.icon ?? null);
 
   return (
     <KeyboardAvoidingView
@@ -143,11 +168,44 @@ export default function GroupSettingsScreen() {
               <Input variant="outline" isDisabled={!isAdmin} className="rounded-lg">
                 <InputField value={name} onChangeText={setName} editable={isAdmin} />
               </Input>
+
+              <Text size="sm" className="text-stone-500">
+                {t("groups.iconLabel")}
+              </Text>
+              <HStack space="sm" className="flex-wrap">
+                <Pressable
+                  onPress={() => isAdmin && setIcon(null)}
+                  disabled={!isAdmin}
+                  className={`w-11 h-11 rounded-lg items-center justify-center border ${
+                    icon ? "border-stone-200 bg-white" : "border-amber-500 bg-amber-100"
+                  }`}
+                >
+                  <Ionicons name="people" size={20} color="#78716c" />
+                </Pressable>
+                {GROUP_ICONS.map((emoji) => {
+                  const selected = icon === emoji;
+                  return (
+                    <Pressable
+                      key={emoji}
+                      onPress={() => isAdmin && setIcon(emoji)}
+                      disabled={!isAdmin}
+                      className={`w-11 h-11 rounded-lg items-center justify-center border ${
+                        selected
+                          ? "border-amber-500 bg-amber-100"
+                          : "border-stone-200 bg-white"
+                      }`}
+                    >
+                      <Text style={{ fontSize: 22 }}>{emoji}</Text>
+                    </Pressable>
+                  );
+                })}
+              </HStack>
+
               {isAdmin && (
                 <Button
                   action="primary"
-                  onPress={handleRename}
-                  isDisabled={saving || !hasNameChange}
+                  onPress={handleSave}
+                  isDisabled={saving || !hasChanges}
                 >
                   <ButtonText>
                     {saving ? t("common.saving") : t("common.saveChanges")}
@@ -220,14 +278,16 @@ export default function GroupSettingsScreen() {
                   {t("profile.dangerZone")}
                 </Heading>
               </HStack>
-              <Button
-                action="negative"
-                variant="outline"
-                isDisabled={busy || !userId}
-                onPress={handleLeave}
-              >
-                <ButtonText>{t("groups.leave")}</ButtonText>
-              </Button>
+              {memberCount !== 1 && (
+                <Button
+                  action="negative"
+                  variant="outline"
+                  isDisabled={busy || !userId}
+                  onPress={handleLeave}
+                >
+                  <ButtonText>{t("groups.leave")}</ButtonText>
+                </Button>
+              )}
               {isAdmin && (
                 <Button
                   action="negative"

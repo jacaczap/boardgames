@@ -1,124 +1,84 @@
-# Groups & self-signup setup (Phase 1 finalization)
+# Groups & self-signup setup
 
-One-time, manual steps to run **once, at the very end of Phase 1**, after all
-Phase-1 code is merged and before any release. Code + migrations are already in
-the repo; this only covers what can't be done in code.
+One-time manual steps. Run each on **DEV first** (verify), then **PROD**.
 
-Run it against **DEV first** (verify), then repeat the same steps on **PROD**.
+> Any Phase-1 change that adds a manual step must add it here.
 
-> Keep this guide complete: any Phase-1 change that adds a manual step must add it
-> here in the same change.
+## Order (breaking change)
 
-## Release ordering (breaking change — read first)
+1. Run all steps on DEV.
+2. `npm run build:prod` → publish to **internal** track → smoke-test ([play-tracks-setup.md](play-tracks-setup.md) §1).
+3. Run §1 below on PROD (migration + `min_version` → 1.1.0).
+4. Promote internal → closed.
+5. Do §2–§8 on PROD.
 
-Phase 1 is a **breaking** backend change: the RLS rewrite requires group
-membership and `group_id` is now `NOT NULL`, so a pre-1.1.0 install can no longer
-create games or approve meetings against the migrated schema. The app `version`
-is bumped to **1.1.0** and a migration raises `app_config.min_version` to
-**1.1.0**, so older native installs get the "Update required" screen instead of
-failing silently.
-
-Because closed-testing users run the **old** build against **PROD**, order the
-PROD run so an updatable build exists before the migration locks them out:
-
-1. **DEV first:** run every step below on DEV (a fresh project — the data
-   migration and version gate are no-ops there) to rehearse.
-2. **Build + ship 1.1.0:** `npm run build:prod`, publish to the **internal**
-   track and smoke-test (see [play-tracks-setup.md](play-tracks-setup.md) §1).
-3. **PROD backend (§1 below):** this push applies the schema migration **and**
-   the `min_version` → 1.1.0 raise together — old installs now show "Update
-   required".
-4. **Promote internal → closed:** testers update to 1.1.0 and are back in.
-5. Finish the remaining PROD steps below (SMTP, privacy URL, store listing,
-   content rating).
-
-Merging to `master` also auto-deploys the web app (Vercel); web is always current
-and exempt from the gate, so nothing extra is needed there.
-
-## 1. Deploy the backend
-
-Pushes the Phase-1 migrations (groups schema, `group_id` columns, membership
-RLS, abuse-limit triggers, onboarding/join RPCs, data migration, `min_version` →
-1.1.0 bump) and the new `delete-account` edge function.
+## 1. Deploy backend
 
 ```bash
-npm run supabase:setup:dev    # then, once verified:
+npm run supabase:setup:dev    # verify, then:
 npm run supabase:setup:prod
 ```
 
-Granular re-runs if needed: `db:push:dev` / `functions:deploy:dev` (and `:prod`).
+Granular re-runs: `db:push:dev` / `functions:deploy:dev` (`:prod`).
 
-The data-migration runs automatically here on **PROD** (a legacy DB with users
-but no groups): it creates one **premium, 20-member** default group named
-`Planszówki`, makes the **earliest-registered account** its admin, and adds all
-existing users as members. On a fresh **DEV** project it is a no-op. Afterwards,
-confirm the picked admin, tier and member limit are correct (adjust via group
-management or the dashboard if not).
+On PROD this creates a premium 20-member `Planszówki` group, sets the earliest account as admin, adds all users. **Confirm admin/tier/limit; adjust if wrong.**
 
-## 2. Auth — enable open self-signup + verification
+## 2. Auth (both projects)
 
-Dashboard → **Authentication**, on **both** projects:
+Dashboard → **Authentication**:
 
-- **Providers → Email**: enable **Allow new users to sign up** and turn **Confirm
-  email** ON. (Phase 0 had signups closed.)
-- **URL Configuration → Redirect URLs** — add the deep links the app uses for
-  email confirmation, password reset and invite links:
+- **Providers → Email**: enable **Allow new users to sign up** + **Confirm email** ON.
+- **URL Configuration → Redirect URLs**, add (paths matter — auth emails redirect to
+  `/login` and `/reset-password`, so web origins need a `/**` wildcard):
   - `boardgames://login`
   - `boardgames://reset-password`
-  - `boardgames://join/*`
-  - web origins: the Vercel prod URL (PROD) / `http://localhost:8081` (DEV).
-- **URL Configuration → Site URL**: set to the web app URL.
+  - PROD web: `https://votenmeet.vercel.app/**`
+  - DEV web: `http://localhost:8081/**`
+- **URL Configuration → Site URL**: PROD `https://votenmeet.vercel.app` (DEV `http://localhost:8081`).
 
-## 3. Email templates + SMTP (required for PROD)
+## 3. Android App Links (invite links)
 
-- Supabase's built-in mailer is heavily rate-limited — unsuitable for real
-  verification/reset volume. On **PROD**, configure **custom SMTP** (Resend or
-  SendGrid) under **Authentication → Emails → SMTP**. DEV can stay on the
-  built-in mailer for testing.
-- Confirm the **Confirm signup** and **Reset password** templates point at the
-  redirect (default `{{ .ConfirmationURL }}` works with the redirect URLs above).
+- Play Console → app → **Setup → App signing → App signing key certificate**: copy SHA-256.
+- Paste it into `sha256_cert_fingerprints` in `public/.well-known/assetlinks.json`.
+- Push to `master` (redeploys web). Confirm `https://votenmeet.vercel.app/.well-known/assetlinks.json` loads.
+- Fresh-install release build → tap an invite link from a chat app → opens app on join screen.
+- Verify: `adb shell pm get-app-links com.jacaczap.boardgames` lists domain `verified`.
 
-## 4. Verify
+## 4. SMTP (Brevo) + email templates
 
-- Register a new account → receive the confirmation email → confirm → land in
-  **onboarding** (no groups yet).
-- Create a group; log in on a second account and **join via an invite link**
-  (`boardgames://join/<code>`) — register-or-login then join.
-- **Forgot password** → open the reset link → set a new password → log in.
-- **Profile → Delete account** removes the account and its data (avatar,
-  memberships, votes); confirm the user can no longer log in.
-- **Report + block:** report a game/member (Report action), confirm a group admin
-  gets the push and sees it under **Group settings → Reports**; block a member and
-  confirm their name/avatar is masked; unblock from **Profile → Blocked users**.
+Apply to **DEV first**, then PROD.
 
-## 5. Privacy policy (rewritten for self-signup) — host it
+**Brevo (once):**
+1. Create free account at [brevo.com](https://www.brevo.com).
+2. **Senders, Domains, IPs → Senders → Add a sender**: add + verify the "from" address (6-digit code).
+3. **SMTP & API → SMTP**: copy an **SMTP key**.
 
-The policy was rewritten for open self-signup, groups, and user content
-([PRIVACY_POLICY.md](../PRIVACY_POLICY.md) + [docs/privacy/index.html](privacy/index.html)).
-Host the HTML at the public URL and point Play at it — see
-[docs/play-tracks-setup.md](play-tracks-setup.md) → "Privacy policy hosting".
-Confirmed URL: `https://jacaczap.github.io/boardgames/privacy/`. Keep the `.md`
-and `.html` in sync.
+**Supabase (per project) → Authentication → Emails → SMTP**, enable custom SMTP:
+- Host `smtp-relay.brevo.com`, Port `587`
+- Username = Brevo SMTP login; Password = SMTP key
+- Sender email = verified sender; Sender name = `VoteNMeet`
 
-## 6. Rebrand — store listing, screenshots, icon
+Then **Authentication → Rate Limits**: raise email limit as needed.
 
-The app was renamed **Planszówki → VoteNMeet** (name in
-[app.config.ts](../app.config.ts); new icon/splash in `assets/`; wood palette
-kept). Manual store steps:
+## 5. Verify
 
-- **Store listing (en + pl):** paste the name + short/long descriptions from
-  [docs/store-listing.md](store-listing.md) into Play Console → **Main store
-  listing** per language.
-- **Screenshots:** the old ones are board-games-branded — **redo all** (phone +
-  tablet, en + pl) with the new name/branding and current screens.
-- **App name** in Play Console: update to **VoteNMeet**.
-- **Android monochrome icon** (`assets/android-icon-monochrome.png`) is still the
-  old mark. If you want an on-brand Android 13+ themed icon, export a single-color
-  (alpha) version of the new icon and replace it. Optional, non-blocking.
+- Register → confirm email → land in onboarding.
+- Second account: join via invite link → register/login → join.
+- Forgot password → reset link → new password → login.
+- Profile → Delete account → confirm login blocked after.
+- Report + block: report a game/member → admin gets push + sees it under **Group settings → Reports**; block → name/avatar masked; unblock from **Profile → Blocked users**.
 
-## 7. Play Content rating — re-submit
+## 6. Privacy policy
 
-In-app **report content** and **block user** now exist. In Play Console →
-**App content → Content rating**, re-open the questionnaire and flip the
-**report users** and **block users** answers to **Yes**, then re-submit to get the
-updated IARC rating.
+Host it + set the URL in Play — see [play-tracks-setup.md](play-tracks-setup.md) → "Privacy policy hosting". URL: `https://jacaczap.github.io/boardgames/privacy/`.
+
+## 7. Store listing / rebrand
+
+- Paste name + descriptions (en + pl) from [store-listing.md](store-listing.md) into Play Console → **Main store listing** per language.
+- Redo all screenshots (phone + tablet, en + pl) — see [store-listing.md](store-listing.md).
+- Play Console app name → **VoteNMeet**.
+- Optional: replace `assets/android-icon-monochrome.png` with an on-brand single-color icon.
+
+## 8. Content rating
+
+Play Console → **App content → Content rating** → re-open questionnaire → set **report users** + **block users** to **Yes** → re-submit.
