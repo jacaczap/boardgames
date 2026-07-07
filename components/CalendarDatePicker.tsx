@@ -21,9 +21,9 @@ import { Text } from "@/components/ui/text";
 import UserAvatar from "@/components/UserAvatar";
 
 const COLORS = {
-  weekend: "#60a5fa",
-  holiday: "#f87171",
-  custom: "#a78bfa",
+  weekend: "#8896a3",
+  holiday: "#c0694a",
+  custom: "#a9825a",
   selected: "#fbbf24",
   selectedBorder: "#b45309",
   past: "#d6d3d1",

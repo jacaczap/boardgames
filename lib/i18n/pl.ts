@@ -1,6 +1,7 @@
 const pl = {
   nav: {
     home: "Start",
+    meetings: "Spotkania",
     games: "Gry",
     profile: "Profil",
     survey: "Ankieta",
@@ -226,6 +227,10 @@ const pl = {
   profile: {
     notFound: "Profil nie znaleziony",
     heading: "Profil",
+    personalInfo: "Dane osobowe",
+    preferences: "Preferencje",
+    security: "Bezpieczeństwo",
+    account: "Konto",
     name: "Imię",
     surname: "Nazwisko",
     firstNamePlaceholder: "Imię",
@@ -266,12 +271,12 @@ const pl = {
       "Trwale usuń swoje konto i wszystkie swoje dane. Tej operacji nie można cofnąć.",
     deleteConfirmTitle: "Usunąć konto?",
     deleteConfirmMessage:
-      "To trwale usunie Twoje konto, profil, członkostwa w grupach i głosy. Tej operacji nie można cofnąć.",
+      "To trwale usunie Twoje konto, profil, członkostwa w grupach i głosy. Każda grupa, w której jesteś jedynym członkiem, również zostanie usunięta. Tej operacji nie można cofnąć.",
     deleting: "Usuwanie...",
     failedDelete: "Nie udało się usunąć konta",
     cannotDeleteAdminTitle: "Nie można usunąć konta",
     cannotDeleteAdminMessage:
-      "Jesteś administratorem co najmniej jednej grupy. Najpierw awansuj innego użytkownika na administratora lub usuń grupę.",
+      "Jesteś administratorem grupy, w której są jeszcze inni członkowie. Najpierw awansuj innego członka na administratora lub usuń grupę.",
   },
 
   games: {

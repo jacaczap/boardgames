@@ -1,7 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import GroupSwitcher from "@/components/GroupSwitcher";
+import AppHeader from "@/components/AppHeader";
 
 export default function TabLayout() {
   const { t } = useTranslation();
@@ -16,16 +16,13 @@ export default function TabLayout() {
           borderTopColor: "#553720",
         },
         headerShown: true,
-        headerStyle: { backgroundColor: "#4a3228" },
-        headerTintColor: "#fef3c7",
-        headerTitleStyle: { color: "#fef3c7" },
-        headerRight: () => <GroupSwitcher />,
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Spotkania",
+          title: t("nav.meetings"),
+          header: () => <AppHeader title={t("nav.meetings")} showSwitcher />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="home-outline" size={size} color={color} />
           ),
@@ -51,6 +48,7 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: t("nav.profile"),
+          header: () => <AppHeader title={t("nav.profile")} showSwitcher />,
           tabBarIcon: ({ color, size }) => (
             <Ionicons name="person-outline" size={size} color={color} />
           ),

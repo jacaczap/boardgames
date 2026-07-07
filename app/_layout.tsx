@@ -5,13 +5,11 @@ import {
   AppState,
   Linking,
   Platform,
-  Pressable,
   StyleSheet,
   View,
 } from "react-native";
 import * as ExpoLinking from "expo-linking";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { Session } from "@supabase/supabase-js";
 import * as Notifications from "expo-notifications";
 import { useTranslation } from "react-i18next";
@@ -27,6 +25,7 @@ import {
 import { GroupProvider } from "@/lib/groupContext";
 import { BlockProvider } from "@/lib/moderation";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import AppHeader from "@/components/AppHeader";
 import UpdateRequiredScreen from "@/components/UpdateRequiredScreen";
 import { showAlert } from "@/lib/alert";
 import {
@@ -387,6 +386,8 @@ export default function RootLayout() {
               { name: "group/invite", title: t("groups.inviteTitle") },
               { name: "group/moderation", title: t("moderation.moderationTitle") },
               { name: "blocked", title: t("moderation.blockedUsersTitle") },
+              { name: "survey/[id]", title: t("nav.survey") },
+              { name: "approve/[id]", title: t("nav.approveMeeting") },
             ].map((s) => (
               <Stack.Screen
                 key={s.name}
@@ -394,53 +395,10 @@ export default function RootLayout() {
                 options={{
                   title: s.title,
                   headerShown: true,
-                  headerStyle: { backgroundColor: "#4a3228" },
-                  headerTintColor: "#fef3c7",
-                  headerTitleStyle: { color: "#fef3c7" },
-                  ...(isWeb && {
-                    headerLeft: () => (
-                      <Pressable onPress={() => router.back()} style={{ marginRight: 8 }}>
-                        <Ionicons name="arrow-back" size={24} color="#fef3c7" />
-                      </Pressable>
-                    ),
-                  }),
+                  header: () => <AppHeader showBack />,
                 }}
               />
             ))}
-            <Stack.Screen
-              name="survey/[id]"
-              options={{
-                title: t("nav.survey"),
-                headerShown: true,
-                headerStyle: { backgroundColor: "#4a3228" },
-                headerTintColor: "#fef3c7",
-                headerTitleStyle: { color: "#fef3c7" },
-                ...(isWeb && {
-                  headerLeft: () => (
-                    <Pressable onPress={() => router.back()} style={{ marginRight: 8 }}>
-                      <Ionicons name="arrow-back" size={24} color="#fef3c7" />
-                    </Pressable>
-                  ),
-                }),
-              }}
-            />
-            <Stack.Screen
-              name="approve/[id]"
-              options={{
-                title: t("nav.approveMeeting"),
-                headerShown: true,
-                headerStyle: { backgroundColor: "#4a3228" },
-                headerTintColor: "#fef3c7",
-                headerTitleStyle: { color: "#fef3c7" },
-                ...(isWeb && {
-                  headerLeft: () => (
-                    <Pressable onPress={() => router.back()} style={{ marginRight: 8 }}>
-                      <Ionicons name="arrow-back" size={24} color="#fef3c7" />
-                    </Pressable>
-                  ),
-                }),
-              }}
-            />
           </Stack>
         </View>
       </View>

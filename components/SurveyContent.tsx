@@ -590,7 +590,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
 
           <Card variant="filled" className="bg-green-50 p-4">
             <HStack space="sm" className="items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+              <Ionicons name="checkmark-circle" size={20} color="#5b7d34" />
               <Text className="text-green-700 font-medium">
                 {t("survey.voteRecorded")}
               </Text>
@@ -600,7 +600,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
           {meetingApprovedByOther && (
             <Card variant="filled" className="bg-orange-100 p-4">
               <HStack space="sm" className="items-center">
-                <Ionicons name="warning-outline" size={20} color="#ea580c" />
+                <Ionicons name="warning-outline" size={20} color="#b5843a" />
                 <Text className="text-orange-800 flex-1">
                   {t("race.meetingApprovedBanner")}
                 </Text>
@@ -801,7 +801,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         {meetingApprovedByOther && (
           <Card variant="filled" className="bg-orange-100 p-4">
             <HStack space="sm" className="items-center">
-              <Ionicons name="warning-outline" size={20} color="#ea580c" />
+              <Ionicons name="warning-outline" size={20} color="#b5843a" />
               <Text className="text-orange-800 flex-1">
                 {t("race.meetingApprovedBanner")}
               </Text>
@@ -819,7 +819,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
               <Ionicons
                 name={notParticipating ? "checkbox" : "square-outline"}
                 size={24}
-                color={notParticipating ? "#ea580c" : "#a8a29e"}
+                color={notParticipating ? "#b5843a" : "#a8a29e"}
               />
               <VStack>
                 <Text className={`font-medium ${notParticipating ? "text-orange-800" : "text-stone-700"}`}>

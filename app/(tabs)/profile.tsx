@@ -38,6 +38,14 @@ import {
 const SUPPORT_EMAIL = "jacaczap@gmail.com";
 const PRIVACY_URL = "https://jacaczap.github.io/boardgames/privacy/";
 
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <Text className="text-xs font-semibold uppercase tracking-wide text-stone-400 px-1 -mb-2">
+      {children}
+    </Text>
+  );
+}
+
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const router = useRouter();
@@ -50,6 +58,7 @@ export default function ProfileScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [email, setEmail] = useState("");
   const [name, setName] = useState("");
   const [surname, setSurname] = useState("");
   const [notifPriorMeeting, setNotifPriorMeeting] = useState("1");
@@ -66,6 +75,7 @@ export default function ProfileScreen() {
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
+      setEmail(user.email ?? "");
 
       const { data, error } = await supabase
         .from("profiles")
@@ -103,7 +113,32 @@ export default function ProfileScreen() {
     setRefreshing(false);
   }, [fetchProfile]);
 
-  const handleSave = async () => {
+  const handleSavePersonal = async () => {
+    if (!profile) return;
+    setSaving(true);
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({
+          name: name.trim() || null,
+          surname: surname.trim() || null,
+        })
+        .eq("id", profile.id);
+
+      if (error) {
+        showAlert(t("common.error"), error.message);
+        return;
+      }
+      showAlert(t("profile.savedTitle"), t("profile.savedMessage"));
+      await fetchProfile();
+    } catch (e: any) {
+      showAlert(t("common.error"), e?.message ?? t("profile.failedSave"));
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleSaveNotifications = async () => {
     if (!profile) return;
 
     const priorMeeting = parseInt(notifPriorMeeting, 10);
@@ -123,8 +158,6 @@ export default function ProfileScreen() {
       const { error } = await supabase
         .from("profiles")
         .update({
-          name: name.trim() || null,
-          surname: surname.trim() || null,
           notification_prior_meeting: priorMeeting,
           notification_reminder_interval: reminderInterval,
         })
@@ -235,20 +268,6 @@ export default function ProfileScreen() {
   };
 
   const handleDeleteAccount = async () => {
-    if (profile) {
-      const { count } = await supabase
-        .from("group_members")
-        .select("group_id", { count: "exact", head: true })
-        .eq("user_id", profile.id)
-        .eq("role", "admin");
-      if (count && count > 0) {
-        showAlert(
-          t("profile.cannotDeleteAdminTitle"),
-          t("profile.cannotDeleteAdminMessage"),
-        );
-        return;
-      }
-    }
     showAlert(t("profile.deleteConfirmTitle"), t("profile.deleteConfirmMessage"), [
       { text: t("common.cancel"), style: "cancel" },
       {
@@ -308,17 +327,16 @@ export default function ProfileScreen() {
     );
   }
 
-  const hasChanges =
-    name !== (profile.name ?? "") ||
-    surname !== (profile.surname ?? "") ||
+  const personalChanged =
+    name !== (profile.name ?? "") || surname !== (profile.surname ?? "");
+  const notifChanged =
     notifPriorMeeting !== String(profile.notification_prior_meeting) ||
     notifReminderInterval !== String(profile.notification_reminder_interval);
 
+  const fullName = [name, surname].filter(Boolean).join(" ").trim();
+
   return (
-    <KeyboardAvoidingView
-      className="flex-1"
-      behavior="padding"
-    >
+    <KeyboardAvoidingView className="flex-1" behavior="padding">
       <ScrollView
         className="flex-1 bg-stone-50"
         contentContainerStyle={{ padding: 16, paddingBottom: 60 }}
@@ -328,11 +346,11 @@ export default function ProfileScreen() {
         }
       >
         <VStack space="xl">
-          {/* Avatar */}
-          <Center>
+          {/* Identity header */}
+          <Center className="pt-2 pb-1">
             <Pressable onPress={handleAvatarUpload} disabled={uploadingAvatar}>
               <Box className="relative">
-                <Avatar size="xl">
+                <Avatar size="xl" className="w-24 h-24">
                   {avatarUrl ? (
                     <AvatarImage source={{ uri: avatarUrl, cacheKey: profile?.avatar_url ?? undefined }} />
                   ) : (
@@ -342,7 +360,7 @@ export default function ProfileScreen() {
                     </AvatarFallbackText>
                   )}
                 </Avatar>
-                <Center className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-amber-700">
+                <Center className="absolute bottom-0 right-0 w-9 h-9 rounded-full bg-amber-700 border-2 border-stone-50">
                   {uploadingAvatar ? (
                     <Spinner size="small" color="white" />
                   ) : (
@@ -351,41 +369,22 @@ export default function ProfileScreen() {
                 </Center>
               </Box>
             </Pressable>
+            {fullName ? (
+              <Heading size="lg" className="mt-3 text-stone-800">
+                {fullName}
+              </Heading>
+            ) : null}
+            {email ? (
+              <Text size="sm" className="text-stone-500 mt-0.5">
+                {email}
+              </Text>
+            ) : null}
           </Center>
 
-          {/* Language Switcher */}
+          {/* Personal info */}
+          <SectionLabel>{t("profile.personalInfo")}</SectionLabel>
           <Card variant="outline" className="p-4">
             <VStack space="md">
-              <HStack space="xs" className="items-center">
-                <Ionicons name="language-outline" size={20} color="#78716c" />
-                <Heading size="md">{t("profile.language")}</Heading>
-              </HStack>
-              <HStack space="sm">
-                <Pressable
-                  onPress={() => setLanguagePreference("en")}
-                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "en" ? "bg-amber-200 border-2 border-amber-600" : "bg-stone-100 border border-stone-200"}`}
-                >
-                  <Text className={`font-medium ${i18n.language === "en" ? "text-amber-700" : "text-stone-600"}`}>
-                    {t("profile.languageEn")}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() => setLanguagePreference("pl")}
-                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "pl" ? "bg-amber-200 border-2 border-amber-600" : "bg-stone-100 border border-stone-200"}`}
-                >
-                  <Text className={`font-medium ${i18n.language === "pl" ? "text-amber-700" : "text-stone-600"}`}>
-                    {t("profile.languagePl")}
-                  </Text>
-                </Pressable>
-              </HStack>
-            </VStack>
-          </Card>
-
-          {/* Profile Info */}
-          <Card variant="outline" className="p-4">
-            <VStack space="md">
-              <Heading size="md">{t("profile.heading")}</Heading>
-
               <VStack space="xs">
                 <Text size="sm" className="text-stone-500 font-medium">{t("profile.name")}</Text>
                 <Input>
@@ -408,15 +407,52 @@ export default function ProfileScreen() {
                 </Input>
               </VStack>
 
+              <Button
+                action="primary"
+                isDisabled={saving || !personalChanged}
+                onPress={handleSavePersonal}
+              >
+                <ButtonText>
+                  {saving ? t("common.saving") : t("common.saveChanges")}
+                </ButtonText>
+              </Button>
             </VStack>
           </Card>
 
-          {/* Notification Settings */}
+          {/* Preferences */}
+          <SectionLabel>{t("profile.preferences")}</SectionLabel>
+          <Card variant="outline" className="p-4">
+            <VStack space="md">
+              <HStack space="xs" className="items-center">
+                <Ionicons name="language-outline" size={20} color="#78716c" />
+                <Heading size="sm">{t("profile.language")}</Heading>
+              </HStack>
+              <HStack space="sm">
+                <Pressable
+                  onPress={() => setLanguagePreference("en")}
+                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "en" ? "bg-amber-200 border-2 border-amber-600" : "bg-stone-100 border border-stone-200"}`}
+                >
+                  <Text className={`font-medium ${i18n.language === "en" ? "text-amber-700" : "text-stone-600"}`}>
+                    {t("profile.languageEn")}
+                  </Text>
+                </Pressable>
+                <Pressable
+                  onPress={() => setLanguagePreference("pl")}
+                  className={`flex-1 py-3 rounded-lg items-center ${i18n.language === "pl" ? "bg-amber-200 border-2 border-amber-600" : "bg-stone-100 border border-stone-200"}`}
+                >
+                  <Text className={`font-medium ${i18n.language === "pl" ? "text-amber-700" : "text-stone-600"}`}>
+                    {t("profile.languagePl")}
+                  </Text>
+                </Pressable>
+              </HStack>
+            </VStack>
+          </Card>
+
           <Card variant="outline" className="p-4">
             <VStack space="md">
               <HStack space="xs" className="items-center">
                 <Ionicons name="notifications-outline" size={20} color="#78716c" />
-                <Heading size="md">{t("profile.notifications")}</Heading>
+                <Heading size="sm">{t("profile.notifications")}</Heading>
               </HStack>
 
               <VStack space="xs">
@@ -452,29 +488,23 @@ export default function ProfileScreen() {
                   />
                 </Input>
               </VStack>
+
+              <Button
+                action="primary"
+                isDisabled={saving || !notifChanged}
+                onPress={handleSaveNotifications}
+              >
+                <ButtonText>
+                  {saving ? t("common.saving") : t("common.saveChanges")}
+                </ButtonText>
+              </Button>
             </VStack>
           </Card>
 
-          {/* Save Button */}
-          <Button
-            action="primary"
-            size="lg"
-            isDisabled={saving || !hasChanges}
-            onPress={handleSave}
-          >
-            <ButtonText>
-              {saving ? t("common.saving") : t("common.saveChanges")}
-            </ButtonText>
-          </Button>
-
-          {/* Change Password */}
+          {/* Security */}
+          <SectionLabel>{t("profile.security")}</SectionLabel>
           <Card variant="outline" className="p-4">
             <VStack space="md">
-              <HStack space="xs" className="items-center">
-                <Ionicons name="lock-closed-outline" size={20} color="#78716c" />
-                <Heading size="md">{t("profile.changePassword")}</Heading>
-              </HStack>
-
               <VStack space="xs">
                 <Text size="sm" className="text-stone-500 font-medium">{t("profile.newPassword")}</Text>
                 <Input>
@@ -520,25 +550,10 @@ export default function ProfileScreen() {
             </VStack>
           </Card>
 
-          {/* Logout */}
-          <Button
-            action="negative"
-            isDisabled={loggingOut}
-            onPress={handleLogout}
-          >
-            <ButtonText>{loggingOut ? t("profile.loggingOut") : t("profile.logOut")}</ButtonText>
-          </Button>
-
-          {/* Help & support */}
-          <Card variant="outline" className="p-4">
-            <VStack space="md">
-              <HStack space="xs" className="items-center">
-                <Ionicons name="help-circle-outline" size={20} color="#78716c" />
-                <Heading size="md">{t("support.title")}</Heading>
-              </HStack>
-              <Text size="sm" className="text-stone-500">
-                {t("support.desc")}
-              </Text>
+          {/* Support */}
+          <SectionLabel>{t("support.title")}</SectionLabel>
+          <Card variant="outline" className="p-2">
+            <VStack>
               <Pressable
                 onPress={() =>
                   Linking.openURL(
@@ -547,7 +562,7 @@ export default function ProfileScreen() {
                     )}`,
                   ).catch(() => {})
                 }
-                className="py-2"
+                className="px-3 py-3 rounded-lg"
               >
                 <HStack space="sm" className="items-center justify-between">
                   <HStack space="sm" className="items-center">
@@ -559,7 +574,7 @@ export default function ProfileScreen() {
               </Pressable>
               <Pressable
                 onPress={() => Linking.openURL(PRIVACY_URL).catch(() => {})}
-                className="py-2"
+                className="px-3 py-3 rounded-lg"
               >
                 <HStack space="sm" className="items-center justify-between">
                   <HStack space="sm" className="items-center">
@@ -569,7 +584,7 @@ export default function ProfileScreen() {
                   <Ionicons name="chevron-forward" size={18} color="#a8a29e" />
                 </HStack>
               </Pressable>
-              <Pressable onPress={() => router.push("/blocked")} className="py-2">
+              <Pressable onPress={() => router.push("/blocked")} className="px-3 py-3 rounded-lg">
                 <HStack space="sm" className="items-center justify-between">
                   <HStack space="sm" className="items-center">
                     <Ionicons name="ban-outline" size={20} color="#78716c" />
@@ -583,32 +598,38 @@ export default function ProfileScreen() {
             </VStack>
           </Card>
 
-          {/* Danger zone */}
-          <Card variant="outline" className="p-4 border-red-200">
-            <VStack space="md">
-              <HStack space="xs" className="items-center">
-                <Ionicons name="warning-outline" size={20} color="#b91c1c" />
-                <Heading size="md" className="text-red-700">
-                  {t("profile.dangerZone")}
-                </Heading>
+          {/* Account */}
+          <SectionLabel>{t("profile.account")}</SectionLabel>
+          <Card variant="outline" className="p-2">
+            <Pressable
+              onPress={handleDeleteAccount}
+              disabled={deletingAccount}
+              className="px-3 py-3 rounded-lg"
+            >
+              <HStack space="sm" className="items-center justify-between">
+                <HStack space="sm" className="items-center">
+                  <Ionicons name="trash-outline" size={20} color="#b91c1c" />
+                  <Text className="text-red-700">
+                    {deletingAccount ? t("profile.deleting") : t("profile.deleteAccount")}
+                  </Text>
+                </HStack>
+                <Ionicons name="chevron-forward" size={18} color="#fca5a5" />
               </HStack>
-              <Text size="sm" className="text-stone-500">
-                {t("profile.deleteAccountDesc")}
-              </Text>
-              <Button
-                action="negative"
-                variant="outline"
-                isDisabled={deletingAccount}
-                onPress={handleDeleteAccount}
-              >
-                <ButtonText>
-                  {deletingAccount
-                    ? t("profile.deleting")
-                    : t("profile.deleteAccount")}
-                </ButtonText>
-              </Button>
-            </VStack>
+            </Pressable>
           </Card>
+
+          {/* Logout at the bottom */}
+          <Button
+            action="secondary"
+            variant="outline"
+            size="lg"
+            isDisabled={loggingOut}
+            onPress={handleLogout}
+          >
+            <ButtonText>
+              {loggingOut ? t("profile.loggingOut") : t("profile.logOut")}
+            </ButtonText>
+          </Button>
         </VStack>
       </ScrollView>
     </KeyboardAvoidingView>

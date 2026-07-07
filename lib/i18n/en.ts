@@ -1,6 +1,7 @@
 const en = {
   nav: {
     home: "Home",
+    meetings: "Meetings",
     games: "Games",
     profile: "Profile",
     survey: "Survey",
@@ -226,6 +227,10 @@ const en = {
   profile: {
     notFound: "Profile not found",
     heading: "Profile",
+    personalInfo: "Personal info",
+    preferences: "Preferences",
+    security: "Security",
+    account: "Account",
     name: "Name",
     surname: "Surname",
     firstNamePlaceholder: "First name",
@@ -266,12 +271,12 @@ const en = {
       "Permanently delete your account and all your data. This cannot be undone.",
     deleteConfirmTitle: "Delete account?",
     deleteConfirmMessage:
-      "This permanently deletes your account, profile, group memberships and votes. This cannot be undone.",
+      "This permanently deletes your account, profile, group memberships and votes. Any group where you're the only member is deleted too. This cannot be undone.",
     deleting: "Deleting...",
     failedDelete: "Failed to delete account",
     cannotDeleteAdminTitle: "Cannot delete account",
     cannotDeleteAdminMessage:
-      "You are an admin of at least one group. Promote another user to admin or delete the group first.",
+      "You are the admin of a group that still has other members. Promote another member to admin or delete the group first.",
   },
 
   games: {

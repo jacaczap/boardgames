@@ -1,9 +1,11 @@
 import React, { useState } from "react";
-import { ScrollView, KeyboardAvoidingView } from "react-native";
+import { ScrollView, KeyboardAvoidingView, Platform } from "react-native";
 import { useRouter } from "expo-router";
 import { showAlert } from "@/lib/alert";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { deleteAccount, AdminOfGroupError } from "@/lib/account";
+import { clearPushToken } from "@/lib/notifications";
 import {
   createGroup,
   joinGroupByCode,
@@ -28,8 +30,9 @@ export default function OnboardingScreen() {
   const [code, setCode] = useState("");
   const [creating, setCreating] = useState(false);
   const [joining, setJoining] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
-  const busy = creating || joining;
+  const busy = creating || joining || deleting;
 
   const handleCreate = async () => {
     const name = groupName.trim();
@@ -69,6 +72,38 @@ export default function OnboardingScreen() {
 
   const handleLogout = () => {
     supabase.auth.signOut();
+  };
+
+  const handleDeleteAccount = () => {
+    showAlert(t("profile.deleteConfirmTitle"), t("profile.deleteConfirmMessage"), [
+      { text: t("common.cancel"), style: "cancel" },
+      {
+        text: t("profile.deleteAccount"),
+        style: "destructive",
+        onPress: async () => {
+          setDeleting(true);
+          try {
+            if (Platform.OS !== "web") {
+              const {
+                data: { user },
+              } = await supabase.auth.getUser();
+              if (user) await clearPushToken(user.id);
+            }
+            await deleteAccount();
+          } catch (e: any) {
+            setDeleting(false);
+            if (e instanceof AdminOfGroupError) {
+              showAlert(
+                t("profile.cannotDeleteAdminTitle"),
+                t("profile.cannotDeleteAdminMessage"),
+              );
+              return;
+            }
+            showAlert(t("common.error"), e?.message ?? t("profile.failedDelete"));
+          }
+        },
+      },
+    ]);
   };
 
   return (
@@ -159,6 +194,12 @@ export default function OnboardingScreen() {
           <Pressable onPress={handleLogout} disabled={busy}>
             <Text className="text-center text-stone-500 font-medium">
               {t("onboarding.logOut")}
+            </Text>
+          </Pressable>
+
+          <Pressable onPress={handleDeleteAccount} disabled={busy}>
+            <Text className="text-center text-red-700 font-medium">
+              {deleting ? t("profile.deleting") : t("profile.deleteAccount")}
             </Text>
           </Pressable>
         </VStack>

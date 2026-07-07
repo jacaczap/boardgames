@@ -630,7 +630,7 @@ export default function ApproveScreen() {
           {!canApprove && (
             <Card variant="filled" className="bg-orange-100 p-4">
               <HStack space="sm" className="items-center">
-                <Ionicons name="lock-closed-outline" size={20} color="#ea580c" />
+                <Ionicons name="lock-closed-outline" size={20} color="#b5843a" />
                 <Text className="text-orange-800 flex-1">
                   {t("approve.notApprover")}
                 </Text>

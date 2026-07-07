@@ -586,7 +586,7 @@ export default function HomeScreen() {
         )}
         <VStack space="md" className="p-5">
           <HStack space="xs" className="items-center">
-            <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+            <Ionicons name="checkmark-circle" size={20} color="#5b7d34" />
             <Text className="text-green-700 font-medium">
               {t("home.meetingApproved")}
             </Text>
@@ -711,7 +711,7 @@ export default function HomeScreen() {
                   {votingResults.dates.slice(0, 5).map((d) => (
                     <HStack key={d.date} space="sm" className="items-center">
                       {d.isChosen ? (
-                        <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
+                        <Ionicons name="checkmark-circle" size={14} color="#5b7d34" />
                       ) : (
                         <View className="w-3.5" />
                       )}
@@ -750,7 +750,7 @@ export default function HomeScreen() {
                   {votingResults.games.slice(0, 5).map((g) => (
                     <HStack key={g.name} space="sm" className="items-center">
                       {g.isChosen ? (
-                        <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
+                        <Ionicons name="checkmark-circle" size={14} color="#5b7d34" />
                       ) : (
                         <View className="w-3.5" />
                       )}

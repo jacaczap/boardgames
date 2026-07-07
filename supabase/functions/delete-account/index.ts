@@ -6,8 +6,9 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 // Deleting the auth user cascades to profiles -> group_members / votes /
 // push_tokens. Group-owned rows (board_games / meetings) are not personal data
 // and stay with their group.
-// Blocked while the user is an admin of any group, so groups are never left
-// leaderless — they must promote another admin or delete the group first.
+// Groups where the caller is the only member are deleted first (nobody is left
+// to lead them). Deletion is blocked only when the caller is an admin of a group
+// that still has other members — they must promote another admin or delete it.
 Deno.serve(async (req) => {
   try {
     const authHeader = req.headers.get("Authorization") ?? "";
@@ -31,19 +32,46 @@ Deno.serve(async (req) => {
       return Response.json({ error: "Invalid session" }, { status: 401 });
     }
 
-    // Refuse if the user still admins any group (would leave it leaderless).
-    const { count: adminCount, error: adminError } = await admin
+    // Inspect every group the user belongs to. Solo groups (only the caller
+    // left) get deleted; a group where the caller is an admin but others remain
+    // blocks deletion so it is never left leaderless.
+    const { data: memberships, error: memError } = await admin
       .from("group_members")
-      .select("group_id", { count: "exact", head: true })
-      .eq("user_id", user.id)
-      .eq("role", "admin");
+      .select("group_id, role")
+      .eq("user_id", user.id);
 
-    if (adminError) {
-      return Response.json({ error: adminError.message }, { status: 500 });
+    if (memError) {
+      return Response.json({ error: memError.message }, { status: 500 });
     }
 
-    if (adminCount && adminCount > 0) {
-      return Response.json({ error: "admin_of_group" }, { status: 409 });
+    const soloGroupIds: string[] = [];
+    for (const m of memberships ?? []) {
+      const { count, error: countError } = await admin
+        .from("group_members")
+        .select("user_id", { count: "exact", head: true })
+        .eq("group_id", m.group_id);
+
+      if (countError) {
+        return Response.json({ error: countError.message }, { status: 500 });
+      }
+
+      if ((count ?? 0) <= 1) {
+        soloGroupIds.push(m.group_id as string);
+      } else if (m.role === "admin") {
+        return Response.json({ error: "admin_of_group" }, { status: 409 });
+      }
+    }
+
+    // Delete solo groups (cascades to their games / meetings / memberships).
+    if (soloGroupIds.length > 0) {
+      const { error: delGroupsError } = await admin
+        .from("groups")
+        .delete()
+        .in("id", soloGroupIds);
+
+      if (delGroupsError) {
+        return Response.json({ error: delGroupsError.message }, { status: 500 });
+      }
     }
 
     // Remove the user's owned upload (avatar) before deleting the profile row.

@@ -50,11 +50,6 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
   scheme: "boardgames",
-  splash: {
-    image: "./assets/splash-icon.png",
-    resizeMode: "contain",
-    backgroundColor: "#fdf8f0",
-  },
   ios: {
     supportsTablet: true,
     bundleIdentifier: variant.packageId,
@@ -62,8 +57,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     adaptiveIcon: {
       backgroundColor: "#C89B6E",
+      backgroundImage: "./assets/icon-wood-bg.png",
       foregroundImage: "./assets/android-icon-foreground.png",
-      backgroundImage: "./assets/android-icon-background.png",
       monochromeImage: "./assets/android-icon-monochrome.png",
     },
     package: variant.packageId,
@@ -94,6 +89,15 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     "expo-router",
     "expo-font",
+    [
+      "expo-splash-screen",
+      {
+        backgroundColor: "#f6f1e6",
+        image: "./assets/splash-icon.png",
+        imageWidth: 240,
+        resizeMode: "contain",
+      },
+    ],
     "expo-notifications",
     [
       "expo-image-picker",
