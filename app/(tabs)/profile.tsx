@@ -36,7 +36,7 @@ import {
 } from "@/components/ui/avatar";
 
 const SUPPORT_EMAIL = "jacaczap@gmail.com";
-const PRIVACY_URL = "https://jacaczap.github.io/boardgames/privacy/";
+const PRIVACY_URL = "https://jacaczap.github.io/votenmeet/privacy/";
 
 function SectionLabel({ children }: { children: React.ReactNode }) {
   return (

@@ -22,6 +22,7 @@ const pl = {
     players: "graczy",
     validation: "Walidacja",
     retry: "Ponów",
+    collapse: "Zwiń",
     loadError: "Coś poszło nie tak. Pociągnij w dół, aby odświeżyć.",
   },
 
@@ -383,6 +384,7 @@ const pl = {
     pickDate: "Wybierz datę",
     pickGame: "Wybierz grę",
     noFutureDates: "Brak dostępnych przyszłych dat",
+    changeDate: "Zmień",
     sortedByVotes: "Posortowane wg głosów uczestników wybranej daty",
     voteCount: "{{count}} głos(ów)",
     approveMeeting: "Zatwierdź spotkanie",

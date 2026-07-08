@@ -25,6 +25,7 @@ import {
 import { GroupProvider } from "@/lib/groupContext";
 import { BlockProvider } from "@/lib/moderation";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { TABLET_CONTENT_MAX_WIDTH, useIsTablet } from "@/lib/responsive";
 import AppHeader from "@/components/AppHeader";
 import UpdateRequiredScreen from "@/components/UpdateRequiredScreen";
 import { showAlert } from "@/lib/alert";
@@ -82,6 +83,7 @@ export default function RootLayout() {
   const [pendingCode, setPendingCode] = useState<string | null>(null);
   const segments = useSegments();
   const router = useRouter();
+  const isTablet = useIsTablet();
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
   const lastVersionCheckRef = useRef(0);
@@ -366,13 +368,25 @@ export default function RootLayout() {
   }
 
   const isWeb = Platform.OS === "web";
+  const framed = isWeb || isTablet;
 
   return (
     <GluestackUIProvider>
       <GroupProvider>
       <BlockProvider>
-      <View style={isWeb ? webStyles.outer : appStyles.root}>
-        <View style={isWeb ? webStyles.inner : appStyles.root}>
+      <View style={framed ? webStyles.outer : appStyles.root}>
+        <View
+          style={
+            framed
+              ? [
+                  webStyles.inner,
+                  isTablet && !isWeb
+                    ? { maxWidth: TABLET_CONTENT_MAX_WIDTH }
+                    : null,
+                ]
+              : appStyles.root
+          }
+        >
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(tabs)" />

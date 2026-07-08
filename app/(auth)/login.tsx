@@ -50,11 +50,19 @@ export default function LoginScreen() {
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
-        className="bg-stone-50"
+        style={{ backgroundColor: "#f6f1e6" }}
       >
         <Box className="flex-1 justify-center px-8">
-          <Heading size="3xl" className="text-center mb-8">
-            {t("auth.appName")}
+          <Heading size="3xl" className="text-center mb-8 font-extrabold">
+            <Text className="text-3xl font-extrabold" style={{ color: "#4a3228" }}>
+              Vote
+            </Text>
+            <Text className="text-3xl font-extrabold" style={{ color: "#f59e0b" }}>
+              N
+            </Text>
+            <Text className="text-3xl font-extrabold" style={{ color: "#4a3228" }}>
+              Meet
+            </Text>
           </Heading>
 
           <VStack space="md">

@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import GroupSwitcher from "@/components/GroupSwitcher";
+import { useIsTablet, TABLET_SCALE } from "@/lib/responsive";
 
 const BAR_BG = "#4a3228";
 const TINT = "#fef3c7";
@@ -24,10 +25,11 @@ export default function AppHeader({
 }: AppHeaderProps) {
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const isTablet = useIsTablet();
 
   return (
     <View style={[styles.bar, { paddingTop: insets.top }]}>
-      <View style={styles.content}>
+      <View style={[styles.content, isTablet && { height: 72 }]}>
         <View style={styles.side}>
           {showBack ? (
             <Pressable
@@ -35,11 +37,14 @@ export default function AppHeader({
               hitSlop={12}
               style={styles.back}
             >
-              <Ionicons name="arrow-back" size={24} color={TINT} />
+              <Ionicons name="arrow-back" size={isTablet ? 30 : 24} color={TINT} />
             </Pressable>
           ) : title ? (
             <Text
-              style={styles.title}
+              style={[
+                styles.title,
+                isTablet && { fontSize: 18 * TABLET_SCALE, maxWidth: 220 },
+              ]}
               numberOfLines={1}
               allowFontScaling={false}
             >
@@ -49,7 +54,10 @@ export default function AppHeader({
         </View>
 
         <View style={styles.center} pointerEvents="none">
-          <Text style={styles.mark} allowFontScaling={false}>
+          <Text
+            style={[styles.mark, isTablet && { fontSize: 20 * TABLET_SCALE }]}
+            allowFontScaling={false}
+          >
             <Text style={styles.markSide}>V</Text>
             <Text style={styles.markMid}>n</Text>
             <Text style={styles.markSide}>M</Text>

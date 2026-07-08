@@ -18,6 +18,7 @@ import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { useGroup } from "@/lib/groupContext";
 import { getDateLocale } from "@/lib/i18n";
+import { useIsTablet } from "@/lib/responsive";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile, Vote, VoteDate, VoteGame } from "@/lib/types";
 import SurveyContent from "@/components/SurveyContent";
@@ -42,6 +43,7 @@ export default function HomeScreen() {
   const router = useRouter();
   const { currentGroupId, canApprove } = useGroup();
   const isWeb = Platform.OS === "web";
+  const isTablet = useIsTablet();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [game, setGame] = useState<BoardGame | null>(null);
   const [attendees, setAttendees] = useState<Profile[]>([]);
@@ -576,7 +578,14 @@ export default function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Card variant="filled" className="bg-green-50 w-full max-w-md self-center">
+      <Card
+        variant="filled"
+        className={
+          isTablet
+            ? "bg-green-50 w-full"
+            : "bg-green-50 w-full max-w-md self-center"
+        }
+      >
         {gameImageUrl && (
           <Image
             source={{ uri: gameImageUrl, cacheKey: game?.image_url ?? undefined }}

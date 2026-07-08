@@ -12,6 +12,7 @@ import {
   withStyleContext,
   useStyleContext,
 } from "@gluestack-ui/nativewind-utils/withStyleContext";
+import { classTextPx, tabletFontStyle } from "@/lib/responsive";
 
 const buttonStyle = tva({
   base: "rounded-xl items-center justify-center flex-row",
@@ -147,18 +148,23 @@ export const Button = React.forwardRef<View, ButtonProps>(
 );
 Button.displayName = "Button";
 
+const BUTTON_TEXT_PX: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 18 };
+
 export const ButtonText = React.forwardRef<Text, TextProps & { className?: string }>(
-  ({ className, ...props }, ref) => {
+  ({ className, style, ...props }, ref) => {
     const { action, variant, size } =
       (useStyleContext("BUTTON") as {
         action?: ButtonAction;
         variant?: ButtonVariant;
         size?: ButtonSize;
       }) ?? {};
+    const basePx = classTextPx(className) ?? BUTTON_TEXT_PX[size ?? "md"];
+    const scaledStyle = tabletFontStyle(basePx);
     return (
       <Text
         ref={ref}
         className={buttonTextStyle({ action, variant, size, className })}
+        style={scaledStyle ? [scaledStyle, style] : style}
         {...props}
       />
     );

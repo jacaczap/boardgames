@@ -5,6 +5,18 @@ export interface UserToken {
   token: string;
 }
 
+export async function getGroupName(
+  supabase: SupabaseClient,
+  groupId: string,
+): Promise<string> {
+  const { data } = await supabase
+    .from("groups")
+    .select("name")
+    .eq("id", groupId)
+    .single();
+  return (data?.name as string) ?? "";
+}
+
 export async function getGroupMemberIds(
   supabase: SupabaseClient,
   groupId: string,

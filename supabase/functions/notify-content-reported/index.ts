@@ -1,7 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendPushNotifications } from "../_shared/push.ts";
 import type { PushMessage } from "../_shared/push.ts";
-import { getGroupAdminIds, getTokensForUsers } from "../_shared/groups.ts";
+import {
+  getGroupAdminIds,
+  getGroupName,
+  getTokensForUsers,
+} from "../_shared/groups.ts";
 
 // Push a new content report to the group's admins so they can review/takedown.
 Deno.serve(async (req) => {
@@ -35,10 +39,14 @@ Deno.serve(async (req) => {
       return Response.json({ message: "No admin tokens" });
     }
 
+    const groupName = await getGroupName(supabase, report.group_id);
+    const groupPartPl = groupName ? ` w grupie ${groupName}` : "";
+    const groupPartEn = groupName ? ` in group ${groupName}` : "";
+
     const messages: PushMessage[] = tokens.map((t) => ({
       to: t.token,
       title: "Nowe zgłoszenie / New report",
-      body: "Zgłoszono treść do sprawdzenia. / Content was reported for review.",
+      body: `Zgłoszono treść${groupPartPl} do sprawdzenia. / Content was reported${groupPartEn} for review.`,
       data: { type: "report", reportId },
     }));
     await sendPushNotifications(messages);

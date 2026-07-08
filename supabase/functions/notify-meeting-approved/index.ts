@@ -1,7 +1,11 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendPushNotifications } from "../_shared/push.ts";
 import type { PushMessage } from "../_shared/push.ts";
-import { getGroupMemberIds, getTokensForUsers } from "../_shared/groups.ts";
+import {
+  getGroupMemberIds,
+  getGroupName,
+  getTokensForUsers,
+} from "../_shared/groups.ts";
 
 Deno.serve(async (req) => {
   try {
@@ -49,10 +53,13 @@ Deno.serve(async (req) => {
       return Response.json({ message: "No tokens" });
     }
 
+    const groupName = await getGroupName(supabase, meeting.group_id);
+    const groupPart = groupName ? ` w grupie ${groupName}` : "";
+
     const messages: PushMessage[] = tokens.map((t) => ({
       to: t.token,
       title: "Spotkanie zatwierdzone!",
-      body: `Spotkanie #${meeting.number}${gamePart}${datePart} zostało zatwierdzone.`,
+      body: `Spotkanie #${meeting.number}${gamePart}${datePart}${groupPart} zostało zatwierdzone.`,
       data: { type: "meeting", meetingId },
     }));
     await sendPushNotifications(messages);

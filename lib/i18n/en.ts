@@ -22,6 +22,7 @@ const en = {
     players: "players",
     validation: "Validation",
     retry: "Retry",
+    collapse: "Collapse",
     loadError: "Something went wrong. Pull down to refresh.",
   },
 
@@ -383,6 +384,7 @@ const en = {
     pickDate: "Pick a date",
     pickGame: "Pick a game",
     noFutureDates: "No future dates available",
+    changeDate: "Change",
     sortedByVotes: "Sorted by votes from attendees of the selected date",
     voteCount: "{{count}} vote(s)",
     approveMeeting: "Approve Meeting",

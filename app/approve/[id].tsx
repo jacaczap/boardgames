@@ -78,6 +78,7 @@ export default function ApproveScreen() {
 
   const [selectedDateId, setSelectedDateId] = useState<string | null>(null);
   const [selectedGameId, setSelectedGameId] = useState<string | null>(null);
+  const [datesCollapsed, setDatesCollapsed] = useState(false);
   const [mode, setMode] = useState<Mode>("approve");
 
   const avatarPaths = useMemo(
@@ -230,6 +231,7 @@ export default function ApproveScreen() {
           );
           setSelectedDateId(chosenDateOpt?.id ?? null);
           setSelectedGameId(m.chosen_game_id ?? null);
+          if (chosenDateOpt) setDatesCollapsed(true);
         }
       } else if (m?.status === "voting") {
         setMode("approve");
@@ -359,6 +361,7 @@ export default function ApproveScreen() {
       }
       setSelectedDateId(null);
       setSelectedGameId(null);
+      setDatesCollapsed(false);
       await fetchData();
     } catch (e: any) {
       showAlert(t("common.error"), e?.message ?? t("approve.failedUnapprove"));
@@ -451,13 +454,32 @@ export default function ApproveScreen() {
 
         {/* Step 1: Pick a date */}
         <VStack space="md">
-          <Heading size="lg">
-            <Ionicons name="calendar-outline" size={18} /> {t("approve.pickDate")}
-          </Heading>
+          <HStack className="items-center justify-between">
+            <Heading size="lg">
+              <Ionicons name="calendar-outline" size={18} /> {t("approve.pickDate")}
+            </Heading>
+            {selectedDateId && (
+              <Pressable onPress={() => setDatesCollapsed((c) => !c)}>
+                <HStack space="xs" className="items-center">
+                  <Text className="text-amber-700 font-medium">
+                    {datesCollapsed ? t("approve.changeDate") : t("common.collapse")}
+                  </Text>
+                  <Ionicons
+                    name={datesCollapsed ? "chevron-down" : "chevron-up"}
+                    size={16}
+                    color="#b45309"
+                  />
+                </HStack>
+              </Pressable>
+            )}
+          </HStack>
           {sortedDates.length === 0 && (
             <Text className="text-stone-400">{t("approve.noFutureDates")}</Text>
           )}
-          {sortedDates.map((opt) => {
+          {(datesCollapsed
+            ? sortedDates.filter((o) => o.id === selectedDateId)
+            : sortedDates
+          ).map((opt) => {
             const selected = selectedDateId === opt.id;
             const voteCount = dateVoteCounts.get(opt.id) ?? 0;
             const voters = dateVoterProfiles.get(opt.id) ?? [];
@@ -467,8 +489,9 @@ export default function ApproveScreen() {
 
             return (
               <Pressable key={opt.id} onPress={() => {
+                if (selectedDateId !== opt.id) setSelectedGameId(null);
                 setSelectedDateId(opt.id);
-                setSelectedGameId(null);
+                setDatesCollapsed(true);
               }}>
                 <Card
                   variant="filled"

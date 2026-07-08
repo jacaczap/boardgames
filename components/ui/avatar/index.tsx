@@ -8,6 +8,7 @@ import {
 import { Image as ExpoImage, type ImageProps } from "expo-image";
 import { cssInterop } from "nativewind";
 import { tva } from "@gluestack-ui/nativewind-utils/tva";
+import { IS_TABLET, UI_SCALE } from "@/lib/responsive";
 
 cssInterop(ExpoImage, { className: "style" });
 
@@ -45,20 +46,46 @@ const fallbackTextStyle = tva({
 
 type AvatarSize = "xs" | "sm" | "md" | "lg" | "xl";
 
+const AVATAR_PX: Record<AvatarSize, number> = {
+  xs: 24,
+  sm: 32,
+  md: 40,
+  lg: 48,
+  xl: 64,
+};
+
+const FALLBACK_PX: Record<AvatarSize, number> = {
+  xs: 10,
+  sm: 12,
+  md: 14,
+  lg: 16,
+  xl: 18,
+};
+
 interface AvatarProps extends ViewProps {
   size?: AvatarSize;
 }
 
 export const Avatar = React.forwardRef<View, AvatarProps>(
-  ({ className, size = "md", children, ...props }, ref) => (
-    <View ref={ref} className={avatarStyle({ size, className })} {...props}>
-      {React.Children.map(children, (child) =>
-        React.isValidElement(child)
-          ? React.cloneElement(child as React.ReactElement<any>, { _size: size })
-          : child,
-      )}
-    </View>
-  ),
+  ({ className, size = "md", children, style, ...props }, ref) => {
+    const scaledStyle = IS_TABLET
+      ? { width: AVATAR_PX[size] * UI_SCALE, height: AVATAR_PX[size] * UI_SCALE }
+      : undefined;
+    return (
+      <View
+        ref={ref}
+        className={avatarStyle({ size, className })}
+        style={scaledStyle ? [scaledStyle, style] : style}
+        {...props}
+      >
+        {React.Children.map(children, (child) =>
+          React.isValidElement(child)
+            ? React.cloneElement(child as React.ReactElement<any>, { _size: size })
+            : child,
+        )}
+      </View>
+    );
+  },
 );
 Avatar.displayName = "Avatar";
 
@@ -84,13 +111,19 @@ interface AvatarFallbackTextProps extends TextProps {
 }
 
 export const AvatarFallbackText = React.forwardRef<Text, AvatarFallbackTextProps>(
-  ({ className, _size = "md", ...props }, ref) => (
-    <Text
-      ref={ref}
-      className={fallbackTextStyle({ size: _size, className })}
-      {...props}
-    />
-  ),
+  ({ className, _size = "md", style, ...props }, ref) => {
+    const scaledStyle = IS_TABLET
+      ? { fontSize: FALLBACK_PX[_size] * UI_SCALE }
+      : undefined;
+    return (
+      <Text
+        ref={ref}
+        className={fallbackTextStyle({ size: _size, className })}
+        style={scaledStyle ? [scaledStyle, style] : style}
+        {...props}
+      />
+    );
+  },
 );
 AvatarFallbackText.displayName = "AvatarFallbackText";
 
