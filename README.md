@@ -225,11 +225,9 @@ and **auto-deploys on every push to `master`**. There are no DEV/preview Vercel
 environments — for web dev work, run it locally (`npx expo start`, press `w`),
 which is backed by the DEV database (see step 8).
 
-- **Build command**: `npx expo export -p web`
-- **Output directory**: `dist`
+- **Build command / output directory**: pinned in `vercel.json` (`APP_ENV=production npx expo export -p web` → `dist`). `APP_ENV=production` lives there (not the dashboard) so the build always uses the prod variant (name `VoteNMeet`, and `webUrl` baked into the bundle) regardless of dashboard settings.
 - **Environment variables** (Vercel project Settings > Environment Variables):
   - `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_KEY` — the **PROD** project's URL + publishable key.
-  - `APP_ENV=production` — so the build uses the prod variant (app name `VoteNMeet` instead of `VoteNMeet (Dev)`). Without it the build defaults to `development`; the DB is unaffected either way (it always comes from the two vars above), but the name would show the dev label.
 
 ## Database
 

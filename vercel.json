@@ -1,3 +1,5 @@
 {
+  "buildCommand": "APP_ENV=production npx expo export -p web",
+  "outputDirectory": "dist",
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
