@@ -13,6 +13,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { useGroup } from "@/lib/groupContext";
+import { getGroupMemberProfiles } from "@/lib/groups";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrls } from "@/lib/storage";
 import { isPolishHoliday } from "@/lib/holidays";
@@ -192,7 +193,7 @@ export default function ApproveScreen() {
           supabase.from("meetings").select("*").eq("id", id).single(),
           supabase.from("date_options").select("*").eq("meeting_id", id).order("date"),
           supabase.from("board_games").select("*").eq("group_id", currentGroupId).order("name"),
-          supabase.from("profiles").select("*"),
+          getGroupMemberProfiles(currentGroupId),
           supabase.from("votes").select("*").eq("meeting_id", id),
           supabase
             .from("vote_dates")
@@ -208,7 +209,7 @@ export default function ApproveScreen() {
       setMeeting(m);
       setDateOptions((dateOptsRes.data as DateOption[]) ?? []);
       setGames((gamesRes.data as BoardGame[]) ?? []);
-      setProfiles((profilesRes.data as Profile[]) ?? []);
+      setProfiles(profilesRes);
 
       setAllVotes((votesRes.data as Vote[]) ?? []);
       setAllVoteDates(

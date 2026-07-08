@@ -100,17 +100,25 @@ export default function RootLayout() {
 
   useEffect(() => {
     const init = async () => {
-      const gate = await runVersionCheck();
-      if (gate.blocked) {
-        setLoading(false);
-        return;
-      }
+      // Never let a stalled boot check trap the user on the spinner. Some mobile
+      // browsers (e.g. Vivaldi) throttle the initial network when a page is
+      // opened from a tapped link, so a token refresh inside getSession can hang;
+      // this guarantees the app renders regardless.
+      const safety = setTimeout(() => setLoading(false), 8000);
+      try {
+        const gate = await runVersionCheck();
+        if (gate.blocked) return;
 
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-      setSession(session);
-      setLoading(false);
+        const {
+          data: { session },
+        } = await supabase.auth.getSession();
+        setSession(session);
+      } catch {
+        // Fail open: render the app (unauthenticated) rather than hang.
+      } finally {
+        clearTimeout(safety);
+        setLoading(false);
+      }
     };
     init();
 

@@ -14,6 +14,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { useGroup } from "@/lib/groupContext";
+import { getGroupMemberProfiles } from "@/lib/groups";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrls } from "@/lib/storage";
 import { signalVoteCast } from "@/lib/voteSignal";
@@ -192,7 +193,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
           supabase.from("meetings").select("*").eq("id", meetingId).single(),
           supabase.from("date_options").select("*").eq("meeting_id", meetingId).order("date"),
           supabase.from("board_games").select("*").eq("group_id", currentGroupId).order("name"),
-          supabase.from("profiles").select("*"),
+          getGroupMemberProfiles(currentGroupId),
           supabase.from("votes").select("*").eq("meeting_id", meetingId),
           supabase
             .from("vote_dates")
@@ -209,7 +210,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
       setDateOptions((dateOptsRes.data as DateOption[]) ?? []);
       const fetchedGames = (gamesRes.data as BoardGame[]) ?? [];
       setGames(fetchedGames);
-      setProfiles((profilesRes.data as Profile[]) ?? []);
+      setProfiles(profilesRes);
 
       const votes = (votesRes.data as Vote[]) ?? [];
       setAllVotes(votes);

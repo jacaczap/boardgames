@@ -17,6 +17,7 @@ import * as FileSystem from "expo-file-system";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { useGroup } from "@/lib/groupContext";
+import { getGroupMemberProfiles } from "@/lib/groups";
 import { getDateLocale } from "@/lib/i18n";
 import { useIsTablet } from "@/lib/responsive";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
@@ -187,14 +188,14 @@ export default function HomeScreen() {
               .select("game_id, vote_id, votes!inner(meeting_id)")
               .eq("votes.meeting_id", m.id),
             supabase.from("board_games").select("id, name").eq("group_id", currentGroupId),
-            supabase.from("profiles").select("id, name, surname, avatar_url"),
+            getGroupMemberProfiles(currentGroupId),
           ]);
 
         const voteUserMap = new Map(
           ((votesRes.data ?? []) as { id: string; user_id: string }[]).map((v) => [v.id, v.user_id]),
         );
         const profileMap = new Map(
-          ((profilesRes.data ?? []) as Profile[]).map((p) => [p.id, p]),
+          profilesRes.map((p) => [p.id, p]),
         );
 
         const voterUserIds = new Set(

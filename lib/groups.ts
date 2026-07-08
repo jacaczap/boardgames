@@ -2,6 +2,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Linking from "expo-linking";
 import Constants from "expo-constants";
 import { supabase } from "./supabase";
+import type { Profile } from "./types";
 
 // Canonical public web origin (prod), e.g. https://votenmeet.vercel.app.
 const WEB_URL = (Constants.expoConfig?.extra?.webUrl as string | undefined) ?? null;
@@ -174,6 +175,28 @@ export async function listMembers(groupId: string): Promise<GroupMember[]> {
       };
     })
     .filter((m) => !!m.userId);
+}
+
+// Full profiles of a group's members, scoped to the group. Routes through
+// group_members so RLS (is_group_member) is the real boundary: a non-member
+// querying another group gets zero rows. Use this instead of a bare
+// profiles.select("*") anywhere a per-group member set is needed (e.g. the
+// "x/y voted" denominator), since the profiles RLS alone (shares_group) would
+// leak members from the user's other groups.
+export async function getGroupMemberProfiles(
+  groupId: string | null,
+): Promise<Profile[]> {
+  if (!groupId) return [];
+  const { data, error } = await supabase
+    .from("group_members")
+    .select("profiles(*)")
+    .eq("group_id", groupId);
+
+  if (error) throw error;
+
+  return (data ?? [])
+    .map((row: any) => (Array.isArray(row.profiles) ? row.profiles[0] : row.profiles))
+    .filter((p: Profile | null): p is Profile => !!p);
 }
 
 export async function updateMemberRole(
