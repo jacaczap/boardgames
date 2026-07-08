@@ -13,6 +13,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { useGroup } from "@/lib/groupContext";
 import { getDateLocale } from "@/lib/i18n";
 import { useSignedUrls } from "@/lib/storage";
 import { signalVoteCast } from "@/lib/voteSignal";
@@ -63,6 +64,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
   const { t } = useTranslation();
   const locale = getDateLocale();
   const router = useRouter();
+  const { currentGroupId, canApprove } = useGroup();
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -189,7 +191,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         await Promise.all([
           supabase.from("meetings").select("*").eq("id", meetingId).single(),
           supabase.from("date_options").select("*").eq("meeting_id", meetingId).order("date"),
-          supabase.from("board_games").select("*").order("name"),
+          supabase.from("board_games").select("*").eq("group_id", currentGroupId).order("name"),
           supabase.from("profiles").select("*"),
           supabase.from("votes").select("*").eq("meeting_id", meetingId),
           supabase
@@ -271,7 +273,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
     } finally {
       setLoading(false);
     }
-  }, [meetingId]);
+  }, [meetingId, currentGroupId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -588,7 +590,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
 
           <Card variant="filled" className="bg-green-50 p-4">
             <HStack space="sm" className="items-center">
-              <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+              <Ionicons name="checkmark-circle" size={20} color="#5b7d34" />
               <Text className="text-green-700 font-medium">
                 {t("survey.voteRecorded")}
               </Text>
@@ -598,7 +600,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
           {meetingApprovedByOther && (
             <Card variant="filled" className="bg-orange-100 p-4">
               <HStack space="sm" className="items-center">
-                <Ionicons name="warning-outline" size={20} color="#ea580c" />
+                <Ionicons name="warning-outline" size={20} color="#b5843a" />
                 <Text className="text-orange-800 flex-1">
                   {t("race.meetingApprovedBanner")}
                 </Text>
@@ -729,14 +731,16 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
               <ButtonText className="text-lg">{t("survey.changeVote")}</ButtonText>
             </Button>
             {embedded ? (
-              <Button
-                variant="outline"
-                action="positive"
-                size="lg"
-                onPress={() => router.push(`/approve/${meetingId}`)}
-              >
-                <ButtonText className="text-lg">{t("home.approveMeeting")}</ButtonText>
-              </Button>
+              canApprove ? (
+                <Button
+                  variant="outline"
+                  action="positive"
+                  size="lg"
+                  onPress={() => router.push(`/approve/${meetingId}`)}
+                >
+                  <ButtonText className="text-lg">{t("home.approveMeeting")}</ButtonText>
+                </Button>
+              ) : null
             ) : (
               <Button
                 variant="outline"
@@ -797,7 +801,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
         {meetingApprovedByOther && (
           <Card variant="filled" className="bg-orange-100 p-4">
             <HStack space="sm" className="items-center">
-              <Ionicons name="warning-outline" size={20} color="#ea580c" />
+              <Ionicons name="warning-outline" size={20} color="#b5843a" />
               <Text className="text-orange-800 flex-1">
                 {t("race.meetingApprovedBanner")}
               </Text>
@@ -815,7 +819,7 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
               <Ionicons
                 name={notParticipating ? "checkbox" : "square-outline"}
                 size={24}
-                color={notParticipating ? "#ea580c" : "#a8a29e"}
+                color={notParticipating ? "#b5843a" : "#a8a29e"}
               />
               <VStack>
                 <Text className={`font-medium ${notParticipating ? "text-orange-800" : "text-stone-700"}`}>

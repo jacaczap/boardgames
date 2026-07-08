@@ -1,6 +1,6 @@
 ---
 name: Groups premium configurable surveys
-overview: Transform the single-group board-games app into a generic, multi-tenant meeting planner with self-signup, group-based isolation, configurable surveys, and a premium tier. Starts with a dev/prod environment split, then three feature phases.
+overview: Transform the single-group board-games app into a generic, multi-tenant meeting planner with self-signup, group-based isolation, configurable surveys, and a premium tier. Starts with a dev/prod environment split, then phased feature work.
 todos:
   - id: p0-supabase-dev
     content: "Phase 0: create separate DEV Supabase project; link via CLI; apply migrations + deploy edge functions/cron/secrets to it (guided console steps + IaC scripts)"
@@ -25,33 +25,39 @@ todos:
     status: completed
   - id: p1-schema
     content: "Phase 1: migration for groups, group_members (role enum), group_invites (per-group, 3-day expiry, multi-use) + is_group_member/is_group_admin/can_approve helpers"
-    status: pending
+    status: completed
   - id: p1-tenant
     content: "Phase 1: add group_id to meetings & board_games, per-group meeting number, update create_next_survey(p_group_id)"
-    status: pending
+    status: completed
   - id: p1-rls
     content: "Phase 1: rewrite all domain RLS to membership-scoped; add anti-flooding triggers (3 free groups/user, member_limit, per-group row caps, rate limits)"
-    status: pending
+    status: completed
   - id: p1-auth
     content: "Phase 1: open registration/email-verification/password-reset screens; in-app account+data deletion as part of self-registration/account management (GDPR self-service); onboarding when user has no groups; invite-link deep-link join flow (register-or-login then join)"
-    status: pending
+    status: completed
   - id: p1-context
     content: "Phase 1: lib/groups context provider (currentGroupId persisted), scope all meetings/board_games queries by it"
-    status: pending
+    status: completed
   - id: p1-ui
-    content: "Phase 1: shared header with group switcher (headerRight) + group management screens (create/settings/members/invite-code/join)"
-    status: pending
+    content: "Phase 1: shared header with group switcher (headerRight) + group management screens (create/settings/members/invite-code/join); gate approve/unapprove UI to approvers/admins (matches the can_approve RLS - regular members no longer see/trigger approval on the meeting + home screens)"
+    status: completed
   - id: p1-edge
     content: "Phase 1: rework cron + edge functions (create-survey, complete-meeting, reminders, notify-*) to operate per group"
-    status: pending
+    status: completed
   - id: p1-migrate
     content: "Phase 1: one-off migration folding existing games/meetings/profiles into a default premium group (20-member limit) with current user as admin"
-    status: pending
+    status: completed
   - id: p1-launch-readiness
     content: "Phase 1 (when self-signup ships): rewrite stale PRIVACY_POLICY.md + docs/privacy/index.html for public/self-signup; in-app UGC report/block + content moderation/takedown (Play UGC policy); English-completeness pass on all i18n keys (en/pl) incl. new screens; REBRAND (app no longer boardgames-only): new generic public/English name, new icon/splash/theme, rewrite Play short+long descriptions (en/pl) + redo all store screenshots; public support/contact channel"
-    status: pending
+    status: completed
+  - id: p1-docs
+    content: "Phase 1 wrap-up: update .cursor/rules/project-context.mdc + README to the multi-tenant model (groups/roles/invites, membership-scoped RLS, can_approve-gated approval, rate_limit_log) - deferred across the Phase 1 migrations to a single coordinated pass"
+    status: completed
   - id: p2-schema
-    content: "Phase 2: survey_dimensions + survey_options + vote_selections tables; make date auto-generation and 3-play rule per-group config"
+    content: "Phase 2: survey_dimensions + survey_options + vote_selections tables; make date auto-generation per-group config"
+    status: pending
+  - id: p2-remove-3play
+    content: "Phase 2: remove the 3-play rule entirely (drop get_consecutive_game_count + the 'must pick a new game after 3 consecutive plays' enforcement, any trigger/RLS/client checks, and related i18n)"
     status: pending
   - id: p2-config-ui
     content: "Phase 2: admin dimension-config screens + 3 presets (boardgames, activity, meetplace)"
@@ -61,6 +67,12 @@ todos:
     status: pending
   - id: p2-migrate
     content: "Phase 2: migrate board_games -> survey_options (game dimension), vote_games -> vote_selections"
+    status: pending
+  - id: p25-theme
+    content: "Phase 2.5: add group theme concept (groups.theme, default generic; only 'boardgames' theme has special features for now, other themes later); theme features gated to premium groups"
+    status: pending
+  - id: p25-history
+    content: "Phase 2.5 (boardgames theme, premium only): historical meetings - store/surface results of past surveys (winning date + winning game/activity + attendees) and per-game win streaks; read-only history/stats screen"
     status: pending
   - id: p3-decisions
     content: "Phase 3 Step 0: decide payment platform (Stripe/RevenueCat/both), tier limits and pricing, free-tier feature gating"
@@ -191,6 +203,11 @@ The moment self-signup ships, the app is effectively public — these can't wait
   - **Store listing (localized en + pl):** rewrite **short + long descriptions** — the current Play descriptions are boardgames-specific and must be regenerated for the generic planner. Redo all **store screenshots** to reflect the new name, branding, and (Phase 2) generic surveys.
 - **Support/contact channel:** a way for non-friend users to reach support (email/form).
 
+### Finalization — one-time manual setup (run last)
+All Phase-1 manual/guided steps are collected in a single one-time guide: [docs/groups-setup.md](docs/groups-setup.md) (Supabase auth config, backend deploy, SMTP; plus privacy-policy rewrite/host, Play content-rating re-submission, rebrand/store listing, and data-migration admin as those items land).
+- **Keep it current:** every Phase-1 change that introduces a manual step must add it to [docs/groups-setup.md](docs/groups-setup.md) in the same change.
+- **Final to-do (release gate):** once all other Phase-1 points are done, execute [docs/groups-setup.md](docs/groups-setup.md) end-to-end (DEV first, then PROD). No release before this.
+
 ---
 
 ## Phase 2 — Configurable / generic surveys
@@ -200,7 +217,8 @@ Goal: survey stops being "dates + games". Default = **dates only**. Premium grou
 ### Data model
 - `survey_dimensions` (per group): `key`, `name`, `type` (`date | option`), `is_optional`, `select_mode` (single/multi), `who_can_add_options`, `allow_photos`, `extra_fields` (jsonb schema), `order`.
 - Generalize: `survey_options` (replaces `board_games` as generic per-dimension options: `label`, `description`, `image_url`, `extra` jsonb, `added_by`) and `vote_selections` (`vote_id`, `dimension_id`, `option_id`) replacing `vote_games`.
-- Dates stay first-class (`date_options`) but auto-generation (weekends, Polish holidays, 60-day range, in [create_next_survey](supabase/migrations/20260424000000_create_next_survey_start_tomorrow.sql) + [lib/holidays.ts](lib/holidays.ts)) becomes **per-group config**. The 3-play rule (`get_consecutive_game_count`) becomes an optional per-dimension rule.
+- Dates stay first-class (`date_options`) but auto-generation (weekends, Polish holidays, 60-day range, in [create_next_survey](supabase/migrations/20260424000000_create_next_survey_start_tomorrow.sql) + [lib/holidays.ts](lib/holidays.ts)) becomes **per-group config**.
+- **Remove the 3-play rule:** drop `get_consecutive_game_count` and the "must pick a new game after 3 consecutive plays" enforcement (function + any trigger/RLS usage, client checks, and related i18n). It doesn't fit the generic model and is being dropped rather than generalized.
 
 ### UI
 - Admin dimension-config screens.
@@ -211,6 +229,21 @@ Goal: survey stops being "dates + games". Default = **dates only**. Premium grou
 
 ### Migration
 - `board_games` → `survey_options` under a "game" dimension; `vote_games` → `vote_selections`.
+
+---
+
+## Phase 2.5 — Group themes + historical meetings (boardgames)
+
+Goal: introduce a per-group **theme** that unlocks theme-specific extras. For now only the **boardgames** theme has special features; other themes can be added later. These theme features are **premium-only**.
+
+### Group theme
+- Add `groups.theme` (`generic` default, `boardgames`). Chosen at group creation and editable in settings. Only `boardgames` currently enables special features; a `generic` group behaves as before.
+- Theme features are gated to **premium** groups (a free boardgames group doesn't get them).
+
+### Historical meetings (boardgames theme, premium)
+- Store and surface the **results of past surveys**: for each completed meeting, the winning date and winning game/activity plus who attended.
+- **Win streaks:** track how many times in a row a game/option has won, shown in the history view. (This reuses the consecutive-count idea from the old 3-play rule, but purely as a stat — no enforcement.)
+- Read-only history / stats screen for the group.
 
 ---
 
@@ -234,6 +267,6 @@ Goal: survey stops being "dates + games". Default = **dates only**. Premium grou
 
 ## Sequencing & risks
 - **Phase 0 first** — without a dev environment, every later phase is risky to test against prod. It's mostly config/guided console work, so it's quick and unblocks everything.
-- Phase 1 is the feature foundation; Phases 2 & 3 depend on it. Phase 3 is riskiest (store policies, legal) — last.
+- Phase 1 is the feature foundation; later phases depend on it. Phase 2.5 (themes + historical meetings) builds on Phase 2's generic survey model; it gates on the `tier` field from Phase 1 (payment enforcement itself lands in Phase 3). Phase 3 is riskiest (store policies, legal) — last.
 - Biggest effort: RLS rewrite (P1), per-group cron (P1), survey remodel + data migration (P2).
 - Each phase ships independently and leaves the app working.

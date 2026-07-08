@@ -5,18 +5,28 @@ import {
   AppState,
   Linking,
   Platform,
-  Pressable,
   StyleSheet,
   View,
 } from "react-native";
+import * as ExpoLinking from "expo-linking";
 import { Stack, useRouter, useSegments } from "expo-router";
-import { Ionicons } from "@expo/vector-icons";
 import { Session } from "@supabase/supabase-js";
 import * as Notifications from "expo-notifications";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 import { checkVersionGate } from "@/lib/version";
+import {
+  getMembershipCount,
+  getPendingInviteCode,
+  onMembershipChanged,
+  parseInviteCode,
+  setPendingInviteCode,
+} from "@/lib/groups";
+import { GroupProvider } from "@/lib/groupContext";
+import { BlockProvider } from "@/lib/moderation";
 import { GluestackUIProvider } from "@/components/ui/gluestack-ui-provider";
+import { TABLET_CONTENT_MAX_WIDTH, useIsTablet } from "@/lib/responsive";
+import AppHeader from "@/components/AppHeader";
 import UpdateRequiredScreen from "@/components/UpdateRequiredScreen";
 import { showAlert } from "@/lib/alert";
 import {
@@ -28,14 +38,52 @@ import {
 import { Center } from "@/components/ui/center";
 import { Spinner } from "@/components/ui/spinner";
 
+// Establishes a Supabase session from tokens embedded in a deep link (email
+// confirmation / password recovery). Handles both the implicit flow (tokens in
+// the URL fragment) and PKCE (a `code` query param). Returns true when the link
+// is a password-recovery link.
+async function establishSessionFromUrl(url: string): Promise<boolean> {
+  try {
+    const hashIndex = url.indexOf("#");
+    if (hashIndex >= 0) {
+      const params = new URLSearchParams(url.slice(hashIndex + 1));
+      const access_token = params.get("access_token");
+      const refresh_token = params.get("refresh_token");
+      if (access_token && refresh_token) {
+        await supabase.auth.setSession({ access_token, refresh_token });
+        return params.get("type") === "recovery";
+      }
+    }
+
+    const queryIndex = url.indexOf("?");
+    if (queryIndex >= 0) {
+      const query = url.slice(queryIndex + 1).split("#")[0];
+      const params = new URLSearchParams(query);
+      const code = params.get("code");
+      if (code) {
+        await supabase.auth.exchangeCodeForSession(code);
+        return params.get("type") === "recovery";
+      }
+    }
+  } catch {
+    // Ignore malformed links / already-consumed tokens.
+  }
+  return false;
+}
+
 export default function RootLayout() {
   const { t } = useTranslation();
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [updateStoreUrl, setUpdateStoreUrl] = useState<string | null>(null);
   const [updateRequired, setUpdateRequired] = useState(false);
+  const [membership, setMembership] = useState<"unknown" | "none" | "has">(
+    "unknown",
+  );
+  const [pendingCode, setPendingCode] = useState<string | null>(null);
   const segments = useSegments();
   const router = useRouter();
+  const isTablet = useIsTablet();
   const responseListener = useRef<Notifications.Subscription | null>(null);
 
   const lastVersionCheckRef = useRef(0);
@@ -207,17 +255,101 @@ export default function RootLayout() {
     };
   }, [router]);
 
+  // Keep the onboarding gate in sync with the user's group memberships.
+  const refreshMembership = useCallback(async (userId: string) => {
+    try {
+      const count = await getMembershipCount(userId);
+      setMembership(count > 0 ? "has" : "none");
+    } catch {
+      // Fail open: a transient error must not trap an existing user in
+      // onboarding. New users hit the onboarding query right after signup, when
+      // the network is already working.
+      setMembership("has");
+    }
+  }, []);
+
+  const syncPendingCode = useCallback(async () => {
+    setPendingCode(await getPendingInviteCode());
+  }, []);
+
+  useEffect(() => {
+    syncPendingCode();
+  }, [syncPendingCode]);
+
+  useEffect(() => {
+    const userId = session?.user?.id;
+    if (!userId) {
+      setMembership("unknown");
+      return;
+    }
+    refreshMembership(userId);
+    const unsub = onMembershipChanged(() => {
+      refreshMembership(userId);
+      syncPendingCode();
+    });
+    return unsub;
+  }, [session?.user?.id, refreshMembership, syncPendingCode]);
+
+  // Deep links: password-recovery sessions and group invite links.
+  useEffect(() => {
+    const handleUrl = async (url: string | null) => {
+      if (!url) return;
+
+      const recovery = await establishSessionFromUrl(url);
+      const { hostname, path } = ExpoLinking.parse(url);
+      const target = `${hostname ?? ""}/${path ?? ""}`;
+      if (recovery || target.includes("reset-password")) {
+        router.replace("/(auth)/reset-password");
+        return;
+      }
+
+      const code = parseInviteCode(url);
+      if (code) {
+        await setPendingInviteCode(code);
+        setPendingCode(code);
+        router.replace(`/join/${code}`);
+      }
+    };
+
+    Linking.getInitialURL().then(handleUrl);
+    const sub = Linking.addEventListener("url", ({ url }) => handleUrl(url));
+    return () => sub.remove();
+  }, [router]);
+
   useEffect(() => {
     if (loading || updateRequired) return;
 
-    const inAuthGroup = segments[0] === "(auth)";
+    const seg = segments as string[];
+    const first = seg[0];
+    const inAuth = first === "(auth)";
+    const inJoin = first === "join";
+    const inOnboarding = first === "onboarding";
+    const inReset = inAuth && seg[1] === "reset-password";
 
-    if (!session && !inAuthGroup) {
-      router.replace("/(auth)/login");
-    } else if (session && inAuthGroup) {
+    if (!session) {
+      if (!inAuth && !inJoin) router.replace("/(auth)/login");
+      return;
+    }
+
+    // A live recovery session must stay on the reset screen.
+    if (inReset) return;
+
+    // Finish a pending invite before anything else, but only pull users who are
+    // still on the auth/onboarding screens (never yank them out of the app).
+    if (pendingCode && (inAuth || inOnboarding)) {
+      router.replace(`/join/${pendingCode}`);
+      return;
+    }
+
+    if (membership === "none" && !inOnboarding && !inJoin) {
+      router.replace("/onboarding");
+      return;
+    }
+
+    if (membership === "has" && (inAuth || inOnboarding)) {
       router.replace("/(tabs)");
     }
-  }, [session, loading, segments, updateRequired]);
+  }, [session, loading, segments, updateRequired, membership, pendingCode, router]);
 
   if (loading) {
     return (
@@ -236,51 +368,56 @@ export default function RootLayout() {
   }
 
   const isWeb = Platform.OS === "web";
+  const framed = isWeb || isTablet;
 
   return (
     <GluestackUIProvider>
-      <View style={isWeb ? webStyles.outer : appStyles.root}>
-        <View style={isWeb ? webStyles.inner : appStyles.root}>
+      <GroupProvider>
+      <BlockProvider>
+      <View style={framed ? webStyles.outer : appStyles.root}>
+        <View
+          style={
+            framed
+              ? [
+                  webStyles.inner,
+                  isTablet && !isWeb
+                    ? { maxWidth: TABLET_CONTENT_MAX_WIDTH }
+                    : null,
+                ]
+              : appStyles.root
+          }
+        >
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="(tabs)" />
-            <Stack.Screen
-              name="survey/[id]"
-              options={{
-                title: t("nav.survey"),
-                headerShown: true,
-                headerStyle: { backgroundColor: "#4a3228" },
-                headerTintColor: "#fef3c7",
-                headerTitleStyle: { color: "#fef3c7" },
-                ...(isWeb && {
-                  headerLeft: () => (
-                    <Pressable onPress={() => router.back()} style={{ marginRight: 8 }}>
-                      <Ionicons name="arrow-back" size={24} color="#fef3c7" />
-                    </Pressable>
-                  ),
-                }),
-              }}
-            />
-            <Stack.Screen
-              name="approve/[id]"
-              options={{
-                title: t("nav.approveMeeting"),
-                headerShown: true,
-                headerStyle: { backgroundColor: "#4a3228" },
-                headerTintColor: "#fef3c7",
-                headerTitleStyle: { color: "#fef3c7" },
-                ...(isWeb && {
-                  headerLeft: () => (
-                    <Pressable onPress={() => router.back()} style={{ marginRight: 8 }}>
-                      <Ionicons name="arrow-back" size={24} color="#fef3c7" />
-                    </Pressable>
-                  ),
-                }),
-              }}
-            />
+            <Stack.Screen name="onboarding" />
+            <Stack.Screen name="join/[code]" />
+            {[
+              { name: "group/create", title: t("groups.createTitle") },
+              { name: "group/join", title: t("groups.joinTitle") },
+              { name: "group/settings", title: t("groups.settingsTitle") },
+              { name: "group/members", title: t("groups.membersTitle") },
+              { name: "group/invite", title: t("groups.inviteTitle") },
+              { name: "group/moderation", title: t("moderation.moderationTitle") },
+              { name: "blocked", title: t("moderation.blockedUsersTitle") },
+              { name: "survey/[id]", title: t("nav.survey") },
+              { name: "approve/[id]", title: t("nav.approveMeeting") },
+            ].map((s) => (
+              <Stack.Screen
+                key={s.name}
+                name={s.name}
+                options={{
+                  title: s.title,
+                  headerShown: true,
+                  header: () => <AppHeader showBack />,
+                }}
+              />
+            ))}
           </Stack>
         </View>
       </View>
+      </BlockProvider>
+      </GroupProvider>
     </GluestackUIProvider>
   );
 }

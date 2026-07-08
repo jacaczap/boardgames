@@ -16,7 +16,9 @@ import * as Sharing from "expo-sharing";
 import * as FileSystem from "expo-file-system";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
+import { useGroup } from "@/lib/groupContext";
 import { getDateLocale } from "@/lib/i18n";
+import { useIsTablet } from "@/lib/responsive";
 import { useSignedUrl, useSignedUrls } from "@/lib/storage";
 import type { Meeting, BoardGame, Profile, Vote, VoteDate, VoteGame } from "@/lib/types";
 import SurveyContent from "@/components/SurveyContent";
@@ -39,7 +41,9 @@ let homeChannelSeq = 0;
 export default function HomeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { currentGroupId, canApprove } = useGroup();
   const isWeb = Platform.OS === "web";
+  const isTablet = useIsTablet();
   const [meeting, setMeeting] = useState<Meeting | null>(null);
   const [game, setGame] = useState<BoardGame | null>(null);
   const [attendees, setAttendees] = useState<Profile[]>([]);
@@ -74,10 +78,21 @@ export default function HomeScreen() {
   const avatarUrls = useSignedUrls("avatars", avatarPaths);
 
   const fetchData = useCallback(async () => {
+    if (!currentGroupId) {
+      setMeeting(null);
+      setGame(null);
+      setAttendees([]);
+      setAllVoterProfiles([]);
+      setVotingResults(null);
+      setNextSurveyDate(null);
+      setLoading(false);
+      return;
+    }
     try {
       const { data: meetings } = await supabase
         .from("meetings")
         .select("*")
+        .eq("group_id", currentGroupId)
         .in("status", ["voting", "approved"])
         .order("number", { ascending: false })
         .limit(1);
@@ -94,6 +109,7 @@ export default function HomeScreen() {
         const { data: lastCompleted } = await supabase
           .from("meetings")
           .select("chosen_date")
+          .eq("group_id", currentGroupId)
           .eq("status", "completed")
           .order("number", { ascending: false })
           .limit(1);
@@ -170,7 +186,7 @@ export default function HomeScreen() {
               .from("vote_games")
               .select("game_id, vote_id, votes!inner(meeting_id)")
               .eq("votes.meeting_id", m.id),
-            supabase.from("board_games").select("id, name"),
+            supabase.from("board_games").select("id, name").eq("group_id", currentGroupId),
             supabase.from("profiles").select("id, name, surname, avatar_url"),
           ]);
 
@@ -239,7 +255,7 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [currentGroupId]);
 
   useFocusEffect(
     useCallback(() => {
@@ -318,12 +334,13 @@ export default function HomeScreen() {
   };
 
   const handleCreateSurvey = async () => {
-    if (creatingSurvey) return;
+    if (creatingSurvey || !currentGroupId) return;
     setCreatingSurvey(true);
     try {
       const { count } = await supabase
         .from("meetings")
         .select("*", { count: "exact", head: true })
+        .eq("group_id", currentGroupId)
         .in("status", ["voting", "approved"]);
       if (count && count > 0) {
         showAlert(t("race.info"), t("home.surveyAlreadyExists"));
@@ -331,7 +348,9 @@ export default function HomeScreen() {
         return;
       }
 
-      const { error } = await supabase.rpc("create_next_survey");
+      const { error } = await supabase.rpc("create_next_survey", {
+        p_group_id: currentGroupId,
+      });
       if (error) {
         showAlert(t("common.error"), error.message);
         return;
@@ -456,7 +475,7 @@ export default function HomeScreen() {
         const ics = [
           "BEGIN:VCALENDAR",
           "VERSION:2.0",
-          "PRODID:-//BoardGames//EN",
+          "PRODID:-//VoteNMeet//EN",
           "BEGIN:VEVENT",
           `DTSTART;VALUE=DATE:${dtstart}`,
           `DTEND;VALUE=DATE:${dtend}`,
@@ -465,9 +484,10 @@ export default function HomeScreen() {
           "END:VCALENDAR",
         ].join("\r\n");
 
-        const uri = FileSystem.cacheDirectory + "event.ics";
-        await FileSystem.writeAsStringAsync(uri, ics);
-        await Sharing.shareAsync(uri, {
+        const file = new FileSystem.File(FileSystem.Paths.cache, "event.ics");
+        file.create({ overwrite: true });
+        file.write(ics);
+        await Sharing.shareAsync(file.uri, {
           mimeType: "text/calendar",
           UTI: "com.apple.ical.ics",
         });
@@ -532,7 +552,7 @@ export default function HomeScreen() {
         )}
         <Button
           action="primary"
-          isDisabled={creatingSurvey}
+          isDisabled={creatingSurvey || !currentGroupId}
           onPress={handleCreateSurvey}
           className="px-6"
         >
@@ -558,7 +578,14 @@ export default function HomeScreen() {
         <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
       }
     >
-      <Card variant="filled" className="bg-green-50 w-full max-w-md self-center">
+      <Card
+        variant="filled"
+        className={
+          isTablet
+            ? "bg-green-50 w-full"
+            : "bg-green-50 w-full max-w-md self-center"
+        }
+      >
         {gameImageUrl && (
           <Image
             source={{ uri: gameImageUrl, cacheKey: game?.image_url ?? undefined }}
@@ -568,7 +595,7 @@ export default function HomeScreen() {
         )}
         <VStack space="md" className="p-5">
           <HStack space="xs" className="items-center">
-            <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
+            <Ionicons name="checkmark-circle" size={20} color="#5b7d34" />
             <Text className="text-green-700 font-medium">
               {t("home.meetingApproved")}
             </Text>
@@ -693,7 +720,7 @@ export default function HomeScreen() {
                   {votingResults.dates.slice(0, 5).map((d) => (
                     <HStack key={d.date} space="sm" className="items-center">
                       {d.isChosen ? (
-                        <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
+                        <Ionicons name="checkmark-circle" size={14} color="#5b7d34" />
                       ) : (
                         <View className="w-3.5" />
                       )}
@@ -732,7 +759,7 @@ export default function HomeScreen() {
                   {votingResults.games.slice(0, 5).map((g) => (
                     <HStack key={g.name} space="sm" className="items-center">
                       {g.isChosen ? (
-                        <Ionicons name="checkmark-circle" size={14} color="#16a34a" />
+                        <Ionicons name="checkmark-circle" size={14} color="#5b7d34" />
                       ) : (
                         <View className="w-3.5" />
                       )}
@@ -765,7 +792,7 @@ export default function HomeScreen() {
             {!isAttending ? (
               <Button
                 action="primary"
-                isDisabled={joiningMeeting}
+                isDisabled={joiningMeeting || !chosenDateOptionId}
                 onPress={handleLateJoin}
               >
                 <ButtonText>
@@ -784,21 +811,25 @@ export default function HomeScreen() {
                 </ButtonText>
               </Button>
             )}
-            <Button
-              variant="outline"
-              action="primary"
-              onPress={() => router.push(`/approve/${meeting.id}?edit=1`)}
-            >
-              <ButtonText>{t("home.editMeeting")}</ButtonText>
-            </Button>
-            <Button
-              variant="outline"
-              action="negative"
-              isDisabled={unapproving}
-              onPress={handleUnapprove}
-            >
-              <ButtonText>{unapproving ? t("home.unapproving") : t("home.unapprove")}</ButtonText>
-            </Button>
+            {canApprove && (
+              <>
+                <Button
+                  variant="outline"
+                  action="primary"
+                  onPress={() => router.push(`/approve/${meeting.id}?edit=1`)}
+                >
+                  <ButtonText>{t("home.editMeeting")}</ButtonText>
+                </Button>
+                <Button
+                  variant="outline"
+                  action="negative"
+                  isDisabled={unapproving}
+                  onPress={handleUnapprove}
+                >
+                  <ButtonText>{unapproving ? t("home.unapproving") : t("home.unapprove")}</ButtonText>
+                </Button>
+              </>
+            )}
           </VStack>
         </VStack>
       </Card>

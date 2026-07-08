@@ -1,32 +1,38 @@
 import React, { useState } from "react";
 import { ScrollView, KeyboardAvoidingView } from "react-native";
+import { useRouter } from "expo-router";
 import { showAlert } from "@/lib/alert";
 import { useTranslation } from "react-i18next";
 import { supabase } from "@/lib/supabase";
 
 import { Box } from "@/components/ui/box";
 import { VStack } from "@/components/ui/vstack";
+import { HStack } from "@/components/ui/hstack";
 import { Heading } from "@/components/ui/heading";
+import { Text } from "@/components/ui/text";
 import { Button, ButtonText, ButtonSpinner } from "@/components/ui/button";
 import { Input, InputField, InputSlot, InputIcon } from "@/components/ui/input";
+import { Pressable } from "@/components/ui/pressable";
 import { Ionicons } from "@expo/vector-icons";
 
 export default function LoginScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
 
   const handleLogin = async () => {
-    if (!email || !password) {
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail || !password) {
       showAlert(t("common.error"), t("auth.fillAllFields"));
       return;
     }
 
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: trimmedEmail,
       password,
     });
     setLoading(false);
@@ -44,11 +50,19 @@ export default function LoginScreen() {
       <ScrollView
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
-        className="bg-stone-50"
+        style={{ backgroundColor: "#f6f1e6" }}
       >
         <Box className="flex-1 justify-center px-8">
-          <Heading size="3xl" className="text-center mb-8">
-            {t("auth.appName")}
+          <Heading size="3xl" className="text-center mb-8 font-extrabold">
+            <Text className="text-3xl font-extrabold" style={{ color: "#4a3228" }}>
+              Vote
+            </Text>
+            <Text className="text-3xl font-extrabold" style={{ color: "#f59e0b" }}>
+              N
+            </Text>
+            <Text className="text-3xl font-extrabold" style={{ color: "#4a3228" }}>
+              Meet
+            </Text>
           </Heading>
 
           <VStack space="md">
@@ -93,6 +107,21 @@ export default function LoginScreen() {
                 <ButtonText>{t("auth.logIn")}</ButtonText>
               )}
             </Button>
+
+            <Pressable onPress={() => router.push("/(auth)/forgot-password")}>
+              <Text className="text-center text-amber-700 font-medium">
+                {t("auth.forgotPassword")}
+              </Text>
+            </Pressable>
+
+            <HStack space="xs" className="justify-center mt-2">
+              <Text className="text-stone-500">{t("auth.noAccount")}</Text>
+              <Pressable onPress={() => router.push("/(auth)/register")}>
+                <Text className="text-amber-700 font-medium">
+                  {t("auth.signUp")}
+                </Text>
+              </Pressable>
+            </HStack>
           </VStack>
         </Box>
       </ScrollView>

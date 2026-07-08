@@ -1,6 +1,7 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { sendPushNotifications } from "../_shared/push.ts";
 import type { PushMessage } from "../_shared/push.ts";
+import { getGroupName } from "../_shared/groups.ts";
 
 Deno.serve(async (_req) => {
   try {
@@ -11,7 +12,7 @@ Deno.serve(async (_req) => {
 
     const { data: approvedMeetings } = await supabase
       .from("meetings")
-      .select("id, number, chosen_date, chosen_game_id")
+      .select("id, number, chosen_date, chosen_game_id, group_id")
       .eq("status", "approved");
 
     if (!approvedMeetings?.length) {
@@ -87,10 +88,15 @@ Deno.serve(async (_req) => {
               ? "jutro"
               : `za ${daysUntil} dni`;
 
+        const groupName = meeting.group_id
+          ? await getGroupName(supabase, meeting.group_id)
+          : "";
+        const groupPart = groupName ? ` w grupie ${groupName}` : "";
+
         const messages: PushMessage[] = tokens.map((t) => ({
           to: t.token,
           title: "Przypomnienie o spotkaniu",
-          body: `Spotkanie planszówkowe #${meeting.number} jest ${daysText}!`,
+          body: `Spotkanie planszówkowe #${meeting.number}${groupPart} jest ${daysText}!`,
           data: { type: "meeting", meetingId: meeting.id },
         }));
         await sendPushNotifications(messages);

@@ -1,9 +1,15 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import AppHeader from "@/components/AppHeader";
+import { useIsTablet } from "@/lib/responsive";
 
 export default function TabLayout() {
   const { t } = useTranslation();
+  const isTablet = useIsTablet();
+  const insets = useSafeAreaInsets();
+  const iconSize = isTablet ? 30 : 24;
 
   return (
     <Tabs
@@ -13,19 +19,27 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: "#3d2818",
           borderTopColor: "#553720",
+          ...(isTablet
+            ? {
+                height: 72 + insets.bottom,
+                paddingTop: 10,
+                paddingBottom: 10 + insets.bottom,
+              }
+            : {}),
         },
+        tabBarLabelPosition: "below-icon",
+        tabBarLabelStyle: isTablet ? { fontSize: 14 } : undefined,
+        tabBarIconStyle: isTablet ? { marginTop: 2 } : undefined,
         headerShown: true,
-        headerStyle: { backgroundColor: "#4a3228" },
-        headerTintColor: "#fef3c7",
-        headerTitleStyle: { color: "#fef3c7" },
       }}
     >
       <Tabs.Screen
         name="index"
         options={{
-          title: "Spotkania",
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="home-outline" size={size} color={color} />
+          title: t("nav.meetings"),
+          header: () => <AppHeader title={t("nav.meetings")} showSwitcher />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="home-outline" size={iconSize} color={color} />
           ),
         }}
       />
@@ -34,8 +48,8 @@ export default function TabLayout() {
         options={{
           title: t("nav.games"),
           headerShown: false,
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="game-controller-outline" size={size} color={color} />
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="game-controller-outline" size={iconSize} color={color} />
           ),
         }}
         listeners={({ navigation }) => ({
@@ -49,8 +63,9 @@ export default function TabLayout() {
         name="profile"
         options={{
           title: t("nav.profile"),
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="person-outline" size={size} color={color} />
+          header: () => <AppHeader title={t("nav.profile")} showSwitcher />,
+          tabBarIcon: ({ color }) => (
+            <Ionicons name="person-outline" size={iconSize} color={color} />
           ),
         }}
       />

@@ -12,6 +12,7 @@ import {
   withStyleContext,
   useStyleContext,
 } from "@gluestack-ui/nativewind-utils/withStyleContext";
+import { classTextPx, tabletFontStyle } from "@/lib/responsive";
 
 const buttonStyle = tva({
   base: "rounded-xl items-center justify-center flex-row",
@@ -37,7 +38,7 @@ const buttonStyle = tva({
     },
   },
   compoundVariants: [
-    { action: "primary", variant: "solid", class: "bg-amber-700 active:bg-amber-800" },
+    { action: "primary", variant: "solid", class: "bg-amber-600 active:bg-amber-700" },
     { action: "secondary", variant: "solid", class: "bg-stone-600 active:bg-stone-700" },
     { action: "positive", variant: "solid", class: "bg-green-600 active:bg-green-700" },
     { action: "negative", variant: "solid", class: "bg-red-600 active:bg-red-700" },
@@ -147,18 +148,23 @@ export const Button = React.forwardRef<View, ButtonProps>(
 );
 Button.displayName = "Button";
 
+const BUTTON_TEXT_PX: Record<ButtonSize, number> = { sm: 14, md: 16, lg: 18 };
+
 export const ButtonText = React.forwardRef<Text, TextProps & { className?: string }>(
-  ({ className, ...props }, ref) => {
+  ({ className, style, ...props }, ref) => {
     const { action, variant, size } =
       (useStyleContext("BUTTON") as {
         action?: ButtonAction;
         variant?: ButtonVariant;
         size?: ButtonSize;
       }) ?? {};
+    const basePx = classTextPx(className) ?? BUTTON_TEXT_PX[size ?? "md"];
+    const scaledStyle = tabletFontStyle(basePx);
     return (
       <Text
         ref={ref}
         className={buttonTextStyle({ action, variant, size, className })}
+        style={scaledStyle ? [scaledStyle, style] : style}
         {...props}
       />
     );
@@ -194,8 +200,8 @@ export const ButtonIcon: React.FC<ButtonIconProps> = ({
 
   const colorMap: Record<string, Record<string, string>> = {
     solid: { primary: "#fff", secondary: "#fff", positive: "#fff", negative: "#fff" },
-    outline: { primary: "#b45309", secondary: "#57534e", positive: "#16a34a", negative: "#dc2626" },
-    link: { primary: "#b45309", secondary: "#57534e", positive: "#16a34a", negative: "#dc2626" },
+    outline: { primary: "#b45309", secondary: "#57534e", positive: "#5b7d34", negative: "#dc2626" },
+    link: { primary: "#b45309", secondary: "#57534e", positive: "#5b7d34", negative: "#dc2626" },
   };
   const color = colorMap[variant ?? "solid"]?.[action ?? "primary"] ?? "#fff";
   return <IconComponent name={name} size={size} color={color} className={className} />;

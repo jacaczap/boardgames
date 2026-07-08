@@ -32,7 +32,7 @@ const VoterListModal: React.FC<VoterListModalProps> = ({
         <Pressable style={styles.card} onPress={(e) => e.stopPropagation()}>
           <VStack space="md">
             <HStack space="sm" className="items-center flex-wrap">
-              <Ionicons name="checkmark" size={18} color="#16a34a" />
+              <Ionicons name="checkmark" size={18} color="#5b7d34" />
               {voted.map((p) => (
                 <View key={p.id}>
                   <UserAvatar profile={p} avatarUrls={avatarUrls} size="sm" />

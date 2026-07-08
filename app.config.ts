@@ -21,13 +21,21 @@ const supabaseKey =
 
 const variant = IS_DEV
   ? {
-      name: "Planszówki (Dev)",
+      name: "VoteNMeet (Dev)",
       packageId: "com.jacaczap.boardgames.dev",
     }
   : {
-      name: "Planszówki",
+      name: "VoteNMeet",
       packageId: "com.jacaczap.boardgames",
     };
+
+// Canonical public web origin. Used to build shareable invite links that work
+// everywhere (web + Android App Links) instead of the custom scheme. Only set
+// for prod so dev falls back to the local origin / custom scheme.
+const webUrl =
+  process.env.EXPO_PUBLIC_WEB_URL ??
+  (USE_PROD_DB ? "https://votenmeet.vercel.app" : undefined);
+const webHost = webUrl ? webUrl.replace(/^https?:\/\//, "").replace(/\/$/, "") : undefined;
 
 // Single project-level file holds both the prod and dev Android clients; the
 // Google Services Gradle plugin selects the entry matching the built package id.
@@ -37,16 +45,11 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: variant.name,
   slug: "boardgames",
-  version: "1.0.0",
+  version: "1.1.0",
   orientation: "portrait",
   icon: "./assets/icon.png",
   userInterfaceStyle: "light",
   scheme: "boardgames",
-  splash: {
-    image: "./assets/splash-icon.png",
-    resizeMode: "contain",
-    backgroundColor: "#fdf8f0",
-  },
   ios: {
     supportsTablet: true,
     bundleIdentifier: variant.packageId,
@@ -54,8 +57,8 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   android: {
     adaptiveIcon: {
       backgroundColor: "#C89B6E",
+      backgroundImage: "./assets/icon-wood-bg.png",
       foregroundImage: "./assets/android-icon-foreground.png",
-      backgroundImage: "./assets/android-icon-background.png",
       monochromeImage: "./assets/android-icon-monochrome.png",
     },
     package: variant.packageId,
@@ -65,6 +68,19 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "android.permission.READ_CALENDAR",
       "android.permission.WRITE_CALENDAR",
     ],
+    // Verified App Link: tapping an https invite link on a device with the app
+    // installed opens the app directly. Requires assetlinks.json hosted at the
+    // web domain (see docs/groups-setup.md). Only prod declares a webHost.
+    ...(webHost && {
+      intentFilters: [
+        {
+          action: "VIEW",
+          autoVerify: true,
+          data: [{ scheme: "https", host: webHost, pathPrefix: "/join" }],
+          category: ["BROWSABLE", "DEFAULT"],
+        },
+      ],
+    }),
   },
   web: {
     favicon: "./assets/favicon.png",
@@ -73,12 +89,21 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   plugins: [
     "expo-router",
     "expo-font",
+    [
+      "expo-splash-screen",
+      {
+        backgroundColor: "#f6f1e6",
+        image: "./assets/splash-icon.png",
+        imageWidth: 240,
+        resizeMode: "contain",
+      },
+    ],
     "expo-notifications",
     [
       "expo-image-picker",
       {
         photosPermission:
-          "Allow BoardGames to access your photos for game images.",
+          "Allow VoteNMeet to access your photos for uploads.",
         cameraPermission: false,
         microphonePermission: false,
       },
@@ -87,7 +112,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       "expo-calendar",
       {
         calendarPermission:
-          "Allow BoardGames to add meeting events to your calendar.",
+          "Allow VoteNMeet to add meeting events to your calendar.",
       },
     ],
     "expo-localization",
@@ -101,6 +126,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
     supabaseUrl,
     supabaseKey,
+    webUrl,
   },
 });
 

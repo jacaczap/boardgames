@@ -9,6 +9,7 @@ export interface Profile {
 
 export interface BoardGame {
   id: string;
+  group_id: string | null;
   name: string;
   description: string | null;
   genre: string | null;
@@ -24,6 +25,7 @@ export type MeetingStatus = "voting" | "approved" | "completed";
 
 export interface Meeting {
   id: string;
+  group_id: string | null;
   number: number;
   status: MeetingStatus;
   chosen_date: string | null;

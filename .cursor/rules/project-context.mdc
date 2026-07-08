@@ -5,7 +5,7 @@ alwaysApply: true
 
 # BoardGames Meeting Planner — Project Context
 
-A small **React Native (Expo)** app for **one closed friend group** to coordinate board game nights: vote on dates + games, approve a meeting, get push reminders. Display name **"Planszówki"** (Polish), bundle id `com.jacaczap.boardgames`. Runs on **Android (primary), Web, iOS**. No self-registration — admin creates users in Supabase.
+A **React Native (Expo)** app for friend groups to coordinate meetings: vote on dates + games/options, approve a meeting, get push reminders. Multi-group with open self-signup. Display name **"VoteNMeet"** (rebranded from "Planszówki"). The app is a generic meeting planner, but keeps a first-class **board-games mode** (shared game library, meeting history/stats, win streaks) as a permanent special feature. Bundle id `com.jacaczap.boardgames`. Runs on **Android (primary), Web, iOS**.
 
 ## Tech Stack
 
@@ -18,67 +18,85 @@ A small **React Native (Expo)** app for **one closed friend group** to coordinat
 
 ## Core Domain Concepts
 
-- **Meeting**: the central entity. Lifecycle status: `voting` → `approved` → `completed`. Has a `number` (sequential). A "survey" is just a meeting in `voting` status.
+- **Group**: the tenant. Every domain row (games, meetings) belongs to a group; all queries filter by the user's `currentGroupId`. Users join via a **per-group, multi-use invite link** (3-day expiry). **Roles** (`group_role`): `admin | approver | member`; creator = admin, admin implies approver. A user can belong to at most **3 free groups**; each group has a `member_limit` (free default 5).
+- **Meeting**: the central entity. Lifecycle status: `voting` → `approved` → `completed`. Has a per-group `number` (unique on `(group_id, number)`). A "survey" is just a meeting in `voting` status.
 - **Survey/voting**: users pick dates (`vote_dates`) and games (`vote_games`) in one `vote` per meeting. A vote with **no dates/games = "not participating"**.
 - **Date options**: auto-generated **weekends + Polish public holidays** in range, plus user-added **custom dates**. Past dates are disabled.
 - **3-play rule**: if a game has been played in 3 recent consecutive completed meetings, a new game must be picked (`get_consecutive_game_count`).
-- **Approval**: any user can approve — pick date (sorted by votes), then game (filtered to that date's voters). Any user can unapprove (→ back to `voting`).
+- **Approval**: **approvers/admins only** (RLS-gated by `can_approve()`, mirrored client-side by `useGroup().canApprove` / `roleCanApprove`) — pick date (sorted by votes), then game (filtered to that date's voters). Same roles can unapprove (→ back to `voting`); members vote but the UI hides approve/unapprove for them.
 - **Late join** ("I will attend"): on an approved meeting, a user with no vote for the chosen date adds a vote for that date + chosen game.
-- **Lifecycle automation** (pg_cron, daily): `create-survey` makes a new survey 7+ days after last completed meeting; `complete-meeting` marks past approved meetings completed → loop continues.
+- **Lifecycle automation** (pg_cron, daily): `create-survey` loops over groups, making a new survey 7+ days after that group's last completed meeting; `complete-meeting` marks past approved meetings completed → loop continues.
 
 ## Screens (expo-router)
 
 ```
 app/
-  _layout.tsx              Root: auth guard, Stack, push-token registration, notification deep-links
-  (auth)/login.tsx         Email+password login, "stay logged in" toggle. No signup.
+  _layout.tsx              Root: auth guard, onboarding gate, Stack, deep-links (invite + password recovery), push-token registration
+  (auth)/login.tsx         Email+password login; links to register + forgot-password
+  (auth)/register.tsx      Open self-signup (email+password)
+  (auth)/verify-email.tsx  "check your email" notice + resend
+  (auth)/forgot-password.tsx  Request password-reset email
+  (auth)/reset-password.tsx   Set new password from recovery deep-link session
   (tabs)/
     _layout.tsx            Bottom tabs (Home/Games/Profile)
     index.tsx              HOME: approved meeting card OR active survey CTA OR empty state
     games/index.tsx        Board games list + search
     games/[id].tsx         Game detail / edit / delete
     games/new.tsx          Add game
-    profile.tsx            Avatar, name/surname, password, notification prefs, language, logout
+    profile.tsx            Avatar, name/surname, password, notif prefs, language, help/support, blocked users, logout, delete account
+  onboarding.tsx           Shown when user has no groups: create a group or join by code
+  join/[code].tsx          Invite deep-link landing (register-or-login then join)
+  group/*                  create, join, settings, members (report/block), invite, moderation (admin reports)
+  blocked.tsx              Manage/unblock users you've blocked
   survey/[id].tsx          Survey voting screen
   approve/[id].tsx         Meeting approval screen
-components/                Shared: SurveyContent, CalendarDatePicker, UserAvatar, VoterListModal
+components/                Shared: SurveyContent, CalendarDatePicker, UserAvatar (block-aware), VoterListModal, ReportDialog, GroupSwitcher (header dropdown)
 components/ui/             gluestack-ui primitives (Box, Button, Text, Card, etc.)
-lib/                       supabase, types, storage, notifications, holidays, alert, voteSignal, i18n
+lib/                       supabase, types, storage, notifications, holidays, alert, voteSignal, groups, groupContext, moderation, account, i18n
 ```
 
-## Data Model (Postgres, all RLS-enabled)
+## Data Model (Postgres, all RLS-enabled, membership-scoped)
 
-- **profiles** (1:1 `auth.users`): `name`, `surname`, `avatar_url`, `notification_prior_meeting`, `notification_reminder_interval`. (No `username` — was dropped.)
+- **groups**: `name`, `created_by`, `tier` (default `free`), `member_limit` (default 5). The tenant.
+- **group_members**: `(group_id, user_id)` PK, `role` (`group_role`: `admin | approver | member`), `joined_at`.
+- **group_invites**: per-group, multi-use `code`, `expires_at` (default now + 3 days), `created_by`.
+- **profiles** (1:1 `auth.users`): `name`, `surname`, `avatar_url`, `notification_prior_meeting`, `notification_reminder_interval`. (No `username` — was dropped.) RLS: read own + profiles of users **sharing a group with me** (`shares_group`).
 - **push_tokens**: `user_id` PK, `token`. Separate table so only owner reads it; Edge Functions read all via `service_role`.
 - **push_token_events**: diagnostic log written via `log_push_token_event` RPC.
-- **board_games**: `name`, `description`, `genre`, `min_players`, `max_players`, `tutorial_url`, `spotify_playlist_url`, `image_url`, `owners` (text[]).
-- **meetings**: `number`, `status`, `chosen_date`, `chosen_game_id`, `approved_by`, `approved_at`, `voting_start_date`.
+- **board_games**: `group_id`, `name`, `description`, `genre`, `min_players`, `max_players`, `tutorial_url`, `spotify_playlist_url`, `image_url`, `owners` (text[]).
+- **meetings**: `group_id`, `number` (per-group, unique on `(group_id, number)`), `status`, `chosen_date`, `chosen_game_id`, `approved_by`, `approved_at`, `voting_start_date`.
 - **date_options**: `meeting_id`, `date`, `is_custom`, `added_by`.
 - **votes** (one per user per meeting) → **vote_dates** (`date_option_id`) + **vote_games** (`game_id`).
-- **survey_reminder_log**: per-user `sent_at` for reminder throttling.
+- **survey_reminder_log**: `(user_id, group_id)` PK, `sent_at` — per-user-per-group reminder throttling.
+- **rate_limit_log**: server-only (no client access); backs `check_rate_limit()` for per-user insert throttling.
+- **content_reports** / **user_blocks**: UGC moderation. Members report a game/profile/group (admins review under Group settings → Reports, resolve/dismiss); users block others (masks name/avatar app-wide via `UserAvatar` + `BlockProvider` in `lib/moderation.tsx`).
 
-Canonical TS types live in `lib/types.ts`. Key SQL functions: `create_next_survey()`, `get_consecutive_game_count()`, Polish-holidays computation (mirrored in `lib/holidays.ts`).
+`board_games` / `meetings` carry `group_id`; `date_options` / `votes` / `vote_dates` / `vote_games` derive their group via `meeting_id`. Membership RLS uses `SECURITY DEFINER` helpers: `is_group_member`, `is_group_admin`, `can_approve`, `shares_group`, `is_group_member_of_meeting`, `is_group_member_of_vote`. **Abuse limits** are enforced by triggers (member/free-group/per-group/per-meeting caps + `check_rate_limit` on inserts).
+
+Canonical TS types live in `lib/types.ts`. Key SQL functions: `create_next_survey(p_group_id)`, `create_group`, `join_group_by_code`, `preview_group_by_code`, `create_group_invite`, `get_consecutive_game_count()`, Polish-holidays computation (mirrored in `lib/holidays.ts`).
 
 ## Edge Functions (`supabase/functions/`)
 
-Cron (daily): `create-survey`, `survey-reminder`, `meeting-reminder`, `complete-meeting`.
-Trigger-based push: `notify-survey-created`, `notify-meeting-approved`, `notify-meeting-unapproved`.
+Cron (daily): `create-survey`, `survey-reminder`, `meeting-reminder`, `complete-meeting` — all loop **per group**.
+Trigger-based push: `notify-survey-created`, `notify-meeting-approved`, `notify-meeting-unapproved`, `notify-content-reported` (pushes new reports to group admins).
+User-invoked: `delete-account` (GDPR self-service: verifies caller JWT, removes their avatar + deletes the auth user, cascading profile/memberships/votes). `verify_jwt` on (not in `config.toml`).
 Shared push sender: `_shared/push.ts` (Expo Push API, batches of 100). Excluded from app tsconfig (Deno runtime).
 
 ## Conventions & Gotchas
 
+- **Multi-tenancy**: every `meetings` / `board_games` query filters by `useGroup().currentGroupId` (`lib/groupContext.tsx`, persisted in AsyncStorage; switched via `GroupSwitcher`). Gate approve/unapprove UI behind `canApprove`. RLS is the real boundary — client filtering is just for correctness.
 - **Realtime**: `meetings` + `votes` tables published; subscribe for live voter counts / approval changes. Use `useFocusEffect` to refetch on screen focus.
 - **Storage**: private buckets `avatars`, `game-images`. Never store raw paths in UI — use `useSignedUrl` / `useSignedUrls` (`lib/storage.ts`, auto-refresh before 1h expiry). Delete old image on replace/delete to avoid orphans.
 - **Alerts**: use `showAlert` from `lib/alert.ts` (cross-platform; web falls back to `window.alert/confirm`), not `Alert.alert` directly.
 - **Strings**: all user-facing text via `t("…")`; add keys to BOTH `lib/i18n/en.ts` and `pl.ts`.
 - **Web**: guard native-only features (`expo-calendar`, push) with `Platform.OS === "web"`. Web is centered max-width 700px.
-- **Theme**: warm wood palette — bg `#fdf8f0`, headers `#4a3228`, tabs `#3d2818`, accent amber `#f59e0b`, light text `#fef3c7`.
+- **Theme**: warm earthy palette — warm **brown** chrome (headers `#4a3228` / tabs `#3d2818`, border `#553720`, golden-cream text `#fef3c7`, cream bg `#f6f1e6`) + a warm **amber** interactive accent (default Tailwind amber: buttons/links `#b45309`, active tab `#f59e0b`, selected `#fbbf24`). Semantic roles centralized in `tailwind.config.js` (`theme.extend.colors`): `amber`(Tailwind default)=primary/interactive, `green`=success (`#5b7d34`, checkmarks/chosen/positive), `orange`=ochre warning, `red`(Tailwind default)=error/danger (vivid red for delete/danger zone, `#dc2626`/`#b91c1c`), `stone`=neutrals. Logo "n" is amber (`#f59e0b`). Note: the **app icon is the "VnM" tear-off calendar on a wood-grain background** (`assets/icon-wood-bg.png`) with a cream sticker contour; Android adaptive icon uses that wood image as `backgroundImage` (fallback `backgroundColor: #C89B6E`). The **splash** is the same calendar centered on cream `#f6f1e6` (configured via the `expo-splash-screen` plugin). Calendar art (`splash-icon.png`/`android-icon-foreground.png`) is transparent and kept inside the mask safe-zone so it isn't clipped. Utility classes keep those family names; inline hex in StyleSheets/nav mirror the same values.
 - **Security**: anon key + RLS is the boundary (repo is public-safe). `service_role` only in Edge Functions. `.env` and `supabase/config.toml` gitignored.
 - **Migrations**: never edit historical ones — add a new file. See `supabase-migrations.mdc` for required grants/RLS pattern.
 - **Minimum supported version (force-update gate)**: implemented — remote `min_version` in the `app_config` table (Supabase, public read), checked on startup by `lib/version.ts`; outdated native builds are hard-blocked with an "Update required" screen (`components/UpdateRequiredScreen.tsx`, wired in `app/_layout.tsx`). Web is exempt; fails open on error. **Breaking-change rule**: for every change, check whether it breaks backward compatibility between backend and app (DB/RLS/schema/edge-function change, or removed client behavior). If it does: bump the app `version` in `app.config.ts` on the release that fixes it, and once that build is live raise `app_config.min_version` (via dashboard or a new migration) to lock out older clients. The two versions must move together (a shipped build's `version` must be ≥ the `min_version` you set). See `docs/version-gate.md`.
 - **Git**: never commit/push without explicit user instruction; never to main/master.
 
-> Note: `README.md` and `.cursor/plans/boardgames_meeting_planner_a7addda3.plan.md` give origin design intent but predate some changes (e.g. `username` removal, the trigger-based `notify-*` functions). Trust the code/`lib/types.ts` when they disagree.
+> Note: `.cursor/plans/boardgames_meeting_planner_a7addda3.plan.md` gives origin design intent but predates the multi-tenant/groups rework (single-tenant, `username`, admin-created users). Trust the code/`lib/types.ts` when they disagree.
 
 ## Keeping This File Up To Date
 

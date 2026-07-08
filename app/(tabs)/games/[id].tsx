@@ -26,6 +26,7 @@ import { Image } from "@/components/ui/image";
 import { Input, InputField } from "@/components/ui/input";
 import { Badge, BadgeText } from "@/components/ui/badge";
 import { Pressable } from "@/components/ui/pressable";
+import ReportDialog from "@/components/ReportDialog";
 
 export default function GameDetailScreen() {
   const { t } = useTranslation();
@@ -37,6 +38,7 @@ export default function GameDetailScreen() {
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [showReport, setShowReport] = useState(false);
 
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
@@ -441,8 +443,27 @@ export default function GameDetailScreen() {
           >
             <ButtonText>{deleting ? t("games.deleting") : t("games.deleteGame")}</ButtonText>
           </Button>
+          <Pressable
+            onPress={() => setShowReport(true)}
+            className="flex-row items-center justify-center gap-2 py-2"
+          >
+            <Ionicons name="flag-outline" size={16} color="#a8a29e" />
+            <Text size="sm" className="text-stone-400">
+              {t("moderation.reportGame")}
+            </Text>
+          </Pressable>
         </VStack>
       </VStack>
+
+      {showReport && game.group_id && (
+        <ReportDialog
+          visible
+          onClose={() => setShowReport(false)}
+          groupId={game.group_id}
+          contentType="board_game"
+          contentId={game.id}
+        />
+      )}
     </ScrollView>
   );
 }
