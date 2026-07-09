@@ -162,14 +162,9 @@ export default function HomeScreen() {
                 );
 
               if (votes?.length) {
-                const { data: profiles } = await supabase
-                  .from("profiles")
-                  .select("id, name, surname, avatar_url")
-                  .in(
-                    "id",
-                    votes.map((v) => v.user_id),
-                  );
-                setAttendees((profiles as Profile[]) ?? []);
+                const voterSet = new Set(votes.map((v) => v.user_id));
+                const memberProfiles = await getGroupMemberProfiles(currentGroupId);
+                setAttendees(memberProfiles.filter((p) => voterSet.has(p.id)));
               }
             }
           }
@@ -191,16 +186,20 @@ export default function HomeScreen() {
             getGroupMemberProfiles(currentGroupId),
           ]);
 
-        const voteUserMap = new Map(
-          ((votesRes.data ?? []) as { id: string; user_id: string }[]).map((v) => [v.id, v.user_id]),
-        );
         const profileMap = new Map(
           profilesRes.map((p) => [p.id, p]),
         );
 
-        const voterUserIds = new Set(
-          ((votesRes.data ?? []) as { id: string; user_id: string }[]).map((v) => v.user_id),
+        // Drop orphaned votes from users no longer in the group (e.g. removed
+        // mid-vote) so tallies and the total match the current membership.
+        const memberIds = new Set(profilesRes.map((p) => p.id));
+        const memberVotes = ((votesRes.data ?? []) as { id: string; user_id: string }[]).filter(
+          (v) => memberIds.has(v.user_id),
         );
+        const voteUserMap = new Map(memberVotes.map((v) => [v.id, v.user_id]));
+        const memberVoteIds = new Set(memberVotes.map((v) => v.id));
+
+        const voterUserIds = new Set(memberVotes.map((v) => v.user_id));
         setAllVoterProfiles(
           [...voterUserIds].map((uid) => profileMap.get(uid)).filter((p): p is Profile => !!p),
         );
@@ -208,6 +207,7 @@ export default function HomeScreen() {
         const dateCountMap = new Map<string, number>();
         const dateVoterMap = new Map<string, Profile[]>();
         for (const vd of (voteDatesRes.data ?? []) as { date_option_id: string; vote_id: string }[]) {
+          if (!memberVoteIds.has(vd.vote_id)) continue;
           dateCountMap.set(vd.date_option_id, (dateCountMap.get(vd.date_option_id) ?? 0) + 1);
           const userId = voteUserMap.get(vd.vote_id);
           const profile = userId ? profileMap.get(userId) : undefined;
@@ -226,6 +226,7 @@ export default function HomeScreen() {
         const gameCountMap = new Map<string, number>();
         const gameVoterMap = new Map<string, Profile[]>();
         for (const vg of (voteGamesRes.data ?? []) as { game_id: string; vote_id: string }[]) {
+          if (!memberVoteIds.has(vg.vote_id)) continue;
           gameCountMap.set(vg.game_id, (gameCountMap.get(vg.game_id) ?? 0) + 1);
           const userId = voteUserMap.get(vg.vote_id);
           const profile = userId ? profileMap.get(userId) : undefined;
@@ -242,7 +243,7 @@ export default function HomeScreen() {
           .map(([gid, count]) => ({ name: gameNameMap.get(gid) ?? "?", count, isChosen: gid === m.chosen_game_id, voters: gameVoterMap.get(gid) ?? [] }))
           .sort((a, b) => b.count - a.count);
 
-        setVotingResults({ dates: dateTallies, games: gameTallies, totalVotes: votesRes.data?.length ?? 0 });
+        setVotingResults({ dates: dateTallies, games: gameTallies, totalVotes: memberVotes.length });
       }
 
       if (m.status === "voting") {

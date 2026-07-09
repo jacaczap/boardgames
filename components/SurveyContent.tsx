@@ -212,17 +212,24 @@ const SurveyContent: React.FC<SurveyContentProps> = ({ meetingId, embedded = fal
       setGames(fetchedGames);
       setProfiles(profilesRes);
 
-      const votes = (votesRes.data as Vote[]) ?? [];
+      // Only current group members count. A member removed mid-vote leaves an
+      // orphaned vote row behind (removing them from the group doesn't delete
+      // their votes), which would otherwise inflate every tally.
+      const memberIds = new Set(profilesRes.map((p) => p.id));
+      const votes = ((votesRes.data as Vote[]) ?? []).filter((v) =>
+        memberIds.has(v.user_id),
+      );
+      const memberVoteIds = new Set(votes.map((v) => v.id));
       setAllVotes(votes);
       setAllVoteDates(
-        (voteDatesRes.data as (VoteDate & { votes: unknown })[])?.map(
-          ({ votes: _, ...vd }) => vd,
-        ) ?? [],
+        (voteDatesRes.data as (VoteDate & { votes: unknown })[])
+          ?.map(({ votes: _, ...vd }) => vd)
+          .filter((vd) => memberVoteIds.has(vd.vote_id)) ?? [],
       );
       setAllVoteGames(
-        (voteGamesRes.data as (VoteGame & { votes: unknown })[])?.map(
-          ({ votes: _, ...vg }) => vg,
-        ) ?? [],
+        (voteGamesRes.data as (VoteGame & { votes: unknown })[])
+          ?.map(({ votes: _, ...vg }) => vg)
+          .filter((vg) => memberVoteIds.has(vg.vote_id)) ?? [],
       );
 
       const counts = new Map<string, number>();
